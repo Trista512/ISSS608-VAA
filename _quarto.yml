@@ -13,6 +13,8 @@ website:
             href: Hands-on_Ex/Hands-on_Ex01/Hands-on_Ex01.qmd
       - text: About
         href: about.qmd
+
+
     right:
       - href: index.qmd
         text: Home
