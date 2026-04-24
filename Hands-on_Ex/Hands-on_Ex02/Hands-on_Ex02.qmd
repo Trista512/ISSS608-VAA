@@ -1,0 +1,226 @@
+---
+title: "Hands-on_Ex02"
+aurthor: HU Yue
+format: html
+---
+
+```{r}
+pacman::p_load(ggrepel, patchwork, 
+               ggthemes, hrbrthemes,
+               tidyverse) 
+```
+## 2.2.2 Importing data
+```{r}
+library(readr)
+exam_data <- readr::read_csv("Exam_data.csv")
+
+```
+## 2.3 Beyond ggplot2 Annotation: ggrepel
+
+```{r}
+ggplot(data = exam_data, 
+       aes(x = MATHS, 
+           y = ENGLISH)) +
+  geom_point() +
+  geom_smooth(method = lm, linewidth = 0.5) +  
+  geom_label_repel(aes(label = ID), 
+                   fontface = "bold") +
+  coord_cartesian(xlim = c(0, 100),
+                  ylim = c(0, 100)) +
+  ggtitle("English scores versus Maths scores for Primary 3")
+```
+
+**Explanation**
+
+This code creates a scatter plot of `MATHS` versus `ENGLISH`, adds a linear regression line, and labels each point using `ID`. `geom_label_repel()` helps prevent overlapping labels, while `coord_cartesian()` restricts the axes to the score range of 0 to 100.
+
+## 2.4 Beyond ggplot2 Themes
+```{r}
+ggplot(data = exam_data, 
+       aes(x = MATHS)) +
+  geom_histogram(bins = 20, 
+                 boundary = 100,
+                 color = "grey25", 
+                 fill = "grey90") +
+  theme_gray() +
+  ggtitle("Distribution of Maths scores")
+```
+
+**Explanation**
+
+This code creates a histogram of `MATHS` scores. The data is grouped into 20 bins, and `boundary = 100` aligns the bins at a fixed boundary. The bars are styled with grey borders and light grey fill, and `theme_gray()` applies the default ggplot theme for a clean appearance.
+
+## 2.4.1 Working with ggtheme package
+
+```{r}
+ggplot(data = exam_data, 
+       aes(x = MATHS)) +
+  geom_histogram(bins = 20, 
+                 boundary = 100,
+                 color = "grey25", 
+                 fill = "grey90") +
+  ggtitle("Distribution of Maths scores") +
+  theme_economist()
+```
+
+**Explanation**
+
+This code creates a histogram of `MATHS` scores using 20 bins and aligns them with a fixed boundary. The bars are styled with grey borders and light grey fill. `theme_economist()` applies a professional theme inspired by *The Economist*, giving the chart a more polished and publication-style appearance.
+
+## 2.4.2 Working with hrbthems package
+
+```{r}
+ggplot(data = exam_data, 
+       aes(x = MATHS)) +
+  geom_histogram(bins = 20, 
+                 boundary = 100,
+                 color = "grey25", 
+                 fill = "grey90") +
+  ggtitle("Distribution of Maths scores") +
+  theme_ipsum()
+```
+
+**Explanation**
+
+This code creates a histogram of `MATHS` scores using 20 bins and aligns them with a fixed boundary. The bars are styled with grey borders and light grey fill. `theme_ipsum()` applies a clean, modern theme with improved typography, making the chart more visually appealing.
+
+```{r}
+ggplot(data = exam_data, 
+       aes(x = MATHS)) +
+  geom_histogram(bins = 20, 
+                 boundary = 100,
+                 color = "grey25", 
+                 fill = "grey90") +
+  ggtitle("Distribution of Maths scores") +
+  theme_ipsum(axis_title_size = 18,
+              base_size = 15,
+              grid = "Y")
+```
+
+**Explanation**
+
+This code creates a histogram of `MATHS` scores and applies a customized `theme_ipsum()`. The theme increases the axis title size and overall text size for better readability, while `grid = "Y"` keeps only horizontal grid lines. This results in a cleaner and more polished visualization.
+
+## 2.5 Beyond Single Graph
+
+
+```{r}
+p1 <- ggplot(data = exam_data, 
+             aes(x = MATHS)) +
+  geom_histogram(bins = 20, 
+                 boundary = 100,
+                 color = "grey25", 
+                 fill = "grey90") + 
+  coord_cartesian(xlim = c(0, 100)) +
+  ggtitle("Distribution of Maths scores")
+
+p1
+```
+
+**Explanation**
+
+This code creates a histogram of `MATHS` scores and assigns it to `p1`. `coord_cartesian(xlim = c(0, 100))` restricts the visible x-axis range to 0–100 without removing any data. Displaying `p1` renders the plot.
+
+```{r}
+p2 <- ggplot(data = exam_data, 
+             aes(x = ENGLISH)) +
+  geom_histogram(bins = 20, 
+                 boundary = 100,
+                 color = "grey25", 
+                 fill = "grey90") +
+  coord_cartesian(xlim = c(0, 100)) +
+  ggtitle("Distribution of English scores")
+
+p2
+```
+
+**Explanation**
+
+This code creates a histogram of `ENGLISH` scores and assigns it to `p2`. The data is grouped into 20 bins, and `coord_cartesian(xlim = c(0, 100))` limits the visible x-axis range to 0–100 without removing data. Displaying `p2` renders the plot.
+
+
+```{r}
+p3 <- ggplot(data = exam_data, 
+             aes(x = MATHS, 
+                 y = ENGLISH)) +
+  geom_point() +
+  geom_smooth(method = lm, 
+              linewidth = 0.5) +  
+  coord_cartesian(xlim = c(0, 100),
+                  ylim = c(0, 100)) +
+  ggtitle("English scores versus Maths scores for Primary 3")
+
+p3
+```
+
+**Explanation**
+
+This code creates a scatter plot of `MATHS` versus `ENGLISH` and adds a linear regression line. `geom_point()` shows individual observations, while `geom_smooth(method = lm)` fits a straight line to indicate the relationship between the two variables. `coord_cartesian()` limits both axes to the 0–100 score range for clearer interpretation.
+
+## 2.5.1 Creating Composite Graphics: pathwork methods
+
+## 2.5.2 Combining two ggplot2 graphs
+
+```{r}
+p1 + p2
+```
+
+**Explanation**
+
+This code attempts to combine `p1` and `p2`. However, in `ggplot2`, plots cannot be directly added together using `+`. To properly combine multiple plots, packages such as `patchwork` or `gridExtra` should be used.
+
+## 2.5.3 Combining three ggplot2 graphs
+
+```{r}
+library(patchwork)
+
+(p1 / p2) | p3
+```
+
+**Explanation**
+
+This code uses the `patchwork` package to arrange multiple plots. `p1 / p2` stacks `p1` above `p2` vertically, and `| p3` places `p3` to the right. The result is a combined layout with `p1` and `p2` on the left (top and bottom) and `p3` on the right.
+
+## 2.5.4 Creating a composite figure with tag
+
+```{r}
+library(patchwork)
+
+((p1 / p2) | p3) + 
+  plot_annotation(tag_levels = 'I')
+```
+
+**Explanation**
+
+This code arranges the plots using `patchwork` and adds automatic labels to each subplot. `p1 / p2` stacks `p1` above `p2`, and `| p3` places `p3` to the right. `plot_annotation(tag_levels = 'I')` labels the plots as I, II, and III, making it easier to reference each subplot.
+
+## 2.5.5 Creating figure with insert
+
+
+```{r}
+library(patchwork)
+
+p3 + inset_element(p2, 
+                   left = 0.02, 
+                   bottom = 0.7, 
+                   right = 0.5, 
+                   top = 1)
+```
+
+**Explanation**
+
+This code overlays `p2` onto `p3` as an inset plot using the `patchwork` package. The arguments `left`, `bottom`, `right`, and `top` control the position and size of the inset using relative coordinates (from 0 to 1). This allows a secondary plot to be displayed within the main plot for comparison or emphasis.
+
+## 2.5.6 Creating a composite figure by using patchwork and ggtheme
+
+```{r}
+library(patchwork)
+library(ggthemes)
+
+patchwork <- (p1 / p2) | p3
+patchwork & theme_economist()
+```
+
+**Explanation**
+
+This code first combines `p1`, `p2`, and `p3` into a layout using `patchwork`. The operator `&` is then used to apply `theme_economist()` to all plots in the layout at once. This ensures a consistent visual style across the combined plots.
