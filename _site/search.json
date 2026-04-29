@@ -189,6 +189,13 @@
     "text": "1.11.1 Working with theme\nCode chunk below creates a horizontal bar chart and applies the gray theme.\n\nggplot(data = exam_data, \n       aes(x = RACE)) +\n  geom_bar() +\n  coord_flip() +\n  theme_gray()\n\n\n\n\n\n\n\n\nExplanation\nThis code chunk creates a bar chart for the variable RACE, flips the coordinates, and applies a theme. The variable RACE is mapped to the x-axis, and geom_bar() counts the number of observations in each category and displays them as bars. coord_flip() switches the axes so that the bars become horizontal, which can improve readability. theme_gray() applies the default gray theme in ggplot2, which controls the overall appearance of the plot, including the background, grid lines, and text style.\nCode chunk below creates a horizontal bar chart and applies the classic theme.\n\nggplot(data = exam_data, \n       aes(x = RACE)) +\n  geom_bar() +\n  coord_flip() +\n  theme_classic()\n\n\n\n\n\n\n\n\nExplanation\nThis code chunk creates a bar chart for the variable RACE, flips the coordinates, and applies a theme. The variable RACE is mapped to the x-axis, and geom_bar() counts the number of observations in each category and displays them as bars. coord_flip() switches the axes so that the bars become horizontal, which makes the chart easier to read. theme_classic() changes the overall appearance of the plot by removing the gray background and grid lines, giving the chart a cleaner and simpler style.\nCode chunk below creates a horizontal bar chart and applies the minimal theme.\n\nggplot(data = exam_data, \n       aes(x = RACE)) +\n  geom_bar() +\n  coord_flip() +\n  theme_minimal()\n\n\n\n\n\n\n\n\nExplanation\nThis code chunk creates a bar chart for the variable RACE, flips the coordinates, and applies a theme. The variable RACE is mapped to the x-axis, and geom_bar() counts the number of observations in each category and displays them as bars. coord_flip() switches the axes so that the bars become horizontal, which improves readability. theme_minimal() changes the overall appearance of the plot by using a clean and simple style with fewer visual distractions, making the chart look more modern and uncluttered."
   },
   {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html",
+    "title": "Hands-on_Ex03",
+    "section": "",
+    "text": "pacman::p_load(ggiraph, plotly, \n               patchwork, DT, tidyverse)\nExplanation\nlibrary(readr)\nexam_data &lt;- readr::read_csv(\"Exam_data.csv\")\nExplanation\nThis code imports the Exam_data.csv file into R and stores it as a data frame named exam_data. The dataset will be used as the main source of information for the subsequent analysis and visualizations."
+  },
+  {
     "objectID": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html",
     "href": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html",
     "title": "Hands-on_Ex02",
@@ -200,14 +207,14 @@
     "href": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html#importing-data",
     "title": "Hands-on_Ex02",
     "section": "2.2.2 Importing data",
-    "text": "2.2.2 Importing data\n\nlibrary(readr)\nexam_data &lt;- readr::read_csv(\"Exam_data.csv\")\n\nRows: 322 Columns: 7\n── Column specification ────────────────────────────────────────────────────────\nDelimiter: \",\"\nchr (4): ID, CLASS, GENDER, RACE\ndbl (3): ENGLISH, MATHS, SCIENCE\n\nℹ Use `spec()` to retrieve the full column specification for this data.\nℹ Specify the column types or set `show_col_types = FALSE` to quiet this message."
+    "text": "2.2.2 Importing data\n\nlibrary(readr)\nexam_data &lt;- readr::read_csv(\"Exam_data.csv\")"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html#beyond-ggplot2-annotation-ggrepel",
     "href": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html#beyond-ggplot2-annotation-ggrepel",
     "title": "Hands-on_Ex02",
     "section": "2.3 Beyond ggplot2 Annotation: ggrepel",
-    "text": "2.3 Beyond ggplot2 Annotation: ggrepel\n\nggplot(data = exam_data, \n       aes(x = MATHS, \n           y = ENGLISH)) +\n  geom_point() +\n  geom_smooth(method = lm, linewidth = 0.5) +  \n  geom_label_repel(aes(label = ID), \n                   fontface = \"bold\") +\n  coord_cartesian(xlim = c(0, 100),\n                  ylim = c(0, 100)) +\n  ggtitle(\"English scores versus Maths scores for Primary 3\")\n\n`geom_smooth()` using formula = 'y ~ x'\n\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a scatter plot of MATHS versus ENGLISH, adds a linear regression line, and labels each point using ID. geom_label_repel() helps prevent overlapping labels, while coord_cartesian() restricts the axes to the score range of 0 to 100."
+    "text": "2.3 Beyond ggplot2 Annotation: ggrepel\n\n\n\n\n\n\nExplanation\nThis code creates a scatter plot of MATHS versus ENGLISH, adds a linear regression line, and labels each point using ID. geom_label_repel() helps prevent overlapping labels, while coord_cartesian() restricts the axes to the score range of 0 to 100."
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html#beyond-ggplot2-themes",
@@ -235,7 +242,7 @@
     "href": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html#beyond-single-graph",
     "title": "Hands-on_Ex02",
     "section": "2.5 Beyond Single Graph",
-    "text": "2.5 Beyond Single Graph\n\np1 &lt;- ggplot(data = exam_data, \n             aes(x = MATHS)) +\n  geom_histogram(bins = 20, \n                 boundary = 100,\n                 color = \"grey25\", \n                 fill = \"grey90\") + \n  coord_cartesian(xlim = c(0, 100)) +\n  ggtitle(\"Distribution of Maths scores\")\n\np1\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a histogram of MATHS scores and assigns it to p1. coord_cartesian(xlim = c(0, 100)) restricts the visible x-axis range to 0–100 without removing any data. Displaying p1 renders the plot.\n\np2 &lt;- ggplot(data = exam_data, \n             aes(x = ENGLISH)) +\n  geom_histogram(bins = 20, \n                 boundary = 100,\n                 color = \"grey25\", \n                 fill = \"grey90\") +\n  coord_cartesian(xlim = c(0, 100)) +\n  ggtitle(\"Distribution of English scores\")\n\np2\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a histogram of ENGLISH scores and assigns it to p2. The data is grouped into 20 bins, and coord_cartesian(xlim = c(0, 100)) limits the visible x-axis range to 0–100 without removing data. Displaying p2 renders the plot.\n\np3 &lt;- ggplot(data = exam_data, \n             aes(x = MATHS, \n                 y = ENGLISH)) +\n  geom_point() +\n  geom_smooth(method = lm, \n              linewidth = 0.5) +  \n  coord_cartesian(xlim = c(0, 100),\n                  ylim = c(0, 100)) +\n  ggtitle(\"English scores versus Maths scores for Primary 3\")\n\np3\n\n`geom_smooth()` using formula = 'y ~ x'\n\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a scatter plot of MATHS versus ENGLISH and adds a linear regression line. geom_point() shows individual observations, while geom_smooth(method = lm) fits a straight line to indicate the relationship between the two variables. coord_cartesian() limits both axes to the 0–100 score range for clearer interpretation."
+    "text": "2.5 Beyond Single Graph\n\np1 &lt;- ggplot(data = exam_data, \n             aes(x = MATHS)) +\n  geom_histogram(bins = 20, \n                 boundary = 100,\n                 color = \"grey25\", \n                 fill = \"grey90\") + \n  coord_cartesian(xlim = c(0, 100)) +\n  ggtitle(\"Distribution of Maths scores\")\n\np1\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a histogram of MATHS scores and assigns it to p1. coord_cartesian(xlim = c(0, 100)) restricts the visible x-axis range to 0–100 without removing any data. Displaying p1 renders the plot.\n\np2 &lt;- ggplot(data = exam_data, \n             aes(x = ENGLISH)) +\n  geom_histogram(bins = 20, \n                 boundary = 100,\n                 color = \"grey25\", \n                 fill = \"grey90\") +\n  coord_cartesian(xlim = c(0, 100)) +\n  ggtitle(\"Distribution of English scores\")\n\np2\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a histogram of ENGLISH scores and assigns it to p2. The data is grouped into 20 bins, and coord_cartesian(xlim = c(0, 100)) limits the visible x-axis range to 0–100 without removing data. Displaying p2 renders the plot.\n\np3 &lt;- ggplot(data = exam_data, \n             aes(x = MATHS, \n                 y = ENGLISH)) +\n  geom_point() +\n  geom_smooth(method = lm, \n              linewidth = 0.5) +  \n  coord_cartesian(xlim = c(0, 100),\n                  ylim = c(0, 100)) +\n  ggtitle(\"English scores versus Maths scores for Primary 3\")\n\np3\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a scatter plot of MATHS versus ENGLISH and adds a linear regression line. geom_point() shows individual observations, while geom_smooth(method = lm) fits a straight line to indicate the relationship between the two variables. coord_cartesian() limits both axes to the 0–100 score range for clearer interpretation."
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html#creating-composite-graphics-pathwork-methods",
@@ -256,28 +263,28 @@
     "href": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html#combining-three-ggplot2-graphs",
     "title": "Hands-on_Ex02",
     "section": "2.5.3 Combining three ggplot2 graphs",
-    "text": "2.5.3 Combining three ggplot2 graphs\n\nlibrary(patchwork)\n\n(p1 / p2) | p3\n\n`geom_smooth()` using formula = 'y ~ x'\n\n\n\n\n\n\n\n\n\nExplanation\nThis code uses the patchwork package to arrange multiple plots. p1 / p2 stacks p1 above p2 vertically, and | p3 places p3 to the right. The result is a combined layout with p1 and p2 on the left (top and bottom) and p3 on the right."
+    "text": "2.5.3 Combining three ggplot2 graphs\n\nlibrary(patchwork)\n\n(p1 / p2) | p3\n\n\n\n\n\n\n\n\nExplanation\nThis code uses the patchwork package to arrange multiple plots. p1 / p2 stacks p1 above p2 vertically, and | p3 places p3 to the right. The result is a combined layout with p1 and p2 on the left (top and bottom) and p3 on the right."
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html#creating-a-composite-figure-with-tag",
     "href": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html#creating-a-composite-figure-with-tag",
     "title": "Hands-on_Ex02",
     "section": "2.5.4 Creating a composite figure with tag",
-    "text": "2.5.4 Creating a composite figure with tag\n\nlibrary(patchwork)\n\n((p1 / p2) | p3) + \n  plot_annotation(tag_levels = 'I')\n\n`geom_smooth()` using formula = 'y ~ x'\n\n\n\n\n\n\n\n\n\nExplanation\nThis code arranges the plots using patchwork and adds automatic labels to each subplot. p1 / p2 stacks p1 above p2, and | p3 places p3 to the right. plot_annotation(tag_levels = 'I') labels the plots as I, II, and III, making it easier to reference each subplot."
+    "text": "2.5.4 Creating a composite figure with tag\n\nlibrary(patchwork)\n\n((p1 / p2) | p3) + \n  plot_annotation(tag_levels = 'I')\n\n\n\n\n\n\n\n\nExplanation\nThis code arranges the plots using patchwork and adds automatic labels to each subplot. p1 / p2 stacks p1 above p2, and | p3 places p3 to the right. plot_annotation(tag_levels = 'I') labels the plots as I, II, and III, making it easier to reference each subplot."
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html#creating-figure-with-insert",
     "href": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html#creating-figure-with-insert",
     "title": "Hands-on_Ex02",
     "section": "2.5.5 Creating figure with insert",
-    "text": "2.5.5 Creating figure with insert\n\nlibrary(patchwork)\n\np3 + inset_element(p2, \n                   left = 0.02, \n                   bottom = 0.7, \n                   right = 0.5, \n                   top = 1)\n\n`geom_smooth()` using formula = 'y ~ x'\n\n\n\n\n\n\n\n\n\nExplanation\nThis code overlays p2 onto p3 as an inset plot using the patchwork package. The arguments left, bottom, right, and top control the position and size of the inset using relative coordinates (from 0 to 1). This allows a secondary plot to be displayed within the main plot for comparison or emphasis."
+    "text": "2.5.5 Creating figure with insert\n\nlibrary(patchwork)\n\np3 + inset_element(p2, \n                   left = 0.02, \n                   bottom = 0.7, \n                   right = 0.5, \n                   top = 1)\n\n\n\n\n\n\n\n\nExplanation\nThis code overlays p2 onto p3 as an inset plot using the patchwork package. The arguments left, bottom, right, and top control the position and size of the inset using relative coordinates (from 0 to 1). This allows a secondary plot to be displayed within the main plot for comparison or emphasis."
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html#creating-a-composite-figure-by-using-patchwork-and-ggtheme",
     "href": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html#creating-a-composite-figure-by-using-patchwork-and-ggtheme",
     "title": "Hands-on_Ex02",
     "section": "2.5.6 Creating a composite figure by using patchwork and ggtheme",
-    "text": "2.5.6 Creating a composite figure by using patchwork and ggtheme\n\nlibrary(patchwork)\nlibrary(ggthemes)\n\npatchwork &lt;- (p1 / p2) | p3\npatchwork & theme_economist()\n\n`geom_smooth()` using formula = 'y ~ x'\n\n\n\n\n\n\n\n\n\nExplanation\nThis code first combines p1, p2, and p3 into a layout using patchwork. The operator & is then used to apply theme_economist() to all plots in the layout at once. This ensures a consistent visual style across the combined plots."
+    "text": "2.5.6 Creating a composite figure by using patchwork and ggtheme\n\nlibrary(patchwork)\nlibrary(ggthemes)\n\npatchwork &lt;- (p1 / p2) | p3\npatchwork & theme_economist()\n\n\n\n\n\n\n\n\nExplanation\nThis code first combines p1, p2, and p3 into a layout using patchwork. The operator & is then used to apply theme_economist() to all plots in the layout at once. This ensures a consistent visual style across the combined plots."
   },
   {
     "objectID": "index.html",
@@ -460,5 +467,180 @@
     "title": "ISSS608-VAA Hands-on Exercise 1",
     "section": "1.11.1 Working with theme",
     "text": "1.11.1 Working with theme\nCode chunk below creates a horizontal bar chart and applies the gray theme.\n\nggplot(data = exam_data, \n       aes(x = RACE)) +\n  geom_bar() +\n  coord_flip() +\n  theme_gray()\n\n\n\n\n\n\n\n\nExplanation\nThis code chunk creates a bar chart for the variable RACE, flips the coordinates, and applies a theme. The variable RACE is mapped to the x-axis, and geom_bar() counts the number of observations in each category and displays them as bars. coord_flip() switches the axes so that the bars become horizontal, which can improve readability. theme_gray() applies the default gray theme in ggplot2, which controls the overall appearance of the plot, including the background, grid lines, and text style.\nCode chunk below creates a horizontal bar chart and applies the classic theme.\n\nggplot(data = exam_data, \n       aes(x = RACE)) +\n  geom_bar() +\n  coord_flip() +\n  theme_classic()\n\n\n\n\n\n\n\n\nExplanation\nThis code chunk creates a bar chart for the variable RACE, flips the coordinates, and applies a theme. The variable RACE is mapped to the x-axis, and geom_bar() counts the number of observations in each category and displays them as bars. coord_flip() switches the axes so that the bars become horizontal, which makes the chart easier to read. theme_classic() changes the overall appearance of the plot by removing the gray background and grid lines, giving the chart a cleaner and simpler style.\nCode chunk below creates a horizontal bar chart and applies the minimal theme.\n\nggplot(data = exam_data, \n       aes(x = RACE)) +\n  geom_bar() +\n  coord_flip() +\n  theme_minimal()\n\n\n\n\n\n\n\n\nExplanation\nThis code chunk creates a bar chart for the variable RACE, flips the coordinates, and applies a theme. The variable RACE is mapped to the x-axis, and geom_bar() counts the number of observations in each category and displays them as bars. coord_flip() switches the axes so that the bars become horizontal, which improves readability. theme_minimal() changes the overall appearance of the plot by using a clean and simple style with fewer visual distractions, making the chart look more modern and uncluttered."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#tooltip-effect-with-tooltip-aesthetic",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#tooltip-effect-with-tooltip-aesthetic",
+    "title": "Hands-on_Ex03",
+    "section": "3.4.1 Tooltip effect with tooltip aesthetic",
+    "text": "3.4.1 Tooltip effect with tooltip aesthetic\n\np &lt;- ggplot(data = exam_data, \n            aes(x = MATHS)) +\n  geom_dotplot_interactive(\n    aes(tooltip = ID),\n    stackgroups = TRUE, \n    binwidth = 1, \n    method = \"histodot\"\n  ) +\n  scale_y_continuous(NULL, \n                     breaks = NULL)\n\ngirafe(\n  ggobj = p,\n  width_svg = 6,\n  height_svg = 6 * 0.618\n)\n\n\n\n\n\nExplanation\nThis code creates an interactive dot plot showing the distribution of MATHS scores. Each dot represents a student, and the tooltip displays the student ID when the cursor hovers over a dot. The girafe() function converts the ggplot object into an interactive visualization."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#displaying-multiple-information-on-tooltip",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#displaying-multiple-information-on-tooltip",
+    "title": "Hands-on_Ex03",
+    "section": "3.5.1 Displaying multiple information on tooltip",
+    "text": "3.5.1 Displaying multiple information on tooltip\n\nexam_data$tooltip &lt;- paste0(\n  \"Name = \", exam_data$ID,\n  \"\\nClass = \", exam_data$CLASS\n)\n\np &lt;- ggplot(data = exam_data, \n            aes(x = MATHS)) +\n  geom_dotplot_interactive(\n    aes(tooltip = tooltip), \n    stackgroups = TRUE,\n    binwidth = 1,\n    method = \"histodot\"\n  ) +\n  scale_y_continuous(NULL, \n                     breaks = NULL)\n\ngirafe(\n  ggobj = p,\n  width_svg = 8,\n  height_svg = 8 * 0.618\n)\n\n\n\n\n\nExplanation\nThis code creates a customized tooltip that shows each student’s ID and CLASS. The interactive dot plot displays the distribution of MATHS scores, and users can hover over each dot to view the corresponding student information."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#customising-tooltip-style---hover-different-color",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#customising-tooltip-style---hover-different-color",
+    "title": "Hands-on_Ex03",
+    "section": "3.6.1 Customising Tooltip style - hover, different color",
+    "text": "3.6.1 Customising Tooltip style - hover, different color\n\ntooltip_css &lt;- \"\n  background-color: white;\n  color: #222222;\n  font-weight: bold;\n  border: 1px solid #999999;\n  border-radius: 6px;\n  padding: 6px;\n\"\n\np &lt;- ggplot(data = exam_data, \n            aes(x = MATHS)) +\n  geom_dotplot_interactive(\n    aes(tooltip = ID),\n    stackgroups = TRUE,\n    binwidth = 1,\n    method = \"histodot\",\n    fill = \"steelblue\",\n    color = \"white\",\n    dotsize = 0.8\n  ) +\n  scale_y_continuous(NULL, \n                     breaks = NULL) +\n  labs(\n    title = \"Interactive Distribution of Maths Scores\",\n    x = \"Maths Score\"\n  ) +\n  theme_minimal() +\n  theme(\n    plot.title = element_text(face = \"bold\"),\n    axis.title.x = element_text(face = \"bold\")\n  )\n\ngirafe(\n  ggobj = p,\n  width_svg = 7,\n  height_svg = 7 * 0.618,\n  options = list(\n    opts_tooltip(css = tooltip_css),\n    opts_hover(css = \"fill: orange; stroke: black; cursor: pointer;\")\n  )\n)\n\n\n\n\n\nExplanation\nThis code creates an interactive dot plot with a customized visual style. Compared with the original version, the plot uses a cleaner theme, a stronger title, blue dots, and a styled tooltip box. The hover effect also changes the dot colour to make the interaction more noticeable."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#displaying-statistics-on-tooltip---different-color",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#displaying-statistics-on-tooltip---different-color",
+    "title": "Hands-on_Ex03",
+    "section": "3.6.2 Displaying statistics on tooltip - different color",
+    "text": "3.6.2 Displaying statistics on tooltip - different color\n\nrace_summary &lt;- exam_data %&gt;%\n  group_by(RACE) %&gt;%\n  summarise(\n    mean_math = mean(MATHS, na.rm = TRUE),\n    se_math = sd(MATHS, na.rm = TRUE) / sqrt(n()),\n    .groups = \"drop\"\n  ) %&gt;%\n  mutate(\n    tooltip = paste0(\n      \"Race: \", RACE,\n      \"\\nMean maths score: \", round(mean_math, 2),\n      \"\\nSE: \", round(se_math, 2)\n    )\n  )\n\np &lt;- ggplot(race_summary, \n            aes(x = RACE, y = mean_math)) +\n  geom_segment(\n    aes(x = RACE, xend = RACE, y = 0, yend = mean_math),\n    color = \"grey60\",\n    linewidth = 1\n  ) +\n  geom_errorbar(\n    aes(ymin = mean_math - se_math,\n        ymax = mean_math + se_math),\n    width = 0.15,\n    linewidth = 0.4\n  ) +\n  geom_point_interactive(\n    aes(tooltip = tooltip, data_id = RACE),\n    size = 5,\n    color = \"steelblue\"\n  ) +\n  labs(\n    title = \"Mean Maths Scores by Race\",\n    x = \"Race\",\n    y = \"Mean Maths Score\"\n  ) +\n  theme_minimal()\n\ngirafe(\n  ggobj = p,\n  width_svg = 8,\n  height_svg = 8 * 0.618,\n  options = list(\n    opts_hover(css = \"fill: orange; stroke: black; cursor: pointer;\"),\n    opts_tooltip(css = \"background-color:white; color:black; padding:6px; border:1px solid grey;\")\n  )\n)\n\n\n\n\n\nExplanation\nThis code first calculates the mean MATHS score and standard error for each race group. It then creates an interactive lollipop chart, where each point represents the average Maths score and the error bar shows the uncertainty around the mean. The tooltip displays the race group, mean score, and standard error when users hover over each point."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#customising-tooltip-style---different-color",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#customising-tooltip-style---different-color",
+    "title": "Hands-on_Ex03",
+    "section": "3.6.1 Customising Tooltip style - different color",
+    "text": "3.6.1 Customising Tooltip style - different color\n\ntooltip_css &lt;- \"\n  background-color: white;\n  color: #222222;\n  font-weight: bold;\n  border: 1px solid #999999;\n  border-radius: 6px;\n  padding: 6px;\n\"\n\np &lt;- ggplot(data = exam_data, \n            aes(x = MATHS)) +\n  geom_dotplot_interactive(\n    aes(tooltip = ID),\n    stackgroups = TRUE,\n    binwidth = 1,\n    method = \"histodot\",\n    fill = \"steelblue\",\n    color = \"white\",\n    dotsize = 0.8\n  ) +\n  scale_y_continuous(NULL, \n                     breaks = NULL) +\n  labs(\n    title = \"Interactive Distribution of Maths Scores\",\n    x = \"Maths Score\"\n  ) +\n  theme_minimal() +\n  theme(\n    plot.title = element_text(face = \"bold\"),\n    axis.title.x = element_text(face = \"bold\")\n  )\n\ngirafe(\n  ggobj = p,\n  width_svg = 7,\n  height_svg = 7 * 0.618,\n  options = list(\n    opts_tooltip(css = tooltip_css),\n    opts_hover(css = \"fill: orange; stroke: black; cursor: pointer;\")\n  )\n)\n\n\n\n\n\nExplanation\nThis code creates an interactive dot plot with a customized visual style. Compared with the original version, the plot uses a cleaner theme, a stronger title, blue dots, and a styled tooltip box. The hover effect also changes the dot colour to make the interaction more noticeable."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#hover-effect-with-data_id-aesthetic",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#hover-effect-with-data_id-aesthetic",
+    "title": "Hands-on_Ex03",
+    "section": "3.6.3 Hover effect with data_id aesthetic",
+    "text": "3.6.3 Hover effect with data_id aesthetic\n\np &lt;- ggplot(data = exam_data, \n            aes(x = MATHS)) +\n  geom_dotplot_interactive(\n    aes(data_id = CLASS),\n    stackgroups = TRUE,\n    binwidth = 1,\n    method = \"histodot\"\n  ) +\n  scale_y_continuous(NULL,\n                     breaks = NULL)\n\ngirafe(\n  ggobj = p,\n  width_svg = 6,\n  height_svg = 6 * 0.618\n)\n\n\n\n\n\nExplanation\nThis code creates an interactive dot plot showing the distribution of MATHS scores. The data_id = CLASS setting allows dots from the same class group to be linked interactively, so hovering over one dot can highlight other dots from the same class."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#displaying-statistics-on-tooltip---lolipop",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#displaying-statistics-on-tooltip---lolipop",
+    "title": "Hands-on_Ex03",
+    "section": "3.6.2 Displaying statistics on tooltip - lolipop",
+    "text": "3.6.2 Displaying statistics on tooltip - lolipop\n\nrace_summary &lt;- exam_data %&gt;%\n  group_by(RACE) %&gt;%\n  summarise(\n    mean_math = mean(MATHS, na.rm = TRUE),\n    se_math = sd(MATHS, na.rm = TRUE) / sqrt(n()),\n    .groups = \"drop\"\n  ) %&gt;%\n  mutate(\n    tooltip = paste0(\n      \"Race: \", RACE,\n      \"\\nMean maths score: \", round(mean_math, 2),\n      \"\\nSE: \", round(se_math, 2)\n    )\n  )\n\np &lt;- ggplot(race_summary, \n            aes(x = RACE, y = mean_math)) +\n  geom_segment(\n    aes(x = RACE, xend = RACE, y = 0, yend = mean_math),\n    color = \"grey60\",\n    linewidth = 1\n  ) +\n  geom_errorbar(\n    aes(ymin = mean_math - se_math,\n        ymax = mean_math + se_math),\n    width = 0.15,\n    linewidth = 0.4\n  ) +\n  geom_point_interactive(\n    aes(tooltip = tooltip, data_id = RACE),\n    size = 5,\n    color = \"steelblue\"\n  ) +\n  labs(\n    title = \"Mean Maths Scores by Race\",\n    x = \"Race\",\n    y = \"Mean Maths Score\"\n  ) +\n  theme_minimal()\n\ngirafe(\n  ggobj = p,\n  width_svg = 8,\n  height_svg = 8 * 0.618,\n  options = list(\n    opts_hover(css = \"fill: orange; stroke: black; cursor: pointer;\"),\n    opts_tooltip(css = \"background-color:white; color:black; padding:6px; border:1px solid grey;\")\n  )\n)\n\n\n\n\n\nExplanation\nThis code first calculates the mean MATHS score and standard error for each race group. It then creates an interactive lollipop chart, where each point represents the average Maths score and the error bar shows the uncertainty around the mean. The tooltip displays the race group, mean score, and standard error when users hover over each point."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#styling-hover-effect",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#styling-hover-effect",
+    "title": "Hands-on_Ex03",
+    "section": "3.6.4 Styling hover effect",
+    "text": "3.6.4 Styling hover effect\n\np &lt;- ggplot(data = exam_data, \n            aes(x = MATHS)) +\n  geom_dotplot_interactive(\n    aes(data_id = CLASS),\n    stackgroups = TRUE,\n    binwidth = 1,\n    method = \"histodot\"\n  ) +\n  scale_y_continuous(NULL,\n                     breaks = NULL)\n\ngirafe(\n  ggobj = p,\n  width_svg = 6,\n  height_svg = 6 * 0.618,\n  options = list(\n    opts_hover(css = \"fill: #202020;\"),\n    opts_hover_inv(css = \"opacity:0.2;\")\n  )\n)\n\n\n\n\n\nExplanation\nThis code creates an interactive dot plot showing the distribution of MATHS scores. The data_id = CLASS setting groups dots by class, so when one dot is hovered over, dots from the same class are highlighted. The opts_hover_inv() option fades the non-selected dots, making the highlighted class easier to identify."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#combining-tooltip-and-hover-effect",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#combining-tooltip-and-hover-effect",
+    "title": "Hands-on_Ex03",
+    "section": "3.6.5 Combining tooltip and hover effect",
+    "text": "3.6.5 Combining tooltip and hover effect\n\np &lt;- ggplot(data = exam_data, \n            aes(x = MATHS)) +\n  geom_dotplot_interactive(\n    aes(tooltip = CLASS, \n        data_id = CLASS),\n    stackgroups = TRUE,\n    binwidth = 1,\n    method = \"histodot\"\n  ) +\n  scale_y_continuous(NULL,\n                     breaks = NULL)\n\ngirafe(\n  ggobj = p,\n  width_svg = 6,\n  height_svg = 6 * 0.618,\n  options = list(\n    opts_hover(css = \"fill: #202020;\"),\n    opts_hover_inv(css = \"opacity:0.2;\")\n  )\n)\n\n\n\n\n\nExplanation\nThis code creates an interactive dot plot of MATHS scores. The tooltip shows the CLASS value when users hover over a dot, while data_id = CLASS links dots from the same class group together. The hover options highlight the selected class and fade the other dots, making class-level patterns easier to compare."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#click-effect-with-onclick",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#click-effect-with-onclick",
+    "title": "Hands-on_Ex03",
+    "section": "3.6.6 Click effect with onclick",
+    "text": "3.6.6 Click effect with onclick\n\nexam_data$onclick &lt;- sprintf(\n  \"window.open(\\\"%s%s\\\")\",\n  \"https://www.moe.gov.sg/schoolfinder?journey=Primary%20school\",\n  as.character(exam_data$ID)\n)\n\np &lt;- ggplot(data = exam_data, \n            aes(x = MATHS)) +\n  geom_dotplot_interactive(\n    aes(onclick = onclick),\n    stackgroups = TRUE,\n    binwidth = 1,\n    method = \"histodot\"\n  ) +\n  scale_y_continuous(NULL,\n                     breaks = NULL)\n\ngirafe(\n  ggobj = p,\n  width_svg = 6,\n  height_svg = 6 * 0.618\n)\n\n\n\n\n\nExplanation\nThis code creates an interactive dot plot where each dot is clickable. The onclick variable stores a web link for each observation, and clicking a dot opens the corresponding MOE SchoolFinder webpage in a new browser window."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#coordinated-multiple-views-with-ggiraph",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#coordinated-multiple-views-with-ggiraph",
+    "title": "Hands-on_Ex03",
+    "section": "3.6.7 Coordinated Multiple Views with ggiraph",
+    "text": "3.6.7 Coordinated Multiple Views with ggiraph\n\np1 &lt;- ggplot(data = exam_data, \n             aes(x = MATHS)) +\n  geom_dotplot_interactive(\n    aes(data_id = ID),\n    stackgroups = TRUE,\n    binwidth = 1,\n    method = \"histodot\",\n    fill = \"#2C7FB8\",\n    color = \"white\",\n    dotsize = 0.75\n  ) +\n  coord_cartesian(xlim = c(0, 100)) +\n  scale_y_continuous(NULL,\n                     breaks = NULL) +\n  labs(\n    title = \"Maths Scores\",\n    x = \"Score\"\n  ) +\n  theme_minimal()\n\np2 &lt;- ggplot(data = exam_data, \n             aes(x = ENGLISH)) +\n  geom_dotplot_interactive(\n    aes(data_id = ID),\n    stackgroups = TRUE,\n    binwidth = 1,\n    method = \"histodot\",\n    fill = \"#D95F0E\",\n    color = \"white\",\n    dotsize = 0.75\n  ) +\n  coord_cartesian(xlim = c(0, 100)) +\n  scale_y_continuous(NULL,\n                     breaks = NULL) +\n  labs(\n    title = \"English Scores\",\n    x = \"Score\"\n  ) +\n  theme_minimal()\n\ngirafe(\n  code = print(p1 + p2),\n  width_svg = 8,\n  height_svg = 3.5,\n  options = list(\n    opts_hover(css = \"fill: black; stroke: black;\"),\n    opts_hover_inv(css = \"opacity:0.65;\")\n  )\n)\n\n\n\n\n\nExplanation\nThis code creates two linked interactive dot plots for comparing MATHS and ENGLISH scores. The data_id = ID setting links the same student across both plots, so hovering over one dot highlights the corresponding student in both subjects. Darker colours and a lighter fading effect are used to make the plots easier to read while keeping the overall score distributions visible."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#creating-an-interactive-scatter-plot-plot_ly-method",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#creating-an-interactive-scatter-plot-plot_ly-method",
+    "title": "Hands-on_Ex03",
+    "section": "3.7.1 Creating an interactive scatter plot: plot_ly() method",
+    "text": "3.7.1 Creating an interactive scatter plot: plot_ly() method\n\nCodeGraph\n\n\n\nplot_ly(data = exam_data, \n        x = ~MATHS, \n        y = ~ENGLISH)\n\n\n\n\n\n\n\n\n\n\n\n\nExplanation\nThis code uses a Quarto tabset to separate the code and the output graph into two clickable tabs. The Code tab shows the R code without running it, while the Graph tab runs the code and displays the interactive Plotly scatter plot of MATHS scores against ENGLISH scores."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#working-with-visual-variable-plot_ly-method",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#working-with-visual-variable-plot_ly-method",
+    "title": "Hands-on_Ex03",
+    "section": "3.7.2 Working with visual variable: plot_ly() method",
+    "text": "3.7.2 Working with visual variable: plot_ly() method\n\nCodeGraph\n\n\n\nplot_ly(data = exam_data, \n        x = ~ENGLISH, \n        y = ~MATHS, \n        color = ~RACE)\n\n\n\n\n\n\n\n\n\n\n\n\nExplanation\nThis code uses a Quarto tabset to separate the R code and the graph into two clickable tabs. The Code tab shows the Plotly code without running it, while the Graph tab hides the code and displays an interactive scatter plot of ENGLISH scores against MATHS scores, with points coloured by RACE."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#creating-an-interactive-scatter-plot-ggplotly-method",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#creating-an-interactive-scatter-plot-ggplotly-method",
+    "title": "Hands-on_Ex03",
+    "section": "3.7.3 Creating an interactive scatter plot: ggplotly() method",
+    "text": "3.7.3 Creating an interactive scatter plot: ggplotly() method\n\nCodeGraph\n\n\n\np &lt;- ggplot(data = exam_data, \n            aes(x = MATHS,\n                y = ENGLISH)) +\n  geom_point(size = 1,\n             color = \"darkblue\") +\n  coord_cartesian(xlim = c(0, 100),\n                  ylim = c(0, 100))\n\nggplotly(p)\n\n\n\n\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a scatter plot showing the relationship between MATHS and ENGLISH scores. The points are coloured dark blue, and ggplotly() converts the static ggplot into an interactive Plotly graph. The code and graph are separated into different clickable tabs."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#coordinated-multiple-views-with-plotly",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#coordinated-multiple-views-with-plotly",
+    "title": "Hands-on_Ex03",
+    "section": "3.7.4 Coordinated Multiple Views with plotly",
+    "text": "3.7.4 Coordinated Multiple Views with plotly\n\nCodeGraph\n\n\n\nd &lt;- highlight_key(exam_data)\n\np1 &lt;- ggplot(data = d, \n             aes(x = MATHS,\n                 y = ENGLISH)) +\n  geom_point(size = 1) +\n  coord_cartesian(xlim = c(0, 100),\n                  ylim = c(0, 100))\n\np2 &lt;- ggplot(data = d, \n             aes(x = MATHS,\n                 y = SCIENCE)) +\n  geom_point(size = 1) +\n  coord_cartesian(xlim = c(0, 100),\n                  ylim = c(0, 100))\n\nsubplot(\n  ggplotly(p1),\n  ggplotly(p2)\n)\n\n\n\n\n\n\n\n\n\n\n\n\nExplanation\nThis code creates two linked interactive scatter plots using highlight_key(). The first plot compares MATHS and ENGLISH scores, while the second compares MATHS and SCIENCE scores. The subplot() function places both interactive plots side by side, allowing users to compare score relationships across subjects."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#interactive-data-table-dt-package",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#interactive-data-table-dt-package",
+    "title": "Hands-on_Ex03",
+    "section": "3.8.1 Interactive Data Table: DT package",
+    "text": "3.8.1 Interactive Data Table: DT package\n\nDT::datatable(exam_data, \n              class = \"compact\")\n\n\n\n\n\nExplanation\nThis code displays exam_data as an interactive table using the DT package. The compact class makes the table layout more condensed, allowing more rows and columns to be viewed clearly on the page."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#linked-brushing-crosstalk-method",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#linked-brushing-crosstalk-method",
+    "title": "Hands-on_Ex03",
+    "section": "3.8.2 Linked brushing: crosstalk method",
+    "text": "3.8.2 Linked brushing: crosstalk method\n\nCodeGraph\n\n\n\nd &lt;- highlight_key(exam_data)\n\np &lt;- ggplot(d, \n            aes(ENGLISH, MATHS)) + \n  geom_point(size = 1) +\n  coord_cartesian(xlim = c(0, 100),\n                  ylim = c(0, 100))\n\ngg &lt;- highlight(ggplotly(p), \n                \"plotly_selected\")\n\ncrosstalk::bscols(\n  gg,\n  DT::datatable(d, \n                options = list(pageLength = 5)),\n  widths = 5\n)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a linked interactive scatter plot and data table using highlight_key() and crosstalk. Users can select points in the Plotly chart, and the corresponding records are linked to the table. The pageLength = 5 option makes the table display only five rows per page."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#linked-brushing-crosstalk-method---show-5-lines-each-page",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#linked-brushing-crosstalk-method---show-5-lines-each-page",
+    "title": "Hands-on_Ex03",
+    "section": "3.8.2 Linked brushing: crosstalk method - show 5 lines each page",
+    "text": "3.8.2 Linked brushing: crosstalk method - show 5 lines each page\n\nCodeGraph\n\n\n\nd &lt;- highlight_key(exam_data)\n\np &lt;- ggplot(d, \n            aes(ENGLISH, MATHS)) + \n  geom_point(size = 1) +\n  coord_cartesian(xlim = c(0, 100),\n                  ylim = c(0, 100))\n\ngg &lt;- highlight(ggplotly(p), \n                \"plotly_selected\")\n\ncrosstalk::bscols(\n  gg,\n  DT::datatable(d, \n                options = list(pageLength = 5)),\n  widths = 5\n)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a linked interactive scatter plot and data table using highlight_key() and crosstalk. Users can select points in the Plotly chart, and the corresponding records are linked to the table. The pageLength = 5 option makes the table display only five rows per page."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#loading-the-r-packages",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#loading-the-r-packages",
+    "title": "Hands-on_Ex03",
+    "section": "4.2.1 Loading the R packages",
+    "text": "4.2.1 Loading the R packages\n\npacman::p_load(readxl, gifski, gapminder,\n               plotly, gganimate, tidyverse)\n\nExplanation\nThis code loads the required R packages for animation, data handling, and interactive visualization. These libraries are used for reading external files, creating animated plots, building interactive charts, and performing general data manipulation. This code loads the required R packages for the analysis. These packages are used for data manipulation, visualization, interactive plots, table display, and combining multiple plots."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#importing-the-data",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#importing-the-data",
+    "title": "Hands-on_Ex03",
+    "section": "4.2.2 Importing the data",
+    "text": "4.2.2 Importing the data\n\ncol &lt;- c(\"Country\", \"Continent\")\n\nglobalPop &lt;- read_xls(\"GlobalPopulation.xls\",\n                      sheet = \"Data\") %&gt;%\n  mutate_at(col, as.factor) %&gt;%\n  mutate(Year = as.integer(Year))\n\nExplanation\nThis code reads the GlobalPopulation.xls file from the Data sheet and stores it as globalPop. The Country and Continent columns are converted into factor variables, while Year is converted into an integer for further analysis and visualization."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#building-a-static-population-bubble-plot---slim-outline",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#building-a-static-population-bubble-plot---slim-outline",
+    "title": "Hands-on_Ex03",
+    "section": "4.3.1 Building a static population bubble plot - slim outline",
+    "text": "4.3.1 Building a static population bubble plot - slim outline\n\nggplot(globalPop, aes(x = Old, y = Young, \n                      size = Population, \n                      colour = Country)) +\n  geom_point(alpha = 0.6,\n             stroke = 0.2,\n             show.legend = FALSE) +\n  scale_colour_manual(values = country_colors) +\n  scale_size(range = c(1.5, 10)) +\n  labs(title = 'Year: {frame_time}', \n       x = '% Aged', \n       y = '% Young')\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a bubble chart showing the relationship between the aged population and young population across countries. The bubble size represents total population, while colour distinguishes different countries. A smaller stroke and reduced size range are used to make the bubbles appear lighter and visually cleaner."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#building-the-animated-bubble-plot",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#building-the-animated-bubble-plot",
+    "title": "Hands-on_Ex03",
+    "section": "4.3.2 Building the animated bubble plot",
+    "text": "4.3.2 Building the animated bubble plot\n\nggplot(globalPop, aes(x = Old, y = Young, \n                      size = Population, \n                      colour = Country)) +\n  geom_point(alpha = 0.6,\n             stroke = 0.2,\n             show.legend = FALSE) +\n  scale_colour_manual(values = country_colors) +\n  scale_size(range = c(1.5, 10)) +\n  labs(title = 'Year: {frame_time}', \n       x = '% Aged', \n       y = '% Young') +\n  transition_time(Year) +\n  ease_aes('linear')\n\n\n\n\n\n\n\n\nExplanation\nThis code creates an animated bubble chart showing changes in population structure over time. The x-axis represents the percentage of aged population, while the y-axis represents the percentage of young population. The bubble size represents total population, and transition_time(Year) animates the chart across different years. A smaller stroke and reduced bubble size range are used to make the points look lighter and cleaner."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#building-an-animated-bubble-plot-ggplotly-method",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#building-an-animated-bubble-plot-ggplotly-method",
+    "title": "Hands-on_Ex03",
+    "section": "4.4.1 Building an animated bubble plot: ggplotly() method",
+    "text": "4.4.1 Building an animated bubble plot: ggplotly() method\n\ngg &lt;- ggplot(globalPop, \n             aes(x = Old, \n                 y = Young, \n                 size = Population, \n                 colour = Country)) +\n  geom_point(aes(size = Population,\n                 frame = Year),\n             alpha = 0.6,\n             stroke = 0.2,\n             show.legend = FALSE) +\n  scale_colour_manual(values = country_colors) +\n  scale_size(range = c(1.5, 10)) +\n  labs(x = '% Aged', \n       y = '% Young')\n\nggplotly(gg)\n\n\n\n\n\nExplanation\nThis code creates an interactive animated bubble chart using ggplotly(). The x-axis shows the percentage of aged population, while the y-axis shows the percentage of young population. Bubble size represents total population, colour represents country, and frame = Year allows the chart to animate across different years.\n\ngg &lt;- ggplot(globalPop, \n             aes(x = Old, \n                 y = Young, \n                 size = Population, \n                 colour = Country)) +\n  geom_point(aes(size = Population,\n                 frame = Year),\n             alpha = 0.6,\n             stroke = 0.2) +\n  scale_colour_manual(values = country_colors) +\n  scale_size(range = c(1.5, 10)) +\n  labs(x = '% Aged', \n       y = '% Young') + \n  theme(legend.position = 'none')\n\nggplotly(gg)\n\n\n\n\n\nExplanation\nThis code creates an interactive animated bubble chart using ggplotly(). The bubble position shows the relationship between aged and young population percentages, while bubble size represents total population and colour represents country. The frame = Year setting enables animation over time, and the legend is removed to make the chart cleaner."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#building-an-animated-bubble-plot-plot_ly-method---add-hover",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#building-an-animated-bubble-plot-plot_ly-method---add-hover",
+    "title": "Hands-on_Ex03",
+    "section": "4.4.2 Building an animated bubble plot: plot_ly() method - add hover",
+    "text": "4.4.2 Building an animated bubble plot: plot_ly() method - add hover\n\nCodeGraph\n\n\n\nbp &lt;- globalPop %&gt;%\n  plot_ly(\n    x = ~Old, \n    y = ~Young, \n    size = ~Population, \n    color = ~Continent,\n    sizes = c(5, 80),\n    frame = ~Year, \n    text = ~paste0(\n      \"Country: \", Country,\n      \"&lt;br&gt;Continent: \", Continent,\n      \"&lt;br&gt;% Aged: \", Old,\n      \"&lt;br&gt;% Young: \", Young,\n      \"&lt;br&gt;Population: \", Population\n    ),\n    hoverinfo = \"text\",\n    type = \"scatter\",\n    mode = \"markers\",\n    marker = list(\n      opacity = 0.7,\n      line = list(width = 0.5, color = \"white\")\n    )\n  ) %&gt;%\n  layout(\n    title = \"Global Population Structure Over Time\",\n    xaxis = list(title = \"% Aged\"),\n    yaxis = list(title = \"% Young\"),\n    showlegend = FALSE\n  )\n\nbp\n\n\n\n\n\n\n\n\n\n\n\n\nExplanation\nThis code creates an interactive animated bubble chart showing changes in global population structure over time. The x-axis represents the percentage of aged population, while the y-axis represents the percentage of young population. Bubble size represents total population, colour represents continent, and the animation frame changes by year. The revised hover text provides clearer information for each country."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#building-an-animated-bubble-plot-plot_ly-method---add-more-tags",
+    "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html#building-an-animated-bubble-plot-plot_ly-method---add-more-tags",
+    "title": "Hands-on_Ex03",
+    "section": "4.4.2 Building an animated bubble plot: plot_ly() method - add more tags",
+    "text": "4.4.2 Building an animated bubble plot: plot_ly() method - add more tags\n\nCodeGraph\n\n\n\nbp &lt;- globalPop %&gt;%\n  plot_ly(\n    x = ~Old, \n    y = ~Young, \n    size = ~Population, \n    color = ~Continent,\n    sizes = c(5, 80),\n    frame = ~Year, \n    text = ~paste0(\n      \"Country: \", Country,\n      \"&lt;br&gt;Continent: \", Continent,\n      \"&lt;br&gt;% Aged: \", Old,\n      \"&lt;br&gt;% Young: \", Young,\n      \"&lt;br&gt;Population: \", Population\n    ),\n    hoverinfo = \"text\",\n    type = \"scatter\",\n    mode = \"markers\",\n    marker = list(\n      opacity = 0.7,\n      line = list(width = 0.5, color = \"white\")\n    )\n  ) %&gt;%\n  layout(\n    title = \"Global Population Structure Over Time\",\n    xaxis = list(title = \"% Aged\"),\n    yaxis = list(title = \"% Young\"),\n    showlegend = FALSE\n  )\n\nbp\n\n\n\n\n\n\n\n\n\n\n\n\nExplanation\nThis code creates an interactive animated bubble chart showing changes in global population structure over time. The x-axis represents the percentage of aged population, while the y-axis represents the percentage of young population. Bubble size represents total population, colour represents continent, and the animation frame changes by year. The revised hover text provides clearer information for each country."
   }
 ]

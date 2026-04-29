@@ -1,0 +1,802 @@
+---
+title: "Hands-on_Ex03"
+date: "2026-04-29"
+date-modified: "last-modified"
+format: html
+
+execute:
+  echo: true
+  eval: true
+  warning: false
+  freeze: true
+---
+
+```{r}
+pacman::p_load(ggiraph, plotly, 
+               patchwork, DT, tidyverse)
+```
+
+**Explanation**
+
+
+```{r}
+library(readr)
+exam_data <- readr::read_csv("Exam_data.csv")
+```
+
+**Explanation**
+
+This code imports the `Exam_data.csv` file into R and stores it as a data frame named `exam_data`. The dataset will be used as the main source of information for the subsequent analysis and visualizations.
+
+## 3.4.1 Tooltip effect with tooltip aesthetic
+```{r}
+p <- ggplot(data = exam_data, 
+            aes(x = MATHS)) +
+  geom_dotplot_interactive(
+    aes(tooltip = ID),
+    stackgroups = TRUE, 
+    binwidth = 1, 
+    method = "histodot"
+  ) +
+  scale_y_continuous(NULL, 
+                     breaks = NULL)
+
+girafe(
+  ggobj = p,
+  width_svg = 6,
+  height_svg = 6 * 0.618
+)
+```
+
+**Explanation**
+
+This code creates an interactive dot plot showing the distribution of `MATHS` scores. Each dot represents a student, and the tooltip displays the student `ID` when the cursor hovers over a dot. The `girafe()` function converts the ggplot object into an interactive visualization.
+
+## 3.5.1 Displaying multiple information on tooltip
+
+```{r}
+exam_data$tooltip <- paste0(
+  "Name = ", exam_data$ID,
+  "\nClass = ", exam_data$CLASS
+)
+
+p <- ggplot(data = exam_data, 
+            aes(x = MATHS)) +
+  geom_dotplot_interactive(
+    aes(tooltip = tooltip), 
+    stackgroups = TRUE,
+    binwidth = 1,
+    method = "histodot"
+  ) +
+  scale_y_continuous(NULL, 
+                     breaks = NULL)
+
+girafe(
+  ggobj = p,
+  width_svg = 8,
+  height_svg = 8 * 0.618
+)
+```
+
+**Explanation**
+
+This code creates a customized tooltip that shows each student’s `ID` and `CLASS`. The interactive dot plot displays the distribution of `MATHS` scores, and users can hover over each dot to view the corresponding student information.
+
+## 3.6.1 Customising Tooltip style - different color
+```{r}
+tooltip_css <- "
+  background-color: white;
+  color: #222222;
+  font-weight: bold;
+  border: 1px solid #999999;
+  border-radius: 6px;
+  padding: 6px;
+"
+
+p <- ggplot(data = exam_data, 
+            aes(x = MATHS)) +
+  geom_dotplot_interactive(
+    aes(tooltip = ID),
+    stackgroups = TRUE,
+    binwidth = 1,
+    method = "histodot",
+    fill = "steelblue",
+    color = "white",
+    dotsize = 0.8
+  ) +
+  scale_y_continuous(NULL, 
+                     breaks = NULL) +
+  labs(
+    title = "Interactive Distribution of Maths Scores",
+    x = "Maths Score"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.title.x = element_text(face = "bold")
+  )
+
+girafe(
+  ggobj = p,
+  width_svg = 7,
+  height_svg = 7 * 0.618,
+  options = list(
+    opts_tooltip(css = tooltip_css),
+    opts_hover(css = "fill: orange; stroke: black; cursor: pointer;")
+  )
+)
+```
+
+**Explanation**
+
+This code creates an interactive dot plot with a customized visual style. Compared with the original version, the plot uses a cleaner theme, a stronger title, blue dots, and a styled tooltip box. The hover effect also changes the dot colour to make the interaction more noticeable.
+
+## 3.6.2 Displaying statistics on tooltip - lolipop
+
+```{r}
+race_summary <- exam_data %>%
+  group_by(RACE) %>%
+  summarise(
+    mean_math = mean(MATHS, na.rm = TRUE),
+    se_math = sd(MATHS, na.rm = TRUE) / sqrt(n()),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    tooltip = paste0(
+      "Race: ", RACE,
+      "\nMean maths score: ", round(mean_math, 2),
+      "\nSE: ", round(se_math, 2)
+    )
+  )
+
+p <- ggplot(race_summary, 
+            aes(x = RACE, y = mean_math)) +
+  geom_segment(
+    aes(x = RACE, xend = RACE, y = 0, yend = mean_math),
+    color = "grey60",
+    linewidth = 1
+  ) +
+  geom_errorbar(
+    aes(ymin = mean_math - se_math,
+        ymax = mean_math + se_math),
+    width = 0.15,
+    linewidth = 0.4
+  ) +
+  geom_point_interactive(
+    aes(tooltip = tooltip, data_id = RACE),
+    size = 5,
+    color = "steelblue"
+  ) +
+  labs(
+    title = "Mean Maths Scores by Race",
+    x = "Race",
+    y = "Mean Maths Score"
+  ) +
+  theme_minimal()
+
+girafe(
+  ggobj = p,
+  width_svg = 8,
+  height_svg = 8 * 0.618,
+  options = list(
+    opts_hover(css = "fill: orange; stroke: black; cursor: pointer;"),
+    opts_tooltip(css = "background-color:white; color:black; padding:6px; border:1px solid grey;")
+  )
+)
+```
+
+**Explanation**
+
+This code first calculates the mean `MATHS` score and standard error for each race group. It then creates an interactive lollipop chart, where each point represents the average Maths score and the error bar shows the uncertainty around the mean. The tooltip displays the race group, mean score, and standard error when users hover over each point.
+
+
+## 3.6.3 Hover effect with data_id aesthetic
+```{r}
+p <- ggplot(data = exam_data, 
+            aes(x = MATHS)) +
+  geom_dotplot_interactive(
+    aes(data_id = CLASS),
+    stackgroups = TRUE,
+    binwidth = 1,
+    method = "histodot"
+  ) +
+  scale_y_continuous(NULL,
+                     breaks = NULL)
+
+girafe(
+  ggobj = p,
+  width_svg = 6,
+  height_svg = 6 * 0.618
+)
+```
+
+**Explanation**
+
+This code creates an interactive dot plot showing the distribution of `MATHS` scores. The `data_id = CLASS` setting allows dots from the same class group to be linked interactively, so hovering over one dot can highlight other dots from the same class.
+
+## 3.6.4 Styling hover effect
+
+```{r}
+p <- ggplot(data = exam_data, 
+            aes(x = MATHS)) +
+  geom_dotplot_interactive(
+    aes(data_id = CLASS),
+    stackgroups = TRUE,
+    binwidth = 1,
+    method = "histodot"
+  ) +
+  scale_y_continuous(NULL,
+                     breaks = NULL)
+
+girafe(
+  ggobj = p,
+  width_svg = 6,
+  height_svg = 6 * 0.618,
+  options = list(
+    opts_hover(css = "fill: #202020;"),
+    opts_hover_inv(css = "opacity:0.2;")
+  )
+)
+```
+
+**Explanation**
+
+This code creates an interactive dot plot showing the distribution of `MATHS` scores. The `data_id = CLASS` setting groups dots by class, so when one dot is hovered over, dots from the same class are highlighted. The `opts_hover_inv()` option fades the non-selected dots, making the highlighted class easier to identify.
+
+## 3.6.5 Combining tooltip and hover effect
+
+```{r}
+p <- ggplot(data = exam_data, 
+            aes(x = MATHS)) +
+  geom_dotplot_interactive(
+    aes(tooltip = CLASS, 
+        data_id = CLASS),
+    stackgroups = TRUE,
+    binwidth = 1,
+    method = "histodot"
+  ) +
+  scale_y_continuous(NULL,
+                     breaks = NULL)
+
+girafe(
+  ggobj = p,
+  width_svg = 6,
+  height_svg = 6 * 0.618,
+  options = list(
+    opts_hover(css = "fill: #202020;"),
+    opts_hover_inv(css = "opacity:0.2;")
+  )
+)
+```
+
+**Explanation**
+
+This code creates an interactive dot plot of `MATHS` scores. The tooltip shows the `CLASS` value when users hover over a dot, while `data_id = CLASS` links dots from the same class group together. The hover options highlight the selected class and fade the other dots, making class-level patterns easier to compare.
+
+## 3.6.6 Click effect with onclick
+
+```{r}
+exam_data$onclick <- sprintf(
+  "window.open(\"%s%s\")",
+  "https://www.moe.gov.sg/schoolfinder?journey=Primary%20school",
+  as.character(exam_data$ID)
+)
+
+p <- ggplot(data = exam_data, 
+            aes(x = MATHS)) +
+  geom_dotplot_interactive(
+    aes(onclick = onclick),
+    stackgroups = TRUE,
+    binwidth = 1,
+    method = "histodot"
+  ) +
+  scale_y_continuous(NULL,
+                     breaks = NULL)
+
+girafe(
+  ggobj = p,
+  width_svg = 6,
+  height_svg = 6 * 0.618
+)
+```
+
+**Explanation**
+
+This code creates an interactive dot plot where each dot is clickable. The `onclick` variable stores a web link for each observation, and clicking a dot opens the corresponding MOE SchoolFinder webpage in a new browser window.
+
+## 3.6.7 Coordinated Multiple Views with ggiraph
+
+```{r}
+p1 <- ggplot(data = exam_data, 
+             aes(x = MATHS)) +
+  geom_dotplot_interactive(
+    aes(data_id = ID),
+    stackgroups = TRUE,
+    binwidth = 1,
+    method = "histodot",
+    fill = "#2C7FB8",
+    color = "white",
+    dotsize = 0.75
+  ) +
+  coord_cartesian(xlim = c(0, 100)) +
+  scale_y_continuous(NULL,
+                     breaks = NULL) +
+  labs(
+    title = "Maths Scores",
+    x = "Score"
+  ) +
+  theme_minimal()
+
+p2 <- ggplot(data = exam_data, 
+             aes(x = ENGLISH)) +
+  geom_dotplot_interactive(
+    aes(data_id = ID),
+    stackgroups = TRUE,
+    binwidth = 1,
+    method = "histodot",
+    fill = "#D95F0E",
+    color = "white",
+    dotsize = 0.75
+  ) +
+  coord_cartesian(xlim = c(0, 100)) +
+  scale_y_continuous(NULL,
+                     breaks = NULL) +
+  labs(
+    title = "English Scores",
+    x = "Score"
+  ) +
+  theme_minimal()
+
+girafe(
+  code = print(p1 + p2),
+  width_svg = 8,
+  height_svg = 3.5,
+  options = list(
+    opts_hover(css = "fill: black; stroke: black;"),
+    opts_hover_inv(css = "opacity:0.65;")
+  )
+)
+```
+
+**Explanation**
+
+This code creates two linked interactive dot plots for comparing `MATHS` and `ENGLISH` scores. The `data_id = ID` setting links the same student across both plots, so hovering over one dot highlights the corresponding student in both subjects. Darker colours and a lighter fading effect are used to make the plots easier to read while keeping the overall score distributions visible.
+
+## 3.7.1 Creating an interactive scatter plot: plot_ly() method
+
+::: {.panel-tabset}
+
+## Code
+
+```{r}
+#| eval: false
+
+plot_ly(data = exam_data, 
+        x = ~MATHS, 
+        y = ~ENGLISH)
+```
+
+## Graph
+
+```{r}
+#| echo: false
+
+plot_ly(data = exam_data, 
+        x = ~MATHS, 
+        y = ~ENGLISH)
+```
+
+:::
+
+**Explanation**
+
+This code uses a Quarto tabset to separate the code and the output graph into two clickable tabs. The `Code` tab shows the R code without running it, while the `Graph` tab runs the code and displays the interactive Plotly scatter plot of `MATHS` scores against `ENGLISH` scores.
+
+## 3.7.2 Working with visual variable: plot_ly() method
+
+::: {.panel-tabset}
+
+## Code
+
+```{r}
+#| eval: false
+
+plot_ly(data = exam_data, 
+        x = ~ENGLISH, 
+        y = ~MATHS, 
+        color = ~RACE)
+```
+
+## Graph
+
+```{r}
+#| echo: false
+
+plot_ly(data = exam_data, 
+        x = ~ENGLISH, 
+        y = ~MATHS, 
+        color = ~RACE)
+```
+
+:::
+
+**Explanation**
+
+This code uses a Quarto tabset to separate the R code and the graph into two clickable tabs. The `Code` tab shows the Plotly code without running it, while the `Graph` tab hides the code and displays an interactive scatter plot of `ENGLISH` scores against `MATHS` scores, with points coloured by `RACE`.
+
+## 3.7.3 Creating an interactive scatter plot: ggplotly() method
+
+::: {.panel-tabset}
+
+## Code
+
+```{r}
+#| eval: false
+
+p <- ggplot(data = exam_data, 
+            aes(x = MATHS,
+                y = ENGLISH)) +
+  geom_point(size = 1,
+             color = "darkblue") +
+  coord_cartesian(xlim = c(0, 100),
+                  ylim = c(0, 100))
+
+ggplotly(p)
+```
+
+## Graph
+
+```{r}
+#| echo: false
+
+p <- ggplot(data = exam_data, 
+            aes(x = MATHS,
+                y = ENGLISH)) +
+  geom_point(size = 1,
+             color = "darkblue") +
+  coord_cartesian(xlim = c(0, 100),
+                  ylim = c(0, 100))
+
+ggplotly(p)
+```
+
+:::
+
+**Explanation**
+
+This code creates a scatter plot showing the relationship between `MATHS` and `ENGLISH` scores. The points are coloured dark blue, and `ggplotly()` converts the static ggplot into an interactive Plotly graph. The code and graph are separated into different clickable tabs.
+
+## 3.7.4 Coordinated Multiple Views with plotly
+
+::: {.panel-tabset}
+
+## Code
+
+```{r}
+#| eval: false
+
+d <- highlight_key(exam_data)
+
+p1 <- ggplot(data = d, 
+             aes(x = MATHS,
+                 y = ENGLISH)) +
+  geom_point(size = 1) +
+  coord_cartesian(xlim = c(0, 100),
+                  ylim = c(0, 100))
+
+p2 <- ggplot(data = d, 
+             aes(x = MATHS,
+                 y = SCIENCE)) +
+  geom_point(size = 1) +
+  coord_cartesian(xlim = c(0, 100),
+                  ylim = c(0, 100))
+
+subplot(
+  ggplotly(p1),
+  ggplotly(p2)
+)
+```
+
+## Graph
+
+```{r}
+#| echo: false
+
+d <- highlight_key(exam_data)
+
+p1 <- ggplot(data = d, 
+             aes(x = MATHS,
+                 y = ENGLISH)) +
+  geom_point(size = 1) +
+  coord_cartesian(xlim = c(0, 100),
+                  ylim = c(0, 100))
+
+p2 <- ggplot(data = d, 
+             aes(x = MATHS,
+                 y = SCIENCE)) +
+  geom_point(size = 1) +
+  coord_cartesian(xlim = c(0, 100),
+                  ylim = c(0, 100))
+
+subplot(
+  ggplotly(p1),
+  ggplotly(p2)
+)
+```
+
+:::
+
+**Explanation**
+
+This code creates two linked interactive scatter plots using `highlight_key()`. The first plot compares `MATHS` and `ENGLISH` scores, while the second compares `MATHS` and `SCIENCE` scores. The `subplot()` function places both interactive plots side by side, allowing users to compare score relationships across subjects.
+
+## 3.8.1 Interactive Data Table: DT package
+
+```{r}
+DT::datatable(exam_data, 
+              class = "compact")
+```
+
+**Explanation**
+
+This code displays `exam_data` as an interactive table using the `DT` package. The `compact` class makes the table layout more condensed, allowing more rows and columns to be viewed clearly on the page.
+
+## 3.8.2 Linked brushing: crosstalk method - show 5 lines each page
+
+::: {.panel-tabset}
+
+## Code
+
+```{r}
+#| eval: false
+
+d <- highlight_key(exam_data)
+
+p <- ggplot(d, 
+            aes(ENGLISH, MATHS)) + 
+  geom_point(size = 1) +
+  coord_cartesian(xlim = c(0, 100),
+                  ylim = c(0, 100))
+
+gg <- highlight(ggplotly(p), 
+                "plotly_selected")
+
+crosstalk::bscols(
+  gg,
+  DT::datatable(d, 
+                options = list(pageLength = 5)),
+  widths = 5
+)
+```
+
+## Graph
+
+```{r}
+#| echo: false
+
+d <- highlight_key(exam_data)
+
+p <- ggplot(d, 
+            aes(ENGLISH, MATHS)) + 
+  geom_point(size = 1) +
+  coord_cartesian(xlim = c(0, 100),
+                  ylim = c(0, 100))
+
+gg <- highlight(ggplotly(p), 
+                "plotly_selected")
+
+crosstalk::bscols(
+  gg,
+  DT::datatable(d, 
+                options = list(pageLength = 5)),
+  widths = 5
+)
+```
+
+:::
+
+**Explanation**
+
+This code creates a linked interactive scatter plot and data table using `highlight_key()` and `crosstalk`. Users can select points in the Plotly chart, and the corresponding records are linked to the table. The `pageLength = 5` option makes the table display only five rows per page.
+
+## 4.2.1 Loading the R packages
+
+```{r}
+pacman::p_load(readxl, gifski, gapminder,
+               plotly, gganimate, tidyverse)
+```
+
+**Explanation**
+
+This code loads the required R packages for animation, data handling, and interactive visualization. These libraries are used for reading external files, creating animated plots, building interactive charts, and performing general data manipulation.
+This code loads the required R packages for the analysis. These packages are used for data manipulation, visualization, interactive plots, table display, and combining multiple plots.
+
+## 4.2.2 Importing the data
+```{r}
+col <- c("Country", "Continent")
+
+globalPop <- read_xls("GlobalPopulation.xls",
+                      sheet = "Data") %>%
+  mutate_at(col, as.factor) %>%
+  mutate(Year = as.integer(Year))
+```
+
+**Explanation**
+
+This code reads the `GlobalPopulation.xls` file from the `Data` sheet and stores it as `globalPop`. The `Country` and `Continent` columns are converted into factor variables, while `Year` is converted into an integer for further analysis and visualization.
+
+## 4.3.1 Building a static population bubble plot - slim outline
+
+```{r}
+ggplot(globalPop, aes(x = Old, y = Young, 
+                      size = Population, 
+                      colour = Country)) +
+  geom_point(alpha = 0.6,
+             stroke = 0.2,
+             show.legend = FALSE) +
+  scale_colour_manual(values = country_colors) +
+  scale_size(range = c(1.5, 10)) +
+  labs(title = 'Year: {frame_time}', 
+       x = '% Aged', 
+       y = '% Young')
+```
+
+**Explanation**
+
+This code creates a bubble chart showing the relationship between the aged population and young population across countries. The bubble size represents total population, while colour distinguishes different countries. A smaller `stroke` and reduced size range are used to make the bubbles appear lighter and visually cleaner.
+
+## 4.3.2 Building the animated bubble plot
+
+```{r}
+ggplot(globalPop, aes(x = Old, y = Young, 
+                      size = Population, 
+                      colour = Country)) +
+  geom_point(alpha = 0.6,
+             stroke = 0.2,
+             show.legend = FALSE) +
+  scale_colour_manual(values = country_colors) +
+  scale_size(range = c(1.5, 10)) +
+  labs(title = 'Year: {frame_time}', 
+       x = '% Aged', 
+       y = '% Young') +
+  transition_time(Year) +
+  ease_aes('linear')
+```
+
+**Explanation**
+
+This code creates an animated bubble chart showing changes in population structure over time. The x-axis represents the percentage of aged population, while the y-axis represents the percentage of young population. The bubble size represents total population, and `transition_time(Year)` animates the chart across different years. A smaller `stroke` and reduced bubble size range are used to make the points look lighter and cleaner.
+
+## 4.4.1 Building an animated bubble plot: ggplotly() method
+
+```{r}
+gg <- ggplot(globalPop, 
+             aes(x = Old, 
+                 y = Young, 
+                 size = Population, 
+                 colour = Country)) +
+  geom_point(aes(size = Population,
+                 frame = Year),
+             alpha = 0.6,
+             stroke = 0.2,
+             show.legend = FALSE) +
+  scale_colour_manual(values = country_colors) +
+  scale_size(range = c(1.5, 10)) +
+  labs(x = '% Aged', 
+       y = '% Young')
+
+ggplotly(gg)
+```
+
+**Explanation**
+
+This code creates an interactive animated bubble chart using `ggplotly()`. The x-axis shows the percentage of aged population, while the y-axis shows the percentage of young population. Bubble size represents total population, colour represents country, and `frame = Year` allows the chart to animate across different years.
+
+```{r}
+gg <- ggplot(globalPop, 
+             aes(x = Old, 
+                 y = Young, 
+                 size = Population, 
+                 colour = Country)) +
+  geom_point(aes(size = Population,
+                 frame = Year),
+             alpha = 0.6,
+             stroke = 0.2) +
+  scale_colour_manual(values = country_colors) +
+  scale_size(range = c(1.5, 10)) +
+  labs(x = '% Aged', 
+       y = '% Young') + 
+  theme(legend.position = 'none')
+
+ggplotly(gg)
+```
+
+**Explanation**
+
+This code creates an interactive animated bubble chart using `ggplotly()`. The bubble position shows the relationship between aged and young population percentages, while bubble size represents total population and colour represents country. The `frame = Year` setting enables animation over time, and the legend is removed to make the chart cleaner.
+
+## 4.4.2 Building an animated bubble plot: plot_ly() method - add more tags
+
+::: {.panel-tabset}
+
+## Code
+
+```{r}
+#| eval: false
+
+bp <- globalPop %>%
+  plot_ly(
+    x = ~Old, 
+    y = ~Young, 
+    size = ~Population, 
+    color = ~Continent,
+    sizes = c(5, 80),
+    frame = ~Year, 
+    text = ~paste0(
+      "Country: ", Country,
+      "<br>Continent: ", Continent,
+      "<br>% Aged: ", Old,
+      "<br>% Young: ", Young,
+      "<br>Population: ", Population
+    ),
+    hoverinfo = "text",
+    type = "scatter",
+    mode = "markers",
+    marker = list(
+      opacity = 0.7,
+      line = list(width = 0.5, color = "white")
+    )
+  ) %>%
+  layout(
+    title = "Global Population Structure Over Time",
+    xaxis = list(title = "% Aged"),
+    yaxis = list(title = "% Young"),
+    showlegend = FALSE
+  )
+
+bp
+```
+
+## Graph
+
+```{r}
+#| echo: false
+
+bp <- globalPop %>%
+  plot_ly(
+    x = ~Old, 
+    y = ~Young, 
+    size = ~Population, 
+    color = ~Continent,
+    sizes = c(5, 80),
+    frame = ~Year, 
+    text = ~paste0(
+      "Country: ", Country,
+      "<br>Continent: ", Continent,
+      "<br>% Aged: ", Old,
+      "<br>% Young: ", Young,
+      "<br>Population: ", Population
+    ),
+    hoverinfo = "text",
+    type = "scatter",
+    mode = "markers",
+    marker = list(
+      opacity = 0.7,
+      line = list(width = 0.5, color = "white")
+    )
+  ) %>%
+  layout(
+    title = "Global Population Structure Over Time",
+    xaxis = list(title = "% Aged"),
+    yaxis = list(title = "% Young"),
+    showlegend = FALSE
+  )
+
+bp
+```
+
+:::
+
+**Explanation**
+
+This code creates an interactive animated bubble chart showing changes in global population structure over time. The x-axis represents the percentage of aged population, while the y-axis represents the percentage of young population. Bubble size represents total population, colour represents continent, and the animation frame changes by year. The revised hover text provides clearer information for each country.

@@ -1,7 +1,14 @@
 ---
 title: "Hands-on_Ex02"
-aurthor: HU Yue
+date: "2026-04-24"
+date-modified: "last-modified"
 format: html
+
+execute:
+  echo: true
+  eval: true
+  warning: false
+  freeze: true
 ---
 
 ```{r}
@@ -17,6 +24,7 @@ exam_data <- readr::read_csv("Exam_data.csv")
 ```
 ## 2.3 Beyond ggplot2 Annotation: ggrepel
 
+:::: panel-tabset
 ```{r}
 ggplot(data = exam_data, 
        aes(x = MATHS, 
@@ -29,6 +37,7 @@ ggplot(data = exam_data,
                   ylim = c(0, 100)) +
   ggtitle("English scores versus Maths scores for Primary 3")
 ```
+::::
 
 **Explanation**
 
