@@ -1,0 +1,933 @@
+---
+title: "Hands-on_Ex04"
+date: "2026-05-06"
+date-modified: "last-modified"
+format: html
+
+execute:
+  echo: true
+  eval: true
+  warning: false
+  freeze: true
+---
+
+## 9  Visualising Distribution
+```{r}
+pacman::p_load(ggdist, ggridges, ggthemes,
+               colorspace, tidyverse)
+```
+
+```{r}
+library(readr)
+exam <- readr::read_csv("Exam_data.csv")
+
+```
+
+## 9.3.1 Plotting ridgeline graph: ggridges method
+```{r}
+ggplot(exam, 
+       aes(x = ENGLISH, 
+           y = CLASS)) +
+  geom_density_ridges(
+    scale = 3,
+    rel_min_height = 0.01,
+    bandwidth = 3.4,
+    fill = lighten("#7097BB", .3),
+    color = "white"
+  ) +
+  scale_x_continuous(
+    name = "English grades",
+    expand = c(0, 0)
+  ) +
+  scale_y_discrete(
+    name = NULL, 
+    expand = expansion(add = c(0.2, 2.6))
+  ) +
+  theme_ridges()
+```
+
+**Explanation**
+
+This code creates a ridgeline density plot to show the distribution of `ENGLISH` scores across different classes. Each ridge represents one class, making it easier to compare score distributions between groups. The plot uses a softened blue fill colour and a ridgeline theme to create a clean visual style.
+
+## 9.3.2 Varying fill colors along the x axis
+```{r}
+
+ggplot(exam, 
+       aes(x = ENGLISH, 
+           y = CLASS,
+           fill = stat(x))) +
+  geom_density_ridges_gradient(
+    scale = 3,
+    rel_min_height = 0.01
+  ) +
+  scale_fill_viridis_c(
+    name = "English Score",
+    option = "C"
+  ) +
+  scale_x_continuous(
+    name = "English grades",
+    expand = c(0, 0)
+  ) +
+  scale_y_discrete(
+    name = NULL, 
+    expand = expansion(add = c(0.2, 2.6))
+  ) +
+  theme_ridges()
+```
+
+**Explanation**
+
+This code creates a gradient ridgeline plot showing the distribution of `ENGLISH` scores across different classes. The object `exam` is used as the dataset, and the colour gradient is based on the English score values, making lower and higher score ranges easier to compare.
+
+## 9.3.3 Mapping the probabilities directly onto colour
+
+```{r}
+ggplot(exam,
+       aes(x = ENGLISH, 
+           y = CLASS, 
+           fill = 0.5 - abs(0.5 - stat(ecdf)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient", 
+    calc_ecdf = TRUE
+  ) +
+  scale_fill_viridis_c(
+    name = "Tail probability",
+    direction = -1
+  ) +
+  theme_ridges()
+```
+
+**Explanation**
+
+This code creates a ridgeline density plot of `ENGLISH` scores across different classes. The fill colour is based on the empirical cumulative distribution function, which highlights how close each score is to the centre or tail of the distribution. The colour scale helps make the tail probability pattern easier to interpret across classes.
+
+
+## 9.3.4 Ridgeline plots with quantile lines
+```{r}
+ggplot(exam,
+       aes(x = ENGLISH, 
+           y = CLASS, 
+           fill = factor(stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE, 
+    quantiles = 4,
+    quantile_lines = TRUE
+  ) +
+  scale_fill_viridis_d(name = "Quartiles") +
+  theme_ridges()
+```
+
+**Explanation**
+
+This code creates a ridgeline density plot of `ENGLISH` scores across different classes. The distribution is divided into four quartiles, and the fill colour represents the quartile group for each part of the density curve. The quantile lines make it easier to compare how English scores are distributed within each class.
+
+```{r}
+ggplot(exam,
+       aes(x = ENGLISH, 
+           y = CLASS, 
+           fill = factor(stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE, 
+    quantiles = c(0.025, 0.975)
+  ) +
+  scale_fill_manual(
+    name = "Probability",
+    values = c("#FF0000A0", "#A0A0A0A0", "#0000FFA0"),
+    labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")
+  ) +
+  theme_ridges()
+```
+
+**Explanation**
+
+This code creates a ridgeline density plot of `ENGLISH` scores across different classes. The distribution is divided using the 2.5% and 97.5% quantiles, so the lower and upper tails are highlighted separately from the middle range. Red represents the lower tail, grey represents the central range, and blue represents the upper tail.
+
+## 9.4 Visualising Distribution with Raincloud Plot
+
+```{r}
+ggplot(exam, 
+       aes(x = RACE, 
+           y = ENGLISH)) +
+  stat_halfeye(
+    adjust = 0.5,
+    justification = -0.2,
+    .width = 0,
+    point_colour = NA
+  )
+```
+
+**Explanation**
+
+This code creates a half-eye plot to show the distribution of `ENGLISH` scores across different race groups. The half-eye shape displays the density distribution for each group, making it easier to compare score patterns between categories.
+
+## 9.4.2 Adding the boxplot with geom_boxplot()
+
+```{r}
+ggplot(exam, 
+       aes(x = RACE, 
+           y = ENGLISH)) +
+  stat_halfeye(
+    adjust = 0.5,
+    justification = -0.2,
+    .width = 0,
+    point_colour = NA
+  )
+```
+
+**Explanation**
+
+This code creates a half-eye plot to show the distribution of `ENGLISH` scores across different race groups. The half-eye shape displays the density distribution for each group, making it easier to compare score patterns between categories.
+
+## 9.4.3 Adding the Dot Plots with stat_dots()
+
+```{r}
+ggplot(exam, 
+       aes(x = RACE, 
+           y = ENGLISH)) +
+  stat_halfeye(
+    adjust = 0.5,
+    justification = -0.2,
+    .width = 0,
+    point_colour = NA
+  ) +
+  geom_boxplot(
+    width = .20,
+    outlier.shape = NA
+  ) +
+  stat_dots(
+    side = "left", 
+    justification = 1.2, 
+    binwidth = .5,
+    dotsize = 2
+  )
+```
+
+**Explanation**
+
+This code creates a raincloud-style plot to compare `ENGLISH` scores across different race groups. The half-eye plot shows the distribution shape, the boxplot summarizes the median and spread, and the dots display individual observations. This provides a fuller view of both group-level patterns and individual score variation.
+
+## 9.4.4 Finishing touch
+
+```{r}
+ggplot(exam, 
+       aes(x = RACE, 
+           y = ENGLISH)) +
+  stat_halfeye(
+    adjust = 0.5,
+    justification = -0.2,
+    .width = 0,
+    point_colour = NA
+  ) +
+  geom_boxplot(
+    width = .20,
+    outlier.shape = NA
+  ) +
+  stat_dots(
+    side = "left", 
+    justification = 1.2, 
+    binwidth = .5,
+    dotsize = 1.5
+  ) +
+  coord_flip() +
+  theme_economist()
+```
+
+**Explanation**
+
+This code creates a horizontal raincloud-style plot to compare `ENGLISH` scores across race groups. The half-eye plot shows the distribution shape, the boxplot summarizes the median and spread, and the dots show individual observations. `coord_flip()` makes the plot easier to read horizontally, while `theme_economist()` gives the chart a more polished visual style.
+
+## 10  Visual Statistical Analysis
+
+## 10.3.1 Installing and launching R packages
+
+```{r}
+pacman::p_load(ggstatsplot, tidyverse)
+```
+
+## 10.3.3 One-sample test: gghistostats() method
+
+```{r}
+set.seed(1234)
+
+gghistostats(
+  data = exam,
+  x = ENGLISH,
+  type = "bayes",
+  test.value = 60,
+  xlab = "English scores"
+)
+```
+
+**Explanation**
+
+This code creates a histogram of `ENGLISH` scores with Bayesian statistical information included. The `test.value = 60` setting compares the English score distribution against the reference value of 60, while `set.seed(1234)` ensures that the result is reproducible.
+
+## 10.3.6 Two-sample mean test: ggbetweenstats()
+
+```{r}
+ggbetweenstats(
+  data = exam,
+  x = GENDER, 
+  y = MATHS,
+  type = "np",
+  messages = FALSE
+)
+```
+
+**Explanation**
+
+This code creates a comparative plot of `MATHS` scores across different gender groups. It uses a non-parametric statistical test to compare the distributions and automatically displays summary statistics and significance results alongside the visualization.
+
+## 10.3.7 Oneway ANOVA Test: ggbetweenstats() method
+
+```{r}
+ggbetweenstats(
+  data = exam,
+  x = RACE, 
+  y = ENGLISH,
+  type = "p",
+  mean.ci = TRUE, 
+  pairwise.comparisons = TRUE, 
+  pairwise.display = "s",
+  p.adjust.method = "fdr",
+  messages = FALSE
+)
+```
+
+**Explanation**
+
+This code compares `ENGLISH` scores across different race groups using a parametric test. It displays the mean confidence intervals and pairwise comparison results, while the FDR adjustment controls for multiple testing. The plot helps identify whether English scores differ significantly between race groups.
+
+## 10.3.8 Significant Test of Correlation: ggscatterstats()
+
+```{r}
+ggscatterstats(
+  data = exam,
+  x = MATHS,
+  y = ENGLISH,
+  marginal = FALSE
+)
+```
+
+**Explanation**
+
+This code creates a scatter plot showing the relationship between `MATHS` and `ENGLISH` scores. It also includes statistical information about the association between the two variables, such as the correlation result. The `marginal = FALSE` option removes the marginal distribution plots to keep the visualization simpler.
+
+## 10.3.9 Significant Test of Association (Depedence) : ggbarstats() methods
+
+```{r}
+exam1 <- exam %>% 
+  mutate(MATHS_bins = cut(
+    MATHS, 
+    breaks = c(0, 60, 75, 85, 100)
+  ))
+```
+
+**Explanation**
+
+This code creates a new dataset named `exam1` by adding a categorical variable called `MATHS_bins`. The `MATHS` scores are grouped into four score ranges: 0–60, 60–75, 75–85, and 85–100. This makes it easier to compare students by Maths score bands in later analysis.
+
+```{r}
+
+ggbarstats(exam1, 
+           x = MATHS_bins, 
+           y = GENDER)
+```
+
+## 11  Visualising Uncertainty
+
+## 11.2.1 Installing and loading the packages
+
+```{r}
+pacman::p_load(plotly, crosstalk, DT, 
+               ggdist, ggridges, colorspace,
+               gganimate, tidyverse)
+```
+
+## 11.3 Visualizing the uncertainty of point estimates: ggplot2 methods
+
+```{r}
+my_sum <- exam %>%
+  group_by(RACE) %>%
+  summarise(
+    n = n(),
+    mean = mean(MATHS),
+    sd = sd(MATHS)
+  ) %>%
+  mutate(se = sd / sqrt(n - 1))
+```
+
+**Explanation**
+
+This code computes summary statistics of `MATHS` scores for each race group. It calculates the sample size (`n`), mean, and standard deviation, and then derives the standard error (`se`) to measure the variability of the sample mean within each group.
+
+::: {.panel-tabset}
+
+## Code
+
+```{r}
+#| eval: false
+
+knitr::kable(head(my_sum), format = 'html')
+```
+
+## Table
+
+```{r}
+#| echo: false
+
+knitr::kable(head(my_sum), format = 'html')
+```
+
+:::
+
+**Explanation**
+
+This code displays the first few rows of the summary table `my_sum` as an HTML table. The Code tab shows the R code without running it, while the Table tab renders and displays the formatted table output.
+
+## 11.3.1 Plotting standard error bars of point estimates
+```{r}
+ggplot(my_sum) +
+  geom_errorbar(
+    aes(x = RACE, 
+        ymin = mean - se, 
+        ymax = mean + se), 
+    width = 0.2, 
+    colour = "black", 
+    alpha = 0.9, 
+    linewidth = 0.5
+  ) +
+  geom_point(
+    aes(x = RACE, 
+        y = mean), 
+    stat = "identity", 
+    color = "red",
+    size = 1.5,
+    alpha = 1
+  ) +
+  ggtitle("Standard Error of Mean Maths Score by Race")
+```
+
+**Explanation**
+
+This code creates an error bar plot showing the mean `MATHS` score for each race group. The red points represent the group mean, while the error bars show the standard error around each mean. This helps compare average Maths performance and uncertainty across race groups.
+
+## 11.3.2 Plotting confidence interval of point estimates
+
+::: {.panel-tabset}
+
+## Code
+
+```{r}
+#| eval: false
+
+ggplot(my_sum) +
+  geom_errorbar(
+    aes(x = reorder(RACE, -mean), 
+        ymin = mean - 1.96 * se, 
+        ymax = mean + 1.96 * se), 
+    width = 0.2, 
+    colour = "black", 
+    alpha = 0.9, 
+    linewidth = 0.5
+  ) +
+  geom_point(
+    aes(x = reorder(RACE, -mean), 
+        y = mean), 
+    stat = "identity", 
+    color = "red",
+    size = 1.5,
+    alpha = 1
+  ) +
+  labs(
+    x = "Race",
+    y = "Mean Maths Score",
+    title = "95% Confidence Interval of Mean Maths Score by Race"
+  )
+```
+
+## Graph
+
+```{r}
+#| echo: false
+
+ggplot(my_sum) +
+  geom_errorbar(
+    aes(x = reorder(RACE, -mean), 
+        ymin = mean - 1.96 * se, 
+        ymax = mean + 1.96 * se), 
+    width = 0.2, 
+    colour = "black", 
+    alpha = 0.9, 
+    linewidth = 0.5
+  ) +
+  geom_point(
+    aes(x = reorder(RACE, -mean), 
+        y = mean), 
+    stat = "identity", 
+    color = "red",
+    size = 1.5,
+    alpha = 1
+  ) +
+  labs(
+    x = "Race",
+    y = "Mean Maths Score",
+    title = "95% Confidence Interval of Mean Maths Score by Race"
+  )
+```
+
+:::
+
+**Explanation**
+
+This code creates an error bar plot showing the 95% confidence interval of the mean `MATHS` score for each race group. The race groups are reordered by their mean Maths score, and the red points represent the group means. The error bars show the uncertainty range around each mean.
+
+## 11.3.3 Visualizing the uncertainty of point estimates with interactive error bars
+
+::: {.panel-tabset}
+
+## Code
+
+```{r}
+#| eval: false
+
+shared_df <- SharedData$new(my_sum)
+
+bscols(
+  widths = c(4, 8),
+  
+  ggplotly(
+    ggplot(shared_df) +
+      geom_errorbar(
+        aes(
+          x = reorder(RACE, -mean),
+          ymin = mean - 2.58 * se,
+          ymax = mean + 2.58 * se
+        ),
+        width = 0.2,
+        colour = "black",
+        alpha = 0.9,
+        linewidth = 0.5
+      ) +
+      geom_point(
+        aes(
+          x = RACE,
+          y = mean,
+          text = paste(
+            "Race:", RACE,
+            "<br>N:", n,
+            "<br>Avg. Scores:", round(mean, 2),
+            "<br>99% CI: [",
+            round(mean - 2.58 * se, 2), ",",
+            round(mean + 2.58 * se, 2), "]"
+          )
+        ),
+        stat = "identity",
+        color = "red",
+        size = 1.5,
+        alpha = 1
+      ) +
+      xlab("Race") +
+      ylab("Average Scores") +
+      theme_minimal() +
+      theme(
+        axis.text.x = element_text(
+          angle = 45,
+          vjust = 0.5,
+          hjust = 1
+        )
+      ) +
+      ggtitle("99% Confidence Interval of Average Maths Scores by Race"),
+    tooltip = "text"
+  ),
+  
+  DT::datatable(
+    shared_df,
+    rownames = FALSE,
+    class = "compact",
+    width = "100%",
+    options = list(
+      pageLength = 10,
+      scrollX = TRUE
+    ),
+    colnames = c(
+      "Race",
+      "No. of Pupils",
+      "Avg Scores",
+      "Std Dev",
+      "Std Error"
+    )
+  ) %>%
+    formatRound(
+      columns = c("mean", "sd", "se"),
+      digits = 2
+    )
+)
+```
+
+## Graph and Table
+
+```{r}
+#| echo: false
+
+shared_df <- SharedData$new(my_sum)
+
+bscols(
+  widths = c(4, 8),
+  
+  ggplotly(
+    ggplot(shared_df) +
+      geom_errorbar(
+        aes(
+          x = reorder(RACE, -mean),
+          ymin = mean - 2.58 * se,
+          ymax = mean + 2.58 * se
+        ),
+        width = 0.2,
+        colour = "black",
+        alpha = 0.9,
+        linewidth = 0.5
+      ) +
+      geom_point(
+        aes(
+          x = RACE,
+          y = mean,
+          text = paste(
+            "Race:", RACE,
+            "<br>N:", n,
+            "<br>Avg. Scores:", round(mean, 2),
+            "<br>99% CI: [",
+            round(mean - 2.58 * se, 2), ",",
+            round(mean + 2.58 * se, 2), "]"
+          )
+        ),
+        stat = "identity",
+        color = "red",
+        size = 1.5,
+        alpha = 1
+      ) +
+      xlab("Race") +
+      ylab("Average Scores") +
+      theme_minimal() +
+      theme(
+        axis.text.x = element_text(
+          angle = 45,
+          vjust = 0.5,
+          hjust = 1
+        )
+      ) +
+      ggtitle("99% Confidence Interval of Average Maths Scores by Race"),
+    tooltip = "text"
+  ),
+  
+  DT::datatable(
+    shared_df,
+    rownames = FALSE,
+    class = "compact",
+    width = "100%",
+    options = list(
+      pageLength = 10,
+      scrollX = TRUE
+    ),
+    colnames = c(
+      "Race",
+      "No. of Pupils",
+      "Avg Scores",
+      "Std Dev",
+      "Std Error"
+    )
+  ) %>%
+    formatRound(
+      columns = c("mean", "sd", "se"),
+      digits = 2
+    )
+)
+```
+
+:::
+
+**Explanation**
+
+This code creates a linked interactive visualization and table using `SharedData`. The plot shows the 99% confidence interval of average `MATHS` scores by race, with red points representing group means and error bars showing the confidence intervals. The table displays the corresponding summary statistics, including sample size, average score, standard deviation, and standard error.
+
+## 11.4.1 Visualizing the uncertainty of point estimates: ggdist methods
+
+```{r}
+exam %>%
+  ggplot(aes(x = RACE, 
+             y = MATHS)) +
+  stat_pointinterval() +
+  labs(
+    title = "Visualising Confidence Intervals of Mean Maths Score",
+    subtitle = "Mean Point + Multiple-Interval Plot",
+    x = "Race",
+    y = "Maths Score"
+  )
+```
+
+**Explanation**
+
+This code creates a point-interval plot to show the mean `MATHS` score for each race group. The point represents the estimated mean, while the interval shows the uncertainty around the mean. This makes it easier to compare average Maths performance across race groups.
+
+```{r}
+exam %>%
+  ggplot(aes(x = RACE, 
+             y = MATHS)) +
+  stat_pointinterval(
+    .width = 0.95,
+    .point = median,
+    .interval = qi
+  ) +
+  labs(
+    title = "Visualising Confidence Intervals of Median Maths Score",
+    subtitle = "Median Point + 95% Quantile Interval Plot",
+    x = "Race",
+    y = "Maths Score"
+  )
+```
+
+**Explanation**
+
+This code creates a point-interval plot showing the median `MATHS` score for each race group. The point represents the median score, while the 95% quantile interval shows the uncertainty range around the median. This helps compare the central tendency of Maths scores across race groups.
+
+## 11.4.2 Visualizing the uncertainty of point estimates: ggdist methods
+
+```{r}
+exam %>%
+  ggplot(aes(x = RACE, 
+             y = MATHS)) +
+  stat_pointinterval(
+    show.legend = FALSE
+  ) +   
+  labs(
+    title = "Visualising Confidence Intervals of Mean Maths Score",
+    subtitle = "Mean Point + Multiple-Interval Plot",
+    x = "Race",
+    y = "Maths Score"
+  )
+```
+
+**Explanation**
+
+This code creates a point-interval plot showing the mean `MATHS` score for each race group. The point represents the group mean, while the interval shows the uncertainty around the mean. The legend is hidden to keep the chart cleaner and easier to read.
+
+## 11.4.3 Visualizing the uncertainty of point estimates: ggdist methods
+
+```{r}
+exam %>%
+  ggplot(aes(x = RACE, 
+             y = MATHS)) +
+  stat_gradientinterval(
+    fill = "skyblue",
+    show.legend = TRUE
+  ) +
+  labs(
+    title = "Visualising Confidence Intervals of Mean Maths Score",
+    subtitle = "Gradient + Interval Plot",
+    x = "Race",
+    y = "Maths Score"
+  )
+```
+
+**Explanation**
+
+This code creates a gradient interval plot to compare `MATHS` scores across race groups. The gradient shape represents the distribution and uncertainty of the scores, while the interval highlights the estimated range around the mean. The legend is shown to help interpret the uncertainty levels in the gradient.
+
+## 11.5 Visualising Uncertainty with Hypothetical Outcome Plots (HOPs)
+
+## 11.5.1 Installing ungeviz package
+
+```{r}
+devtools::install_github("wilkelab/ungeviz")
+```
+
+## 11.5.2 Launch the application in R
+
+```{r}
+library(ungeviz)
+```
+
+## 11.5.3 Visualising Uncertainty with Hypothetical Outcome Plots (HOPs)
+```{r}
+ggplot(data = exam, 
+       aes(x = factor(RACE), 
+           y = MATHS)) +
+  geom_point(
+    position = position_jitter(
+      height = 0.3, 
+      width = 0.05
+    ), 
+    size = 0.4, 
+    color = "#0072B2", 
+    alpha = 0.5
+  ) +
+  geom_hpline(
+    data = sampler(25, group = RACE), 
+    height = 0.6, 
+    color = "#D55E00"
+  ) +
+  theme_bw() + 
+  transition_states(.draw, 1, 3)
+```
+
+**Explanation**
+
+This code creates an animated visualization of `MATHS` scores across race groups. The jittered points represent individual observations, while the horizontal lines (`geom_hpline`) show sampled summary statistics for each group. The `transition_states(.draw, 1, 3)` function animates the drawing process across multiple states, helping illustrate sampling variability over time.
+
+## 8  Funnel Plots for Fair Comparisons
+
+## 8.2 Installing and Launching R Packages
+
+```{r}
+pacman::p_load(tidyverse, FunnelPlotR, plotly, knitr)
+```
+
+## 8.3 Importing Data
+
+```{r}
+covid19 <- read_csv("COVID-19_DKI_Jakarta.csv") %>%
+  mutate_if(is.character, as.factor)
+```
+
+## 8.4.1 FunnelPlotR methods: The basic plot
+
+```{r}
+funnel_plot(
+  .data = covid19,
+  numerator = Positive,
+  denominator = Death,
+  group = `Sub-district`
+)
+```
+
+**Explanation**
+
+This code creates a funnel plot using the `covid19` dataset. It compares the number of positive cases against deaths across different sub-districts. The plot helps identify groups that may fall outside the expected range and show unusually high or low patterns.
+
+## 8.4.2 FunnelPlotR methods: Makeover 1
+
+```{r}
+funnel_plot(
+  .data = covid19,
+  numerator = Death,
+  denominator = Positive,
+  group = `Sub-district`,
+  data_type = "PR",
+  xrange = c(0, 6500),
+  yrange = c(0, 0.05)
+)
+```
+
+**Explanation**
+
+This code creates a funnel plot to examine the death-to-positive-case rate across different sub-districts. The `data_type = "PR"` setting treats the result as a proportion rate, while `xrange` and `yrange` control the visible range of the x-axis and y-axis. This helps make the plot easier to read and compare across sub-districts.
+
+## 8.4.3 FunnelPlotR methods: Makeover 2
+
+```{r}
+funnel_plot(
+  .data = covid19,
+  numerator = Death,
+  denominator = Positive,
+  group = `Sub-district`,
+  data_type = "PR",   
+  xrange = c(0, 6500),  
+  yrange = c(0, 0.05),
+  label = NA,
+  title = "Cumulative COVID-19 Fatality Rate by Cumulative Total Number of COVID-19 Positive Cases",           
+  x_label = "Cumulative COVID-19 Positive Cases",
+  y_label = "Cumulative Fatality Rate"
+)
+```
+
+**Explanation**
+
+This code creates a funnel plot showing the cumulative COVID-19 fatality rate across sub-districts. The fatality rate is calculated as deaths divided by positive cases, while the x-axis shows the cumulative number of positive cases. The customized title and axis labels make the chart easier to interpret. 
+
+## 8.5.1 Computing the basic derived fields
+
+```{r}
+df <- covid19 %>%
+  mutate(rate = Death / Positive) %>%
+  mutate(rate.se = sqrt((rate*(1-rate)) / (Positive))) %>%
+  filter(rate > 0)
+fit.mean <- weighted.mean(df$rate, 1/df$rate.se^2)
+```
+
+## 8.5.2 Calculate lower and upper limits for 95% and 99.9% CI
+
+```{r}
+number.seq <- seq(1, max(df$Positive), 1)
+number.ll95 <- fit.mean - 1.96 * sqrt((fit.mean*(1-fit.mean)) / (number.seq)) 
+number.ul95 <- fit.mean + 1.96 * sqrt((fit.mean*(1-fit.mean)) / (number.seq)) 
+number.ll999 <- fit.mean - 3.29 * sqrt((fit.mean*(1-fit.mean)) / (number.seq)) 
+number.ul999 <- fit.mean + 3.29 * sqrt((fit.mean*(1-fit.mean)) / (number.seq)) 
+dfCI <- data.frame(number.ll95, number.ul95, number.ll999, 
+                   number.ul999, number.seq, fit.mean)
+```
+
+## 8.5.3 Plotting a static funnel plot
+
+```{r}
+p <- ggplot(df, aes(x = Positive, y = rate)) +
+  geom_point(aes(label=`Sub-district`), 
+             alpha=0.4) +
+  geom_line(data = dfCI, 
+            aes(x = number.seq, 
+                y = number.ll95), 
+            size = 0.4, 
+            colour = "grey40", 
+            linetype = "dashed") +
+  geom_line(data = dfCI, 
+            aes(x = number.seq, 
+                y = number.ul95), 
+            size = 0.4, 
+            colour = "grey40", 
+            linetype = "dashed") +
+  geom_line(data = dfCI, 
+            aes(x = number.seq, 
+                y = number.ll999), 
+            size = 0.4, 
+            colour = "grey40") +
+  geom_line(data = dfCI, 
+            aes(x = number.seq, 
+                y = number.ul999), 
+            size = 0.4, 
+            colour = "grey40") +
+  geom_hline(data = dfCI, 
+             aes(yintercept = fit.mean), 
+             size = 0.4, 
+             colour = "grey40") +
+  coord_cartesian(ylim=c(0,0.05)) +
+  annotate("text", x = 1, y = -0.13, label = "95%", size = 3, colour = "grey40") + 
+  annotate("text", x = 4.5, y = -0.18, label = "99%", size = 3, colour = "grey40") + 
+  ggtitle("Cumulative Fatality Rate by Cumulative Number of COVID-19 Cases") +
+  xlab("Cumulative Number of COVID-19 Cases") + 
+  ylab("Cumulative Fatality Rate") +
+  theme_light() +
+  theme(plot.title = element_text(size=12),
+        legend.position = c(0.91,0.85), 
+        legend.title = element_text(size=7),
+        legend.text = element_text(size=7),
+        legend.background = element_rect(colour = "grey60", linetype = "dotted"),
+        legend.key.height = unit(0.3, "cm"))
+p
+```
+
+## 8.5.4 Interactive Funnel Plot: plotly + ggplot2
+
+```{r}
+fp_ggplotly <- ggplotly(
+  p,
+  tooltip = c("label", "x", "y")
+)
+
+fp_ggplotly
+```
+
+**Explanation**
+
+This code converts the existing ggplot object `p` into an interactive Plotly graph. The tooltip is customized to display the label, x-value, and y-value when users hover over points in the plot.

@@ -642,5 +642,285 @@
     "title": "Hands-on_Ex03",
     "section": "4.4.2 Building an animated bubble plot: plot_ly() method - add more tags",
     "text": "4.4.2 Building an animated bubble plot: plot_ly() method - add more tags\n\nCodeGraph\n\n\n\nbp &lt;- globalPop %&gt;%\n  plot_ly(\n    x = ~Old, \n    y = ~Young, \n    size = ~Population, \n    color = ~Continent,\n    sizes = c(5, 80),\n    frame = ~Year, \n    text = ~paste0(\n      \"Country: \", Country,\n      \"&lt;br&gt;Continent: \", Continent,\n      \"&lt;br&gt;% Aged: \", Old,\n      \"&lt;br&gt;% Young: \", Young,\n      \"&lt;br&gt;Population: \", Population\n    ),\n    hoverinfo = \"text\",\n    type = \"scatter\",\n    mode = \"markers\",\n    marker = list(\n      opacity = 0.7,\n      line = list(width = 0.5, color = \"white\")\n    )\n  ) %&gt;%\n  layout(\n    title = \"Global Population Structure Over Time\",\n    xaxis = list(title = \"% Aged\"),\n    yaxis = list(title = \"% Young\"),\n    showlegend = FALSE\n  )\n\nbp\n\n\n\n\n\n\n\n\n\n\n\n\nExplanation\nThis code creates an interactive animated bubble chart showing changes in global population structure over time. The x-axis represents the percentage of aged population, while the y-axis represents the percentage of young population. Bubble size represents total population, colour represents continent, and the animation frame changes by year. The revised hover text provides clearer information for each country."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html",
+    "title": "Hands-on_Ex04",
+    "section": "",
+    "text": "pacman::p_load(ggdist, ggridges, ggthemes,\n               colorspace, tidyverse)\n\n\nlibrary(readr)\nexam &lt;- readr::read_csv(\"Exam_data.csv\")"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#plotting-ridgeline-graph-ggridges-method",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#plotting-ridgeline-graph-ggridges-method",
+    "title": "Hands-on_Ex04",
+    "section": "9.3.1 Plotting ridgeline graph: ggridges method",
+    "text": "9.3.1 Plotting ridgeline graph: ggridges method\n\nggplot(exam, \n       aes(x = ENGLISH, \n           y = CLASS)) +\n  geom_density_ridges(\n    scale = 3,\n    rel_min_height = 0.01,\n    bandwidth = 3.4,\n    fill = lighten(\"#7097BB\", .3),\n    color = \"white\"\n  ) +\n  scale_x_continuous(\n    name = \"English grades\",\n    expand = c(0, 0)\n  ) +\n  scale_y_discrete(\n    name = NULL, \n    expand = expansion(add = c(0.2, 2.6))\n  ) +\n  theme_ridges()\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a ridgeline density plot to show the distribution of ENGLISH scores across different classes. Each ridge represents one class, making it easier to compare score distributions between groups. The plot uses a softened blue fill colour and a ridgeline theme to create a clean visual style."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#varying-fill-colors-along-the-x-axis",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#varying-fill-colors-along-the-x-axis",
+    "title": "Hands-on_Ex04",
+    "section": "9.3.2 Varying fill colors along the x axis",
+    "text": "9.3.2 Varying fill colors along the x axis\n\nggplot(exam, \n       aes(x = ENGLISH, \n           y = CLASS,\n           fill = stat(x))) +\n  geom_density_ridges_gradient(\n    scale = 3,\n    rel_min_height = 0.01\n  ) +\n  scale_fill_viridis_c(\n    name = \"English Score\",\n    option = \"C\"\n  ) +\n  scale_x_continuous(\n    name = \"English grades\",\n    expand = c(0, 0)\n  ) +\n  scale_y_discrete(\n    name = NULL, \n    expand = expansion(add = c(0.2, 2.6))\n  ) +\n  theme_ridges()\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a gradient ridgeline plot showing the distribution of ENGLISH scores across different classes. The object exam is used as the dataset, and the colour gradient is based on the English score values, making lower and higher score ranges easier to compare."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#mapping-the-probabilities-directly-onto-colour",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#mapping-the-probabilities-directly-onto-colour",
+    "title": "Hands-on_Ex04",
+    "section": "9.3.3 Mapping the probabilities directly onto colour",
+    "text": "9.3.3 Mapping the probabilities directly onto colour\n\nggplot(exam,\n       aes(x = ENGLISH, \n           y = CLASS, \n           fill = 0.5 - abs(0.5 - stat(ecdf)))) +\n  stat_density_ridges(\n    geom = \"density_ridges_gradient\", \n    calc_ecdf = TRUE\n  ) +\n  scale_fill_viridis_c(\n    name = \"Tail probability\",\n    direction = -1\n  ) +\n  theme_ridges()\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a ridgeline density plot of ENGLISH scores across different classes. The fill colour is based on the empirical cumulative distribution function, which highlights how close each score is to the centre or tail of the distribution. The colour scale helps make the tail probability pattern easier to interpret across classes."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#ridgeline-plots-with-quantile-lines",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#ridgeline-plots-with-quantile-lines",
+    "title": "Hands-on_Ex04",
+    "section": "9.3.4 Ridgeline plots with quantile lines",
+    "text": "9.3.4 Ridgeline plots with quantile lines\n\nggplot(exam,\n       aes(x = ENGLISH, \n           y = CLASS, \n           fill = factor(stat(quantile)))) +\n  stat_density_ridges(\n    geom = \"density_ridges_gradient\",\n    calc_ecdf = TRUE, \n    quantiles = 4,\n    quantile_lines = TRUE\n  ) +\n  scale_fill_viridis_d(name = \"Quartiles\") +\n  theme_ridges()\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a ridgeline density plot of ENGLISH scores across different classes. The distribution is divided into four quartiles, and the fill colour represents the quartile group for each part of the density curve. The quantile lines make it easier to compare how English scores are distributed within each class.\n\nggplot(exam,\n       aes(x = ENGLISH, \n           y = CLASS, \n           fill = factor(stat(quantile)))) +\n  stat_density_ridges(\n    geom = \"density_ridges_gradient\",\n    calc_ecdf = TRUE, \n    quantiles = c(0.025, 0.975)\n  ) +\n  scale_fill_manual(\n    name = \"Probability\",\n    values = c(\"#FF0000A0\", \"#A0A0A0A0\", \"#0000FFA0\"),\n    labels = c(\"(0, 0.025]\", \"(0.025, 0.975]\", \"(0.975, 1]\")\n  ) +\n  theme_ridges()\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a ridgeline density plot of ENGLISH scores across different classes. The distribution is divided using the 2.5% and 97.5% quantiles, so the lower and upper tails are highlighted separately from the middle range. Red represents the lower tail, grey represents the central range, and blue represents the upper tail."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualising-distribution-with-raincloud-plot",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualising-distribution-with-raincloud-plot",
+    "title": "Hands-on_Ex04",
+    "section": "9.4 Visualising Distribution with Raincloud Plot",
+    "text": "9.4 Visualising Distribution with Raincloud Plot\n\nggplot(exam, \n       aes(x = RACE, \n           y = ENGLISH)) +\n  stat_halfeye(\n    adjust = 0.5,\n    justification = -0.2,\n    .width = 0,\n    point_colour = NA\n  )\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a half-eye plot to show the distribution of ENGLISH scores across different race groups. The half-eye shape displays the density distribution for each group, making it easier to compare score patterns between categories."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#adding-the-boxplot-with-geom_boxplot",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#adding-the-boxplot-with-geom_boxplot",
+    "title": "Hands-on_Ex04",
+    "section": "9.4.2 Adding the boxplot with geom_boxplot()",
+    "text": "9.4.2 Adding the boxplot with geom_boxplot()\n\nggplot(exam, \n       aes(x = RACE, \n           y = ENGLISH)) +\n  stat_halfeye(\n    adjust = 0.5,\n    justification = -0.2,\n    .width = 0,\n    point_colour = NA\n  )\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a half-eye plot to show the distribution of ENGLISH scores across different race groups. The half-eye shape displays the density distribution for each group, making it easier to compare score patterns between categories."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#adding-the-dot-plots-with-stat_dots",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#adding-the-dot-plots-with-stat_dots",
+    "title": "Hands-on_Ex04",
+    "section": "9.4.3 Adding the Dot Plots with stat_dots()",
+    "text": "9.4.3 Adding the Dot Plots with stat_dots()\n\nggplot(exam, \n       aes(x = RACE, \n           y = ENGLISH)) +\n  stat_halfeye(\n    adjust = 0.5,\n    justification = -0.2,\n    .width = 0,\n    point_colour = NA\n  ) +\n  geom_boxplot(\n    width = .20,\n    outlier.shape = NA\n  ) +\n  stat_dots(\n    side = \"left\", \n    justification = 1.2, \n    binwidth = .5,\n    dotsize = 2\n  )\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a raincloud-style plot to compare ENGLISH scores across different race groups. The half-eye plot shows the distribution shape, the boxplot summarizes the median and spread, and the dots display individual observations. This provides a fuller view of both group-level patterns and individual score variation."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#finishing-touch",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#finishing-touch",
+    "title": "Hands-on_Ex04",
+    "section": "9.4.4 Finishing touch",
+    "text": "9.4.4 Finishing touch\n\nggplot(exam, \n       aes(x = RACE, \n           y = ENGLISH)) +\n  stat_halfeye(\n    adjust = 0.5,\n    justification = -0.2,\n    .width = 0,\n    point_colour = NA\n  ) +\n  geom_boxplot(\n    width = .20,\n    outlier.shape = NA\n  ) +\n  stat_dots(\n    side = \"left\", \n    justification = 1.2, \n    binwidth = .5,\n    dotsize = 1.5\n  ) +\n  coord_flip() +\n  theme_economist()\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a horizontal raincloud-style plot to compare ENGLISH scores across race groups. The half-eye plot shows the distribution shape, the boxplot summarizes the median and spread, and the dots show individual observations. coord_flip() makes the plot easier to read horizontally, while theme_economist() gives the chart a more polished visual style."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#installing-and-launching-r-packages",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#installing-and-launching-r-packages",
+    "title": "Hands-on_Ex04",
+    "section": "10.3.1 Installing and launching R packages",
+    "text": "10.3.1 Installing and launching R packages\n\npacman::p_load(ggstatsplot, tidyverse)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#one-sample-test-gghistostats-method",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#one-sample-test-gghistostats-method",
+    "title": "Hands-on_Ex04",
+    "section": "10.3.3 One-sample test: gghistostats() method",
+    "text": "10.3.3 One-sample test: gghistostats() method\n\nset.seed(1234)\n\ngghistostats(\n  data = exam,\n  x = ENGLISH,\n  type = \"bayes\",\n  test.value = 60,\n  xlab = \"English scores\"\n)\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a histogram of ENGLISH scores with Bayesian statistical information included. The test.value = 60 setting compares the English score distribution against the reference value of 60, while set.seed(1234) ensures that the result is reproducible."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#two-sample-mean-test-ggbetweenstats",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#two-sample-mean-test-ggbetweenstats",
+    "title": "Hands-on_Ex04",
+    "section": "10.3.6 Two-sample mean test: ggbetweenstats()",
+    "text": "10.3.6 Two-sample mean test: ggbetweenstats()\n\nggbetweenstats(\n  data = exam,\n  x = GENDER, \n  y = MATHS,\n  type = \"np\",\n  messages = FALSE\n)\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a comparative plot of MATHS scores across different gender groups. It uses a non-parametric statistical test to compare the distributions and automatically displays summary statistics and significance results alongside the visualization."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#oneway-anova-test-ggbetweenstats-method",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#oneway-anova-test-ggbetweenstats-method",
+    "title": "Hands-on_Ex04",
+    "section": "10.3.7 Oneway ANOVA Test: ggbetweenstats() method",
+    "text": "10.3.7 Oneway ANOVA Test: ggbetweenstats() method\n\nggbetweenstats(\n  data = exam,\n  x = RACE, \n  y = ENGLISH,\n  type = \"p\",\n  mean.ci = TRUE, \n  pairwise.comparisons = TRUE, \n  pairwise.display = \"s\",\n  p.adjust.method = \"fdr\",\n  messages = FALSE\n)\n\n\n\n\n\n\n\n\nExplanation\nThis code compares ENGLISH scores across different race groups using a parametric test. It displays the mean confidence intervals and pairwise comparison results, while the FDR adjustment controls for multiple testing. The plot helps identify whether English scores differ significantly between race groups."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#significant-test-of-correlation-ggscatterstats",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#significant-test-of-correlation-ggscatterstats",
+    "title": "Hands-on_Ex04",
+    "section": "10.3.8 Significant Test of Correlation: ggscatterstats()",
+    "text": "10.3.8 Significant Test of Correlation: ggscatterstats()\n\nggscatterstats(\n  data = exam,\n  x = MATHS,\n  y = ENGLISH,\n  marginal = FALSE\n)\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a scatter plot showing the relationship between MATHS and ENGLISH scores. It also includes statistical information about the association between the two variables, such as the correlation result. The marginal = FALSE option removes the marginal distribution plots to keep the visualization simpler."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#significant-test-of-association-depedence-ggbarstats-methods",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#significant-test-of-association-depedence-ggbarstats-methods",
+    "title": "Hands-on_Ex04",
+    "section": "10.3.9 Significant Test of Association (Depedence) : ggbarstats() methods",
+    "text": "10.3.9 Significant Test of Association (Depedence) : ggbarstats() methods\n\nexam1 &lt;- exam %&gt;% \n  mutate(MATHS_bins = cut(\n    MATHS, \n    breaks = c(0, 60, 75, 85, 100)\n  ))\n\nExplanation\nThis code creates a new dataset named exam1 by adding a categorical variable called MATHS_bins. The MATHS scores are grouped into four score ranges: 0–60, 60–75, 75–85, and 85–100. This makes it easier to compare students by Maths score bands in later analysis.\n\nggbarstats(exam1, \n           x = MATHS_bins, \n           y = GENDER)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#installing-and-loading-the-packages",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#installing-and-loading-the-packages",
+    "title": "Hands-on_Ex04",
+    "section": "11.2.1 Installing and loading the packages",
+    "text": "11.2.1 Installing and loading the packages\n\npacman::p_load(plotly, crosstalk, DT, \n               ggdist, ggridges, colorspace,\n               gganimate, tidyverse)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualizing-the-uncertainty-of-point-estimates-ggplot2-methods",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualizing-the-uncertainty-of-point-estimates-ggplot2-methods",
+    "title": "Hands-on_Ex04",
+    "section": "11.3 Visualizing the uncertainty of point estimates: ggplot2 methods",
+    "text": "11.3 Visualizing the uncertainty of point estimates: ggplot2 methods\n\nmy_sum &lt;- exam %&gt;%\n  group_by(RACE) %&gt;%\n  summarise(\n    n = n(),\n    mean = mean(MATHS),\n    sd = sd(MATHS)\n  ) %&gt;%\n  mutate(se = sd / sqrt(n - 1))\n\nExplanation\nThis code computes summary statistics of MATHS scores for each race group. It calculates the sample size (n), mean, and standard deviation, and then derives the standard error (se) to measure the variability of the sample mean within each group.\n\nCodeTable\n\n\n\nknitr::kable(head(my_sum), format = 'html')\n\n\n\n\n\n\n\n\nRACE\nn\nmean\nsd\nse\n\n\n\n\nChinese\n193\n76.50777\n15.69040\n1.132357\n\n\nIndian\n12\n60.66667\n23.35237\n7.041005\n\n\nMalay\n108\n57.44444\n21.13478\n2.043177\n\n\nOthers\n9\n69.66667\n10.72381\n3.791438\n\n\n\n\n\n\n\n\nExplanation\nThis code displays the first few rows of the summary table my_sum as an HTML table. The Code tab shows the R code without running it, while the Table tab renders and displays the formatted table output."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#plotting-standard-error-bars-of-point-estimates",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#plotting-standard-error-bars-of-point-estimates",
+    "title": "Hands-on_Ex04",
+    "section": "11.3.1 Plotting standard error bars of point estimates",
+    "text": "11.3.1 Plotting standard error bars of point estimates\n\nggplot(my_sum) +\n  geom_errorbar(\n    aes(x = RACE, \n        ymin = mean - se, \n        ymax = mean + se), \n    width = 0.2, \n    colour = \"black\", \n    alpha = 0.9, \n    linewidth = 0.5\n  ) +\n  geom_point(\n    aes(x = RACE, \n        y = mean), \n    stat = \"identity\", \n    color = \"red\",\n    size = 1.5,\n    alpha = 1\n  ) +\n  ggtitle(\"Standard Error of Mean Maths Score by Race\")\n\n\n\n\n\n\n\n\nExplanation\nThis code creates an error bar plot showing the mean MATHS score for each race group. The red points represent the group mean, while the error bars show the standard error around each mean. This helps compare average Maths performance and uncertainty across race groups."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#plotting-confidence-interval-of-point-estimates",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#plotting-confidence-interval-of-point-estimates",
+    "title": "Hands-on_Ex04",
+    "section": "11.3.2 Plotting confidence interval of point estimates",
+    "text": "11.3.2 Plotting confidence interval of point estimates\n\nCodeGraph\n\n\n\nggplot(my_sum) +\n  geom_errorbar(\n    aes(x = reorder(RACE, -mean), \n        ymin = mean - 1.96 * se, \n        ymax = mean + 1.96 * se), \n    width = 0.2, \n    colour = \"black\", \n    alpha = 0.9, \n    linewidth = 0.5\n  ) +\n  geom_point(\n    aes(x = reorder(RACE, -mean), \n        y = mean), \n    stat = \"identity\", \n    color = \"red\",\n    size = 1.5,\n    alpha = 1\n  ) +\n  labs(\n    x = \"Race\",\n    y = \"Mean Maths Score\",\n    title = \"95% Confidence Interval of Mean Maths Score by Race\"\n  )\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nExplanation\nThis code creates an error bar plot showing the 95% confidence interval of the mean MATHS score for each race group. The race groups are reordered by their mean Maths score, and the red points represent the group means. The error bars show the uncertainty range around each mean."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualizing-the-uncertainty-of-point-estimates-with-interactive-error-bars",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualizing-the-uncertainty-of-point-estimates-with-interactive-error-bars",
+    "title": "Hands-on_Ex04",
+    "section": "11.3.3 Visualizing the uncertainty of point estimates with interactive error bars",
+    "text": "11.3.3 Visualizing the uncertainty of point estimates with interactive error bars\n\nCodeGraph and Table\n\n\n\nshared_df &lt;- SharedData$new(my_sum)\n\nbscols(\n  widths = c(4, 8),\n  \n  ggplotly(\n    ggplot(shared_df) +\n      geom_errorbar(\n        aes(\n          x = reorder(RACE, -mean),\n          ymin = mean - 2.58 * se,\n          ymax = mean + 2.58 * se\n        ),\n        width = 0.2,\n        colour = \"black\",\n        alpha = 0.9,\n        linewidth = 0.5\n      ) +\n      geom_point(\n        aes(\n          x = RACE,\n          y = mean,\n          text = paste(\n            \"Race:\", RACE,\n            \"&lt;br&gt;N:\", n,\n            \"&lt;br&gt;Avg. Scores:\", round(mean, 2),\n            \"&lt;br&gt;99% CI: [\",\n            round(mean - 2.58 * se, 2), \",\",\n            round(mean + 2.58 * se, 2), \"]\"\n          )\n        ),\n        stat = \"identity\",\n        color = \"red\",\n        size = 1.5,\n        alpha = 1\n      ) +\n      xlab(\"Race\") +\n      ylab(\"Average Scores\") +\n      theme_minimal() +\n      theme(\n        axis.text.x = element_text(\n          angle = 45,\n          vjust = 0.5,\n          hjust = 1\n        )\n      ) +\n      ggtitle(\"99% Confidence Interval of Average Maths Scores by Race\"),\n    tooltip = \"text\"\n  ),\n  \n  DT::datatable(\n    shared_df,\n    rownames = FALSE,\n    class = \"compact\",\n    width = \"100%\",\n    options = list(\n      pageLength = 10,\n      scrollX = TRUE\n    ),\n    colnames = c(\n      \"Race\",\n      \"No. of Pupils\",\n      \"Avg Scores\",\n      \"Std Dev\",\n      \"Std Error\"\n    )\n  ) %&gt;%\n    formatRound(\n      columns = c(\"mean\", \"sd\", \"se\"),\n      digits = 2\n    )\n)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a linked interactive visualization and table using SharedData. The plot shows the 99% confidence interval of average MATHS scores by race, with red points representing group means and error bars showing the confidence intervals. The table displays the corresponding summary statistics, including sample size, average score, standard deviation, and standard error."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualizing-the-uncertainty-of-point-estimates-ggdist-methods",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualizing-the-uncertainty-of-point-estimates-ggdist-methods",
+    "title": "Hands-on_Ex04",
+    "section": "11.4.1 Visualizing the uncertainty of point estimates: ggdist methods",
+    "text": "11.4.1 Visualizing the uncertainty of point estimates: ggdist methods\n\nexam %&gt;%\n  ggplot(aes(x = RACE, \n             y = MATHS)) +\n  stat_pointinterval() +\n  labs(\n    title = \"Visualising Confidence Intervals of Mean Maths Score\",\n    subtitle = \"Mean Point + Multiple-Interval Plot\",\n    x = \"Race\",\n    y = \"Maths Score\"\n  )\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a point-interval plot to show the mean MATHS score for each race group. The point represents the estimated mean, while the interval shows the uncertainty around the mean. This makes it easier to compare average Maths performance across race groups.\n\nexam %&gt;%\n  ggplot(aes(x = RACE, \n             y = MATHS)) +\n  stat_pointinterval(\n    .width = 0.95,\n    .point = median,\n    .interval = qi\n  ) +\n  labs(\n    title = \"Visualising Confidence Intervals of Median Maths Score\",\n    subtitle = \"Median Point + 95% Quantile Interval Plot\",\n    x = \"Race\",\n    y = \"Maths Score\"\n  )\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a point-interval plot showing the median MATHS score for each race group. The point represents the median score, while the 95% quantile interval shows the uncertainty range around the median. This helps compare the central tendency of Maths scores across race groups."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualizing-the-uncertainty-of-point-estimates-ggdist-methods-1",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualizing-the-uncertainty-of-point-estimates-ggdist-methods-1",
+    "title": "Hands-on_Ex04",
+    "section": "11.4.2 Visualizing the uncertainty of point estimates: ggdist methods",
+    "text": "11.4.2 Visualizing the uncertainty of point estimates: ggdist methods\n\nexam %&gt;%\n  ggplot(aes(x = RACE, \n             y = MATHS)) +\n  stat_pointinterval(\n    show.legend = FALSE\n  ) +   \n  labs(\n    title = \"Visualising Confidence Intervals of Mean Maths Score\",\n    subtitle = \"Mean Point + Multiple-Interval Plot\",\n    x = \"Race\",\n    y = \"Maths Score\"\n  )\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a point-interval plot showing the mean MATHS score for each race group. The point represents the group mean, while the interval shows the uncertainty around the mean. The legend is hidden to keep the chart cleaner and easier to read."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualizing-the-uncertainty-of-point-estimates-ggdist-methods-2",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualizing-the-uncertainty-of-point-estimates-ggdist-methods-2",
+    "title": "Hands-on_Ex04",
+    "section": "11.4.3 Visualizing the uncertainty of point estimates: ggdist methods",
+    "text": "11.4.3 Visualizing the uncertainty of point estimates: ggdist methods\n\nexam %&gt;%\n  ggplot(aes(x = RACE, \n             y = MATHS)) +\n  stat_gradientinterval(\n    fill = \"skyblue\",\n    show.legend = TRUE\n  ) +\n  labs(\n    title = \"Visualising Confidence Intervals of Mean Maths Score\",\n    subtitle = \"Gradient + Interval Plot\",\n    x = \"Race\",\n    y = \"Maths Score\"\n  )\n\n\n\n\n\n\n\n\nExplanation\nThis code creates a gradient interval plot to compare MATHS scores across race groups. The gradient shape represents the distribution and uncertainty of the scores, while the interval highlights the estimated range around the mean. The legend is shown to help interpret the uncertainty levels in the gradient."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualising-uncertainty-with-hypothetical-outcome-plots-hops",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualising-uncertainty-with-hypothetical-outcome-plots-hops",
+    "title": "Hands-on_Ex04",
+    "section": "11.5 Visualising Uncertainty with Hypothetical Outcome Plots (HOPs)",
+    "text": "11.5 Visualising Uncertainty with Hypothetical Outcome Plots (HOPs)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#installing-ungeviz-package",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#installing-ungeviz-package",
+    "title": "Hands-on_Ex04",
+    "section": "11.5.1 Installing ungeviz package",
+    "text": "11.5.1 Installing ungeviz package\n\ndevtools::install_github(\"wilkelab/ungeviz\")"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#launch-the-application-in-r",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#launch-the-application-in-r",
+    "title": "Hands-on_Ex04",
+    "section": "11.5.2 Launch the application in R",
+    "text": "11.5.2 Launch the application in R\n\nlibrary(ungeviz)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualising-distribution",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualising-distribution",
+    "title": "Hands-on_Ex04",
+    "section": "",
+    "text": "pacman::p_load(ggdist, ggridges, ggthemes,\n               colorspace, tidyverse)\n\n\nlibrary(readr)\nexam &lt;- readr::read_csv(\"Exam_data.csv\")"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visual-statistical-analysis",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visual-statistical-analysis",
+    "title": "Hands-on_Ex04",
+    "section": "10 Visual Statistical Analysis",
+    "text": "10 Visual Statistical Analysis"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualising-uncertainty",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualising-uncertainty",
+    "title": "Hands-on_Ex04",
+    "section": "11 Visualising Uncertainty",
+    "text": "11 Visualising Uncertainty"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualising-uncertainty-with-hypothetical-outcome-plots-hops-1",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualising-uncertainty-with-hypothetical-outcome-plots-hops-1",
+    "title": "Hands-on_Ex04",
+    "section": "11.5.3 Visualising Uncertainty with Hypothetical Outcome Plots (HOPs)",
+    "text": "11.5.3 Visualising Uncertainty with Hypothetical Outcome Plots (HOPs)\n\nggplot(data = exam, \n       aes(x = factor(RACE), \n           y = MATHS)) +\n  geom_point(\n    position = position_jitter(\n      height = 0.3, \n      width = 0.05\n    ), \n    size = 0.4, \n    color = \"#0072B2\", \n    alpha = 0.5\n  ) +\n  geom_hpline(\n    data = sampler(25, group = RACE), \n    height = 0.6, \n    color = \"#D55E00\"\n  ) +\n  theme_bw() + \n  transition_states(.draw, 1, 3)\n\n\n\n\n\n\n\n\nExplanation\nThis code creates an animated visualization of MATHS scores across race groups. The jittered points represent individual observations, while the horizontal lines (geom_hpline) show sampled summary statistics for each group. The transition_states(.draw, 1, 3) function animates the drawing process across multiple states, helping illustrate sampling variability over time."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#funnel-plots-for-fair-comparisons",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#funnel-plots-for-fair-comparisons",
+    "title": "Hands-on_Ex04",
+    "section": "8 Funnel Plots for Fair Comparisons",
+    "text": "8 Funnel Plots for Fair Comparisons"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#installing-and-launching-r-packages-1",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#installing-and-launching-r-packages-1",
+    "title": "Hands-on_Ex04",
+    "section": "8.2 Installing and Launching R Packages",
+    "text": "8.2 Installing and Launching R Packages\n\npacman::p_load(tidyverse, FunnelPlotR, plotly, knitr)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#importing-data",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#importing-data",
+    "title": "Hands-on_Ex04",
+    "section": "8.3 Importing Data",
+    "text": "8.3 Importing Data\n\ncovid19 &lt;- read_csv(\"COVID-19_DKI_Jakarta.csv\") %&gt;%\n  mutate_if(is.character, as.factor)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#funnelplotr-methods-the-basic-plot",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#funnelplotr-methods-the-basic-plot",
+    "title": "Hands-on_Ex04",
+    "section": "8.4.1 FunnelPlotR methods: The basic plot",
+    "text": "8.4.1 FunnelPlotR methods: The basic plot\n\nfunnel_plot(\n  .data = covid19,\n  numerator = Positive,\n  denominator = Death,\n  group = `Sub-district`\n)\n\n\n\n\n\n\n\n\nA funnel plot object with 267 points of which 0 are outliers. \nPlot is adjusted for overdispersion. \n\n\nExplanation\nThis code creates a funnel plot using the covid19 dataset. It compares the number of positive cases against deaths across different sub-districts. The plot helps identify groups that may fall outside the expected range and show unusually high or low patterns."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#funnelplotr-methods-makeover-1",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#funnelplotr-methods-makeover-1",
+    "title": "Hands-on_Ex04",
+    "section": "8.4.2 FunnelPlotR methods: Makeover 1",
+    "text": "8.4.2 FunnelPlotR methods: Makeover 1\n\nfunnel_plot(\n  .data = covid19,\n  numerator = Death,\n  denominator = Positive,\n  group = `Sub-district`,\n  data_type = \"PR\",\n  xrange = c(0, 6500),\n  yrange = c(0, 0.05)\n)\n\n\n\n\n\n\n\n\nA funnel plot object with 267 points of which 7 are outliers. \nPlot is adjusted for overdispersion. \n\n\nExplanation\nThis code creates a funnel plot to examine the death-to-positive-case rate across different sub-districts. The data_type = \"PR\" setting treats the result as a proportion rate, while xrange and yrange control the visible range of the x-axis and y-axis. This helps make the plot easier to read and compare across sub-districts."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#funnelplotr-methods-makeover-2",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#funnelplotr-methods-makeover-2",
+    "title": "Hands-on_Ex04",
+    "section": "8.4.3 FunnelPlotR methods: Makeover 2",
+    "text": "8.4.3 FunnelPlotR methods: Makeover 2\n\nfunnel_plot(\n  .data = covid19,\n  numerator = Death,\n  denominator = Positive,\n  group = `Sub-district`,\n  data_type = \"PR\",   \n  xrange = c(0, 6500),  \n  yrange = c(0, 0.05),\n  label = NA,\n  title = \"Cumulative COVID-19 Fatality Rate by Cumulative Total Number of COVID-19 Positive Cases\",           \n  x_label = \"Cumulative COVID-19 Positive Cases\",\n  y_label = \"Cumulative Fatality Rate\"\n)\n\n\n\n\n\n\n\n\nA funnel plot object with 267 points of which 7 are outliers. \nPlot is adjusted for overdispersion. \n\n\nExplanation\nThis code creates a funnel plot showing the cumulative COVID-19 fatality rate across sub-districts. The fatality rate is calculated as deaths divided by positive cases, while the x-axis shows the cumulative number of positive cases. The customized title and axis labels make the chart easier to interpret."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#computing-the-basic-derived-fields",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#computing-the-basic-derived-fields",
+    "title": "Hands-on_Ex04",
+    "section": "8.5.1 Computing the basic derived fields",
+    "text": "8.5.1 Computing the basic derived fields\n\ndf &lt;- covid19 %&gt;%\n  mutate(rate = Death / Positive) %&gt;%\n  mutate(rate.se = sqrt((rate*(1-rate)) / (Positive))) %&gt;%\n  filter(rate &gt; 0)\nfit.mean &lt;- weighted.mean(df$rate, 1/df$rate.se^2)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#calculate-lower-and-upper-limits-for-95-and-99.9-ci",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#calculate-lower-and-upper-limits-for-95-and-99.9-ci",
+    "title": "Hands-on_Ex04",
+    "section": "8.5.2 Calculate lower and upper limits for 95% and 99.9% CI",
+    "text": "8.5.2 Calculate lower and upper limits for 95% and 99.9% CI\n\nnumber.seq &lt;- seq(1, max(df$Positive), 1)\nnumber.ll95 &lt;- fit.mean - 1.96 * sqrt((fit.mean*(1-fit.mean)) / (number.seq)) \nnumber.ul95 &lt;- fit.mean + 1.96 * sqrt((fit.mean*(1-fit.mean)) / (number.seq)) \nnumber.ll999 &lt;- fit.mean - 3.29 * sqrt((fit.mean*(1-fit.mean)) / (number.seq)) \nnumber.ul999 &lt;- fit.mean + 3.29 * sqrt((fit.mean*(1-fit.mean)) / (number.seq)) \ndfCI &lt;- data.frame(number.ll95, number.ul95, number.ll999, \n                   number.ul999, number.seq, fit.mean)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#plotting-a-static-funnel-plot",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#plotting-a-static-funnel-plot",
+    "title": "Hands-on_Ex04",
+    "section": "8.5.3 Plotting a static funnel plot",
+    "text": "8.5.3 Plotting a static funnel plot\n\np &lt;- ggplot(df, aes(x = Positive, y = rate)) +\n  geom_point(aes(label=`Sub-district`), \n             alpha=0.4) +\n  geom_line(data = dfCI, \n            aes(x = number.seq, \n                y = number.ll95), \n            size = 0.4, \n            colour = \"grey40\", \n            linetype = \"dashed\") +\n  geom_line(data = dfCI, \n            aes(x = number.seq, \n                y = number.ul95), \n            size = 0.4, \n            colour = \"grey40\", \n            linetype = \"dashed\") +\n  geom_line(data = dfCI, \n            aes(x = number.seq, \n                y = number.ll999), \n            size = 0.4, \n            colour = \"grey40\") +\n  geom_line(data = dfCI, \n            aes(x = number.seq, \n                y = number.ul999), \n            size = 0.4, \n            colour = \"grey40\") +\n  geom_hline(data = dfCI, \n             aes(yintercept = fit.mean), \n             size = 0.4, \n             colour = \"grey40\") +\n  coord_cartesian(ylim=c(0,0.05)) +\n  annotate(\"text\", x = 1, y = -0.13, label = \"95%\", size = 3, colour = \"grey40\") + \n  annotate(\"text\", x = 4.5, y = -0.18, label = \"99%\", size = 3, colour = \"grey40\") + \n  ggtitle(\"Cumulative Fatality Rate by Cumulative Number of COVID-19 Cases\") +\n  xlab(\"Cumulative Number of COVID-19 Cases\") + \n  ylab(\"Cumulative Fatality Rate\") +\n  theme_light() +\n  theme(plot.title = element_text(size=12),\n        legend.position = c(0.91,0.85), \n        legend.title = element_text(size=7),\n        legend.text = element_text(size=7),\n        legend.background = element_rect(colour = \"grey60\", linetype = \"dotted\"),\n        legend.key.height = unit(0.3, \"cm\"))\np"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#interactive-funnel-plot-plotly-ggplot2",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#interactive-funnel-plot-plotly-ggplot2",
+    "title": "Hands-on_Ex04",
+    "section": "8.5.4 Interactive Funnel Plot: plotly + ggplot2",
+    "text": "8.5.4 Interactive Funnel Plot: plotly + ggplot2\n\nfp_ggplotly &lt;- ggplotly(\n  p,\n  tooltip = c(\"label\", \"x\", \"y\")\n)\n\nfp_ggplotly\n\n\n\n\n\nExplanation\nThis code converts the existing ggplot object p into an interactive Plotly graph. The tooltip is customized to display the label, x-value, and y-value when users hover over points in the plot."
   }
 ]
