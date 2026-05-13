@@ -922,5 +922,523 @@
     "title": "Hands-on_Ex04",
     "section": "8.5.4 Interactive Funnel Plot: plotly + ggplot2",
     "text": "8.5.4 Interactive Funnel Plot: plotly + ggplot2\n\nfp_ggplotly &lt;- ggplotly(\n  p,\n  tooltip = c(\"label\", \"x\", \"y\")\n)\n\nfp_ggplotly\n\n\n\n\n\nExplanation\nThis code converts the existing ggplot object p into an interactive Plotly graph. The tooltip is customized to display the label, x-value, and y-value when users hover over points in the plot."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#installing-and-launching-r-packages",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#installing-and-launching-r-packages",
+    "title": "Hands-on_Ex05",
+    "section": "13.2 Installing and launching R packages",
+    "text": "13.2 Installing and launching R packages\n\npacman::p_load(plotly, ggtern, tidyverse)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#data-preparation",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#data-preparation",
+    "title": "Hands-on_Ex05",
+    "section": "13.3 Data Preparation",
+    "text": "13.3 Data Preparation\n\n#Reading the data into R environment\npop_data &lt;- read_csv(\"respopagsex2000to2018_tidy.csv\")"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#preparing-the-data",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#preparing-the-data",
+    "title": "Hands-on_Ex05",
+    "section": "13.3.3 Preparing the Data",
+    "text": "13.3.3 Preparing the Data\n\nagpop_mutated &lt;- pop_data %&gt;%\n  mutate(Year = as.character(Year)) %&gt;%\n  spread(AG, Population) %&gt;%\n  mutate(YOUNG = rowSums(.[4:8])) %&gt;%\n  mutate(ACTIVE = rowSums(.[9:16])) %&gt;%\n  mutate(OLD = rowSums(.[17:21])) %&gt;%\n  mutate(TOTAL = rowSums(.[22:24])) %&gt;%\n  filter(Year == 2018) %&gt;%\n  filter(TOTAL &gt; 0)\n\nExplanation:\nThis code reshapes the population data from long format to wide format by age group.\nIt then calculates the young, active, old, and total population groups for 2018, keeping only areas with valid population values."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#plotting-ternary-diagram-with-r",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#plotting-ternary-diagram-with-r",
+    "title": "Hands-on_Ex05",
+    "section": "13.4 Plotting Ternary Diagram with R",
+    "text": "13.4 Plotting Ternary Diagram with R"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#plotting-a-static-ternary-diagram",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#plotting-a-static-ternary-diagram",
+    "title": "Hands-on_Ex05",
+    "section": "13.4.1 4.1 Plotting a static ternary diagram",
+    "text": "13.4.1 4.1 Plotting a static ternary diagram\n\nggtern(data = agpop_mutated, aes(x = YOUNG, y = ACTIVE, z = OLD)) +\n  geom_point()\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a ternary plot showing the proportions of young, active, and old populations. Each point represents one area’s population structure across the three age groups.\n\n# Reusable function for axis formatting\naxis &lt;- function(txt) {\n  list(\n    title = txt,\n    tickformat = \".0%\",\n    tickfont = list(size = 10),\n    titlefont = list(size = 13)\n  )\n}\n\nternaryAxes &lt;- list(\n  aaxis = axis(\"Young Population\"),\n  baxis = axis(\"Active Population\"),\n  caxis = axis(\"Old Population\")\n)\n\nplot_ly(\n  agpop_mutated,\n  a = ~YOUNG / TOTAL,\n  b = ~ACTIVE / TOTAL,\n  c = ~OLD / TOTAL,\n  type = \"scatterternary\",\n  mode = \"markers\",\n  marker = list(\n    size = 8,\n    color = \"#2E86DE\",\n    opacity = 0.65,\n    line = list(color = \"white\", width = 1)\n  ),\n  text = ~paste(\n    \"Young:\", round(YOUNG / TOTAL * 100, 1), \"%\",\n    \"&lt;br&gt;Active:\", round(ACTIVE / TOTAL * 100, 1), \"%\",\n    \"&lt;br&gt;Old:\", round(OLD / TOTAL * 100, 1), \"%\"\n  ),\n  hoverinfo = \"text\"\n) %&gt;%\n  layout(\n    title = list(\n      text = \"Interactive Population Structure by Age Group\",\n      y = 0.95\n    ),\n    margin = list(t = 90, l = 40, r = 40, b = 40),\n    annotations = list(\n      list(\n        text = \"Population Composition\",\n        x = 0.1, y = 0.93,\n        ax = 0, ay = 0,\n        xref = \"paper\", yref = \"paper\",\n        align = \"center\",\n        font = list(family = \"serif\", size = 14, color = \"white\"),\n        bgcolor = \"#2C3E50\",\n        bordercolor = \"black\",\n        borderwidth = 2\n      )\n    ),\n    ternary = ternaryAxes\n  )\n\n\n\n\n\nExplanation:\nThe error happened because ternaryAxes was used before it was created.\nThis version defines the axis formatting first, so the ternary plot can render correctly."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#plotting-an-interative-ternary-diagram",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#plotting-an-interative-ternary-diagram",
+    "title": "Hands-on_Ex05",
+    "section": "13.4.2 Plotting an interative ternary diagram",
+    "text": "13.4.2 Plotting an interative ternary diagram\n\n# Reusable function for creating annotation object\nlabel &lt;- function(txt) {\n  list(\n    text = txt,\n    x = 0.1, y = 1,\n    ax = 0, ay = 0,\n    xref = \"paper\", yref = \"paper\",\n    align = \"center\",\n    font = list(family = \"serif\", size = 15, color = \"white\"),\n    bgcolor = \"#2C3E50\",\n    bordercolor = \"black\",\n    borderwidth = 2\n  )\n}\n\n# Reusable function for axis formatting\naxis &lt;- function(txt) {\n  list(\n    title = txt,\n    tickformat = \".0%\",\n    tickfont = list(size = 10),\n    titlefont = list(size = 13)\n  )\n}\n\nternaryAxes &lt;- list(\n  aaxis = axis(\"Young Population\"),\n  baxis = axis(\"Active Population\"),\n  caxis = axis(\"Old Population\")\n)\n\n# Create a more visually engaging interactive ternary plot\nplot_ly(\n  agpop_mutated,\n  a = ~YOUNG / TOTAL,\n  b = ~ACTIVE / TOTAL,\n  c = ~OLD / TOTAL,\n  type = \"scatterternary\",\n  mode = \"markers\",\n  marker = list(\n    size = 8,\n    color = \"#2E86DE\",\n    opacity = 0.65,\n    line = list(color = \"white\", width = 1)\n  ),\n  text = ~paste(\n    \"Young:\", round(YOUNG / TOTAL * 100, 1), \"%\",\n    \"&lt;br&gt;Active:\", round(ACTIVE / TOTAL * 100, 1), \"%\",\n    \"&lt;br&gt;Old:\", round(OLD / TOTAL * 100, 1), \"%\"\n  ),\n  hoverinfo = \"text\"\n) %&gt;%\n  layout(\n    title = \"Interactive Population Structure by Age Group\",\n    annotations = label(\"Population Composition\"),\n    ternary = ternaryAxes\n  )\n\n\n\n\n\nExplanation:\nThis code creates a more interactive ternary plot by showing population proportions instead of raw counts.\nIt also adds customized marker styling and hover labels, making the visualization clearer and more engaging."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#visual-correlation-analysis",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#visual-correlation-analysis",
+    "title": "Hands-on_Ex05",
+    "section": "6 Visual Correlation Analysis",
+    "text": "6 Visual Correlation Analysis"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#installing-and-launching-r-packages-1",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#installing-and-launching-r-packages-1",
+    "title": "Hands-on_Ex05",
+    "section": "6.2 Installing and Launching R Packages",
+    "text": "6.2 Installing and Launching R Packages\n\npacman::p_load(corrplot, ggstatsplot, tidyverse)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#importing-and-preparing-the-data-set",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#importing-and-preparing-the-data-set",
+    "title": "Hands-on_Ex05",
+    "section": "6.3 Importing and Preparing The Data Set",
+    "text": "6.3 Importing and Preparing The Data Set"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#importing-data",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#importing-data",
+    "title": "Hands-on_Ex05",
+    "section": "6.3.1 Importing Data",
+    "text": "6.3.1 Importing Data\n\nwine &lt;- read_csv(\"wine_quality.csv\")"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#building-correlation-matrix-pairs-method",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#building-correlation-matrix-pairs-method",
+    "title": "Hands-on_Ex05",
+    "section": "6.4 Building Correlation Matrix: pairs() method",
+    "text": "6.4 Building Correlation Matrix: pairs() method"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#building-a-basic-correlation-matrix",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#building-a-basic-correlation-matrix",
+    "title": "Hands-on_Ex05",
+    "section": "6.4.1 Building a basic correlation matrix",
+    "text": "6.4.1 Building a basic correlation matrix\n\npairs(wine[, 1:11])\n\n\n\n\n\n\n\n\nExplanation:\nThis code generates a scatterplot matrix for the first 11 variables in the wine dataset.\nIt helps visualize pairwise relationships and detect correlations or patterns across variables.\n\npairs(wine[,2:12])"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#drawing-the-lower-corner",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#drawing-the-lower-corner",
+    "title": "Hands-on_Ex05",
+    "section": "6.4.2 Drawing the lower corner",
+    "text": "6.4.2 Drawing the lower corner\n\npairs(wine[, 2:12], upper.panel = NULL)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a lower-triangle scatterplot matrix for variables 2 to 12 in the wine dataset.\nRemoving the upper panel makes the plot cleaner and easier to read.\n\npairs(wine[, 2:12], lower.panel = NULL)\n\n\n\n\n\n\n\n\nExplanation:\nThis code displays only the upper-triangle scatterplot matrix for variables 2 to 12.\nHiding the lower panel reduces redundancy and improves visual clarity."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#including-with-correlation-coefficients--change-color-hover-etc",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#including-with-correlation-coefficients--change-color-hover-etc",
+    "title": "Hands-on_Ex05",
+    "section": "6.4.3 Including with correlation coefficients- change color, hover, etc",
+    "text": "6.4.3 Including with correlation coefficients- change color, hover, etc\n\npanel.cor &lt;- function(x, y, digits = 2, prefix = \"\", cex.cor, ...) {\n  usr &lt;- par(\"usr\")\n  on.exit(par(usr))\n  par(usr = c(0, 1, 0, 1))\n  \n  r &lt;- cor(x, y, use = \"complete.obs\")\n  txt &lt;- format(c(r, 0.123456789), digits = digits)[1]\n  txt &lt;- paste0(prefix, txt)\n  \n  if (missing(cex.cor)) {\n    cex.cor &lt;- 0.8 / strwidth(txt)\n  }\n  \n  text(\n    0.5, 0.5, txt,\n    cex = cex.cor * (1 + abs(r)) / 2,\n    col = \"#1F4E79\",\n    font = 2\n  )\n}\n\npanel.smooth2 &lt;- function(x, y, ...) {\n  points(x, y, pch = 19, col = rgb(0.2, 0.4, 0.7, 0.35), cex = 0.6)\n  lines(lowess(x, y), col = \"#D95F02\", lwd = 2)\n}\n\npairs(\n  wine[, 2:12],\n  lower.panel = panel.smooth2,\n  upper.panel = panel.cor,\n  diag.panel = NULL,\n  main = \"Scatterplot Matrix and Correlation of Wine Variables\",\n  pch = 19\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis improved scatterplot matrix shows smoothed trends in the lower panel and correlation values in the upper panel.\nThe transparent points and colored trend lines make relationships between wine variables easier to interpret."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#including-with-correlation-coefficients--change-color-hover-adding",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#including-with-correlation-coefficients--change-color-hover-adding",
+    "title": "Hands-on_Ex05",
+    "section": "6.4.3 Including with correlation coefficients- change color, hover, adding",
+    "text": "6.4.3 Including with correlation coefficients- change color, hover, adding\n\npanel.cor &lt;- function(x, y, digits = 2, prefix = \"\", cex.cor, ...) {\n  usr &lt;- par(\"usr\")\n  on.exit(par(usr))\n  par(usr = c(0, 1, 0, 1))\n  \n  r &lt;- cor(x, y, use = \"complete.obs\")\n  txt &lt;- format(c(r, 0.123456789), digits = digits)[1]\n  txt &lt;- paste0(prefix, txt)\n  \n  if (missing(cex.cor)) {\n    cex.cor &lt;- 0.8 / strwidth(txt)\n  }\n  \n  text(\n    0.5, 0.5, txt,\n    cex = cex.cor * (1 + abs(r)) / 2,\n    col = \"#1F4E79\",\n    font = 2\n  )\n}\n\npanel.smooth2 &lt;- function(x, y, ...) {\n  points(x, y, pch = 19, col = rgb(0.2, 0.4, 0.7, 0.35), cex = 0.6)\n  lines(lowess(x, y), col = \"#D95F02\", lwd = 2)\n}\n\npairs(\n  wine[, 2:12],\n  lower.panel = panel.smooth2,\n  upper.panel = panel.cor,\n  diag.panel = NULL,\n  main = \"Scatterplot Matrix and Correlation of Wine Variables\",\n  pch = 19\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis improved scatterplot matrix shows smoothed trends in the lower panel and correlation values in the upper panel.\nThe transparent points and colored trend lines make relationships between wine variables easier to interpret."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#visualising-correlation-matrix-ggcormat---changing-color",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#visualising-correlation-matrix-ggcormat---changing-color",
+    "title": "Hands-on_Ex05",
+    "section": "6.5 Visualising Correlation Matrix: ggcormat() - changing color",
+    "text": "6.5 Visualising Correlation Matrix: ggcormat() - changing color"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#the-basic-plot",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#the-basic-plot",
+    "title": "Hands-on_Ex05",
+    "section": "6.5.1 The basic plot",
+    "text": "6.5.1 The basic plot\n\nggstatsplot::ggcorrmat(\n  data = wine,\n  cor.vars = 1:11,\n  colors = c(\"red\", \"white\", \"green\")\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code customizes the correlation matrix colors to a red–white–green gradient.\nRed indicates negative correlation, green indicates positive correlation, and white represents near zero correlation.\n\nggstatsplot::ggcorrmat(\n  data = wine, \n  cor.vars = 1:11,\n  colors = c(\"red\", \"white\", \"green\"),\n  ggcorrplot.args = list(\n    outline.color = \"black\", \n    hc.order = TRUE,\n    tl.cex = 3\n  ),\n  title = \"Correlogram for wine dataset\",\n  subtitle = \"Four pairs are not significant at p &lt; 0.05\"\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code updates the correlogram to use a red–white–green color scheme.\nIt keeps the clustering and styling options while making positive and negative correlations visually distinct."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#building-multiple-plots",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#building-multiple-plots",
+    "title": "Hands-on_Ex05",
+    "section": "6.6 Building multiple plots",
+    "text": "6.6 Building multiple plots\n\ngrouped_ggcorrmat(\n  data = wine,\n  cor.vars = 1:11,\n  cor.vars.names = c(\n    \"FA\", \"VA\", \"CA\", \"RS\", \"Cl\", \"FSO2\",\n    \"TSO2\", \"Den\", \"pH\", \"Sul\", \"Alc\"\n  ),\n  grouping.var = type,\n  matrix.type = \"lower\",\n  type = \"robust\",\n  p.adjust.method = \"holm\",\n  digits = 1,\n  colors = c(\"red\", \"white\", \"green\"),\n  plotgrid.args = list(ncol = 1),\n  ggcorrplot.args = list(\n    outline.color = \"black\",\n    hc.order = TRUE,\n    pch.cex = 10\n  ),\n  annotation.args = list(\n    tag_levels = \"a\",\n    title = \"Correlogram for wine dataset\",\n    subtitle = \"Grouped by wine type\",\n    caption = \"Dataset: UCI Machine Learning Repository\"\n  )\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates grouped correlation matrices by wine type using robust correlation.\nThe red–white–green color scale makes negative, weak, and positive correlations easier to compare across groups."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#visualising-correlation-matrix-using-corrplot-package",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#visualising-correlation-matrix-using-corrplot-package",
+    "title": "Hands-on_Ex05",
+    "section": "6.7 Visualising Correlation Matrix using corrplot Package",
+    "text": "6.7 Visualising Correlation Matrix using corrplot Package"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#getting-started-with-corrplot",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#getting-started-with-corrplot",
+    "title": "Hands-on_Ex05",
+    "section": "6.7.1 Getting started with corrplot",
+    "text": "6.7.1 Getting started with corrplot\n\nwine.cor &lt;- cor(wine[, 1:11])\n\ncorrplot(wine.cor)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#working-with-visual-geometrics",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#working-with-visual-geometrics",
+    "title": "Hands-on_Ex05",
+    "section": "6.7.2 Working with visual geometrics",
+    "text": "6.7.2 Working with visual geometrics\n\ncorrplot(wine.cor, \n         method = \"ellipse\")\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a correlation plot using ellipses to represent the strength and direction of correlations.\nThe shape and orientation of each ellipse help visualize whether the relationship is positive, negative, weak, or strong."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#working-with-layout",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#working-with-layout",
+    "title": "Hands-on_Ex05",
+    "section": "6.7.3 Working with layout",
+    "text": "6.7.3 Working with layout\n\ncorrplot(\n  wine.cor,\n  method = \"ellipse\",\n  type = \"lower\"\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a correlation plot with ellipses and displays only the lower triangle of the matrix.\nShowing only half of the matrix reduces repetition and makes the plot easier to read.\n\ncorrplot(\n  wine.cor,\n  method = \"ellipse\",\n  type = \"lower\",\n  diag = FALSE,\n  tl.col = \"black\"\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a lower-triangle correlation plot using ellipses and removes the diagonal elements.\nThe variable labels are shown in black to improve readability."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#working-with-mixed-layout",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#working-with-mixed-layout",
+    "title": "Hands-on_Ex05",
+    "section": "6.7.4 Working with mixed layout",
+    "text": "6.7.4 Working with mixed layout\n\ncorrplot.mixed(\n  wine.cor,\n  lower = \"ellipse\",\n  upper = \"number\",\n  tl.pos = \"lt\",\n  diag = \"l\",\n  tl.col = \"black\"\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a mixed correlation plot with ellipses in the lower triangle and correlation numbers in the upper triangle.\nThis combined format makes it easy to compare both the visual pattern and the exact correlation values.\n\ncorrplot.mixed(\n  wine.cor,\n  lower = \"ellipse\",\n  upper = \"number\",\n  tl.pos = \"lt\",\n  diag = \"l\",\n  tl.col = \"black\"\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code produces a mixed correlation plot with ellipses in the lower triangle and numerical correlation values in the upper triangle.\nIt combines visual interpretation and exact values, making the correlation structure easier to understand."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#combining-corrgram-with-the-significant-test",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#combining-corrgram-with-the-significant-test",
+    "title": "Hands-on_Ex05",
+    "section": "6.7.5 Combining corrgram with the significant test",
+    "text": "6.7.5 Combining corrgram with the significant test\n\nwine.sig = cor.mtest(wine.cor, conf.level= .95)\ncorrplot(wine.cor,\n         method = \"number\",\n         type = \"lower\",\n         diag = FALSE,\n         tl.col = \"black\",\n         tl.srt = 45,\n         p.mat = wine.sig$p,\n         sig.level = .05)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#reorder-a-corrgram",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#reorder-a-corrgram",
+    "title": "Hands-on_Ex05",
+    "section": "6.7.6 Reorder a corrgram",
+    "text": "6.7.6 Reorder a corrgram\n\ncorrplot.mixed(\n  wine.cor,\n  lower = \"ellipse\",\n  upper = \"number\",\n  tl.pos = \"lt\",\n  diag = \"l\",\n  order = \"AOE\",\n  tl.col = \"black\"\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a mixed correlation plot with ellipses in the lower triangle and correlation values in the upper triangle.\nThe order = \"AOE\" option rearranges variables based on angular order of eigenvectors, which helps reveal clusters and correlation patterns more clearly."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#reordering-a-correlation-matrix-using-hclust",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#reordering-a-correlation-matrix-using-hclust",
+    "title": "Hands-on_Ex05",
+    "section": "6.7.7 Reordering a correlation matrix using hclust",
+    "text": "6.7.7 Reordering a correlation matrix using hclust\n\ncorrplot(\n  wine.cor,\n  method = \"ellipse\",\n  tl.pos = \"lt\",\n  tl.col = \"black\",\n  order = \"hclust\",\n  hclust.method = \"ward.D\",\n  addrect = 3\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates an ellipse-based correlation plot and reorders the variables using hierarchical clustering.\nThe rectangles highlight three variable clusters, making the correlation structure easier to interpret."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#heatmap-for-visualising-and-analysing-multivariate-data",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#heatmap-for-visualising-and-analysing-multivariate-data",
+    "title": "Hands-on_Ex05",
+    "section": "14 Heatmap for Visualising and Analysing Multivariate Data",
+    "text": "14 Heatmap for Visualising and Analysing Multivariate Data"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#installing-and-launching-r-packages-2",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#installing-and-launching-r-packages-2",
+    "title": "Hands-on_Ex05",
+    "section": "14.2 Installing and Launching R Packages",
+    "text": "14.2 Installing and Launching R Packages\n\npacman::p_load(seriation, dendextend, heatmaply, tidyverse)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#importing-and-preparing-the-data-set-1",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#importing-and-preparing-the-data-set-1",
+    "title": "Hands-on_Ex05",
+    "section": "14.3 Importing and Preparing The Data Set",
+    "text": "14.3 Importing and Preparing The Data Set\n\nwh &lt;- read_csv(\"WHData-2018.csv\")\n\n\n14.3.2 Preparing the data\n\nrow.names(wh) &lt;- wh$Country"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#transforming-the-data-frame-into-a-matrix",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#transforming-the-data-frame-into-a-matrix",
+    "title": "Hands-on_Ex05",
+    "section": "14.3.3 Transforming the data frame into a matrix",
+    "text": "14.3.3 Transforming the data frame into a matrix\n\nwh1 &lt;- dplyr::select(wh, c(3, 7:12))\nwh_matrix &lt;- data.matrix(wh)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#static-heatmap",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#static-heatmap",
+    "title": "Hands-on_Ex05",
+    "section": "14.4 Static Heatmap",
+    "text": "14.4 Static Heatmap"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#heatmap-of-r-stats",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#heatmap-of-r-stats",
+    "title": "Hands-on_Ex05",
+    "section": "14.4.1 heatmap() of R Stats",
+    "text": "14.4.1 heatmap() of R Stats\n\nwh_heatmap &lt;- heatmap(\n  wh_matrix,\n  Rowv = NA,\n  Colv = NA\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a heatmap from the wh_matrix data matrix.\nSetting Rowv = NA and Colv = NA removes row and column clustering, so the heatmap keeps the original ordering of the data.\n\nwh_heatmap &lt;- heatmap(wh_matrix)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a heatmap from wh_matrix and applies the default hierarchical clustering to both rows and columns.\nIt helps reveal patterns, similarities, and possible clusters in the data.\n\nwh_heatmap &lt;- heatmap(\n  wh_matrix,\n  scale = \"column\",\n  col = colorRampPalette(c(\"navy\", \"white\", \"firebrick3\"))(50),\n  cexRow = 0.7,\n  cexCol = 0.9,\n  margins = c(10, 5),\n  Colv = NA\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code improves the heatmap by using a stronger blue–white–red color contrast.\nIt also removes column clustering to preserve the original column order and makes the labels easier to read."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#heatmap-of-r-stats---changing-color-more-readable",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#heatmap-of-r-stats---changing-color-more-readable",
+    "title": "Hands-on_Ex05",
+    "section": "14.4.1 heatmap() of R Stats - changing color more readable",
+    "text": "14.4.1 heatmap() of R Stats - changing color more readable\n\nwh_heatmap &lt;- heatmap(\n  wh_matrix,\n  Rowv = NA,\n  Colv = NA\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a heatmap from the wh_matrix data matrix.\nSetting Rowv = NA and Colv = NA removes row and column clustering, so the heatmap keeps the original ordering of the data.\n\nwh_heatmap &lt;- heatmap(wh_matrix)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a heatmap from wh_matrix and applies the default hierarchical clustering to both rows and columns.\nIt helps reveal patterns, similarities, and possible clusters in the data.\n\nwh_heatmap &lt;- heatmap(\n  wh_matrix,\n  scale = \"column\",\n  col = colorRampPalette(c(\"navy\", \"white\", \"firebrick3\"))(50),\n  cexRow = 0.7,\n  cexCol = 0.9,\n  margins = c(10, 5),\n  Colv = NA\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code improves the heatmap by using a stronger blue–white–red color contrast.\nIt also removes column clustering to preserve the original column order and makes the labels easier to read."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#creating-interactive-heatmap",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#creating-interactive-heatmap",
+    "title": "Hands-on_Ex05",
+    "section": "14.5 Creating Interactive Heatmap",
+    "text": "14.5 Creating Interactive Heatmap"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#working-with-heatmaply",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#working-with-heatmaply",
+    "title": "Hands-on_Ex05",
+    "section": "14.5.1 Working with heatmaply",
+    "text": "14.5.1 Working with heatmaply\n\nheatmaply(\n  mtcars,\n  colors = colorRampPalette(c(\"navy\", \"white\", \"firebrick3\"))(100)\n)\n\n\n\n\n\nExplanation:\nThis code creates an interactive heatmap of the mtcars dataset with a stronger blue–white–red color palette.\nThe customized colors make low, medium, and high values easier to distinguish.\n\nheatmaply(\n  wh_matrix[, -c(1, 2, 4, 5)],\n  colors = colorRampPalette(c(\"navy\", \"white\", \"firebrick3\"))(100),\n  fontsize_row = 6,\n  fontsize_col = 6\n)\n\n\n\n\n\nExplanation:\nThis code creates an interactive heatmap with a clearer blue–white–red color scale and smaller row and column labels.\nReducing the font size makes the variable names easier to fit and prevents the text from overlapping."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#data-trasformation",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#data-trasformation",
+    "title": "Hands-on_Ex05",
+    "section": "14.5.2 Data trasformation",
+    "text": "14.5.2 Data trasformation\n\nheatmaply(\n  wh_matrix[, -c(1, 2, 4, 5)],\n  scale = \"column\",\n  colors = colorRampPalette(c(\"navy\", \"white\", \"firebrick3\"))(100),\n  fontsize_row = 8,\n  fontsize_col = 8,\n  main = \"Interactive Heatmap of Selected Variables\"\n)\n\n\n\n\n\nExplanation:\nThis code creates a column-scaled interactive heatmap for the selected variables in wh_matrix.\nThe improved color palette and smaller text make the heatmap easier to read and interpret.\n\nheatmaply(\n  normalize(wh_matrix[, -c(1, 2, 4, 5)]),\n  colors = colorRampPalette(c(\"navy\", \"white\", \"firebrick3\"))(100),\n  fontsize_row = 6,\n  fontsize_col = 6,\n  main = \"Interactive Heatmap of Normalized Variables\"\n)\n\n\n\n\n\nExplanation:\nThis code creates an interactive heatmap after normalizing the selected variables, so they are on a comparable scale.\nThe stronger color palette and smaller labels make patterns across variables easier to see.\n\nheatmaply(\n  percentize(wh_matrix[, -c(1, 2, 4, 5)]),\n  colors = colorRampPalette(c(\"navy\", \"white\", \"firebrick3\"))(100),\n  fontsize_row = 8,\n  fontsize_col = 8,\n  main = \"Interactive Heatmap of Percentized Variables\"\n)\n\n\n\n\n\nExplanation:\nThis code creates an interactive heatmap after converting the selected variables to percentage-based values.\nThe customized color palette and smaller text improve readability and make patterns easier to compare across variables."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#manual-approach",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#manual-approach",
+    "title": "Hands-on_Ex05",
+    "section": "14.5.4 Manual approach",
+    "text": "14.5.4 Manual approach\n\nheatmaply(\n  normalize(wh_matrix[, -c(1, 2, 4, 5)]),\n  dist_method = \"euclidean\",\n  hclust_method = \"ward.D\",\n  colors = colorRampPalette(c(\"navy\", \"white\", \"firebrick3\"))(100),\n  fontsize_row = 6,\n  fontsize_col = 6,\n  main = \"Normalized Heatmap with Hierarchical Clustering\"\n)\n\n\n\n\n\nExplanation:\nThis code creates an interactive heatmap using normalized values, Euclidean distance, and Ward’s clustering method.\nThe customized color scale and smaller labels make the clustered patterns easier to read and compare."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#statistical-approach",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#statistical-approach",
+    "title": "Hands-on_Ex05",
+    "section": "14.5.5 Statistical approach",
+    "text": "14.5.5 Statistical approach\n\nwh_d &lt;- dist(\n  normalize(wh_matrix[, -c(1, 2, 4, 5)]),\n  method = \"euclidean\"\n)\n\ndend_expend(wh_d)[[3]]\n\n  dist_methods hclust_methods     optim\n1      unknown         ward.D 0.6137851\n2      unknown        ward.D2 0.6289186\n3      unknown         single 0.4774362\n4      unknown       complete 0.6434009\n5      unknown        average 0.6701688\n6      unknown       mcquitty 0.5020102\n7      unknown         median 0.5901833\n8      unknown       centroid 0.6338734\n\n\nExplanation:\nThis code first computes the Euclidean distance matrix based on the normalized variables in wh_matrix.\nIt then extracts the third component from dend_expend(wh_d), which is typically used to inspect part of the dendrogram expansion results.\n\nwh_clust &lt;- hclust(wh_d, method = \"average\")\nnum_k &lt;- find_k(wh_clust)\nplot(num_k)\n\n\n\n\n\n\n\n\nExplanation:\nThis code performs hierarchical clustering on the distance matrix using the average linkage method.\nIt then uses find_k() to help identify a suitable number of clusters and plots the result for visual inspection.\n\nheatmaply(\n  normalize(wh_matrix[, -c(1, 2, 4, 5)]),\n  dist_method = \"euclidean\",\n  hclust_method = \"average\",\n  k_row = 3,\n  scale = \"none\",\n  colors = colorRampPalette(c(\"darkblue\", \"white\", \"darkred\"))(120),\n  fontsize_row = 7,\n  fontsize_col = 8,\n  margins = c(80, 120),\n  main = \"Clustered Heatmap of Normalized Variables\"\n)\n\n\n\n\n\nExplanation:\nThis version enhances the clustered heatmap with stronger color contrast and better spacing.\nIt makes the row clusters easier to distinguish while keeping the normalized values comparable across variables."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#seriation",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#seriation",
+    "title": "Hands-on_Ex05",
+    "section": "14.5.6 Seriation",
+    "text": "14.5.6 Seriation\n\nheatmaply(\n  normalize(wh_matrix[, -c(1, 2, 4, 5)]),\n  seriate = \"OLO\",\n  colors = colorRampPalette(c(\"navy\", \"white\", \"firebrick3\"))(100),\n  fontsize_row = 8,\n  fontsize_col = 8,\n  main = \"Normalized Heatmap with Optimal Leaf Ordering\"\n)\n\n\n\n\n\nExplanation:\nThis code creates an interactive heatmap using normalized data and applies optimal leaf ordering (OLO) to improve the arrangement of rows and columns.\nThe customized color palette and smaller labels make the reordered patterns easier to see.\n\nheatmaply(\n  normalize(wh_matrix[, -c(1, 2, 4, 5)]),\n  seriate = \"GW\",\n  colors = colorRampPalette(c(\"navy\", \"white\", \"firebrick3\"))(100),\n  fontsize_row = 8,\n  fontsize_col = 8,\n  main = \"Normalized Heatmap with Gruvaeus-Wainer Reordering\"\n)\n\n\n\n\n\nExplanation:\nThis code creates an interactive heatmap using normalized data and applies the Gruvaeus–Wainer (GW) seriating method to reorder the rows and columns.\nThe improved color contrast and smaller labels make the reordered structure easier to read.\n\nheatmaply(\n  normalize(wh_matrix[, -c(1, 2, 4, 5)]),\n  seriate = \"mean\",\n  colors = colorRampPalette(c(\"navy\", \"white\", \"firebrick3\"))(100),\n  fontsize_row = 8,\n  fontsize_col = 8,\n  main = \"Normalized Heatmap with Mean Reordering\"\n)\n\n\n\n\n\nExplanation:\nThis code creates an interactive heatmap using normalized data and reorders the rows and columns based on the mean values.\nThe stronger color palette and smaller labels make the reordered patterns easier to compare and interpret.\n\nheatmaply(\n  normalize(wh_matrix[, -c(1, 2, 4, 5)]),\n  seriate = \"none\",\n  colors = colorRampPalette(c(\"navy\", \"white\", \"firebrick3\"))(100),\n  fontsize_row = 8,\n  fontsize_col = 8,\n  main = \"Normalized Heatmap without Reordering\"\n)\n\n\n\n\n\nExplanation:\nThis code creates an interactive heatmap using normalized data without reordering the rows or columns.\nIt keeps the original data order while improving readability with a clearer color scale and smaller labels."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#working-with-colour-palettes",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#working-with-colour-palettes",
+    "title": "Hands-on_Ex05",
+    "section": "14.5.7 Working with colour palettes",
+    "text": "14.5.7 Working with colour palettes\n\nheatmaply(\n  normalize(wh_matrix[, -c(1, 2, 4, 5)]),\n  seriate = \"none\",\n  colors = Blues,\n  fontsize_row = 8,\n  fontsize_col = 8,\n  main = \"Normalized Heatmap with Blue Colour Palette\"\n)\n\n\n\n\n\nExplanation:\nThis code creates an interactive heatmap using normalized data with no reordering of rows or columns.\nThe Blues palette gives the heatmap a cleaner single-colour gradient, while the smaller text improves readability."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#the-finishing-touch",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#the-finishing-touch",
+    "title": "Hands-on_Ex05",
+    "section": "14.5.8 The finishing touch",
+    "text": "14.5.8 The finishing touch\n\nheatmaply(\n  normalize(wh_matrix[, -c(1, 2, 4, 5)]),\n  Colv = NA,\n  seriate = \"none\",\n  colors = Blues,\n  k_row = 5,\n  margins = c(60, 220, 80, 40),\n  fontsize_row = 3,\n  fontsize_col = 7,\n  main = \"World Happiness Indicators by Country, 2018\",\n  xlab = \"World Happiness Indicators\",\n  ylab = \"World Countries\",\n  width = 1100,\n  height = 1400\n)\n\n\n\n\n\nExplanation:\nThis code creates an interactive heatmap of normalized World Happiness indicators by country.\nThe figure size is enlarged, the title is shortened, and the row labels are reduced to improve readability."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#visual-multivariate-analysis-with-parallel-coordinates-plot",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#visual-multivariate-analysis-with-parallel-coordinates-plot",
+    "title": "Hands-on_Ex05",
+    "section": "15 Visual Multivariate Analysis with Parallel Coordinates Plot",
+    "text": "15 Visual Multivariate Analysis with Parallel Coordinates Plot"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#installing-and-launching-r-packages-3",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#installing-and-launching-r-packages-3",
+    "title": "Hands-on_Ex05",
+    "section": "15.2 Installing and Launching R Packages",
+    "text": "15.2 Installing and Launching R Packages\n\npacman::p_load(GGally, parallelPlot, tidyverse)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#data-preparation-1",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#data-preparation-1",
+    "title": "Hands-on_Ex05",
+    "section": "15.3 Data Preparation",
+    "text": "15.3 Data Preparation\n\nwh &lt;- read_csv(\"WHData-2018.csv\")"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#plotting-static-parallel-coordinates-plot",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#plotting-static-parallel-coordinates-plot",
+    "title": "Hands-on_Ex05",
+    "section": "15.4 Plotting Static Parallel Coordinates Plot",
+    "text": "15.4 Plotting Static Parallel Coordinates Plot"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#plotting-a-simple-parallel-coordinates",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#plotting-a-simple-parallel-coordinates",
+    "title": "Hands-on_Ex05",
+    "section": "15.4.1 Plotting a simple parallel coordinates",
+    "text": "15.4.1 Plotting a simple parallel coordinates\n\nggparcoord(data = wh, \n           columns = c(7:12))"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#plotting-a-parallel-coordinates-with-boxplot",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#plotting-a-parallel-coordinates-with-boxplot",
+    "title": "Hands-on_Ex05",
+    "section": "15.4.2 Plotting a parallel coordinates with boxplot",
+    "text": "15.4.2 Plotting a parallel coordinates with boxplot\n\nggparcoord(\n  data = wh,\n  columns = c(7:12),\n  groupColumn = 2,\n  scale = \"uniminmax\",\n  alphaLines = 0.2,\n  boxplot = TRUE,\n  title = \"Parallel Coordinates Plot of World Happiness Variables\"\n) +\n  theme(\n    axis.text.x = element_text(\n      angle = 35,\n      hjust = 1,\n      vjust = 1,\n      size = 10\n    ),\n    plot.title = element_text(size = 16),\n    legend.title = element_text(size = 12),\n    legend.text = element_text(size = 10)\n  )\n\n\n\n\n\n\n\n\nExplanation:\nThis code improves the parallel coordinates plot by rotating the x-axis labels and reducing text crowding.\nIt also adjusts the title and legend text sizes to make the overall plot easier to read."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#parallel-coordinates-with-facet",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#parallel-coordinates-with-facet",
+    "title": "Hands-on_Ex05",
+    "section": "15.4.3 Parallel coordinates with facet",
+    "text": "15.4.3 Parallel coordinates with facet\n\nggparcoord(\n  data = wh,\n  columns = c(7:12),\n  groupColumn = 2,\n  scale = \"uniminmax\",\n  alphaLines = 0.2,\n  boxplot = TRUE,\n  title = \"Multiple Parallel Coordinates Plots of World Happiness Variables by Region\"\n) +\n  facet_wrap(~Region) +\n  theme(\n    axis.text.x = element_text(\n      angle = 45,\n      hjust = 1,\n      vjust = 1,\n      size = 8\n    ),\n    strip.text = element_text(size = 10),\n    plot.title = element_text(size = 16)\n  )\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates multiple parallel coordinates plots by region using facet_wrap().\nRotating the x-axis labels and reducing the text size makes the variable names easier to read across the smaller facet panels."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#rotating-x-axis-text-label",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#rotating-x-axis-text-label",
+    "title": "Hands-on_Ex05",
+    "section": "15.4.4 Rotating x-axis text label",
+    "text": "15.4.4 Rotating x-axis text label\n\nggparcoord(\n  data = wh,\n  columns = c(7:12),\n  groupColumn = 2,\n  scale = \"uniminmax\",\n  alphaLines = 0.2,\n  boxplot = TRUE,\n  title = \"Multiple Parallel Coordinates Plots of World Happiness Variables by Region\"\n) +\n  facet_wrap(~Region) +\n  theme(\n    axis.text.x = element_text(angle = 30, hjust = 1, size = 8)\n  )\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates multiple parallel coordinates plots by region and rotates the x-axis labels by 30 degrees.\nThe label adjustment helps reduce overlap and improves readability in the faceted panels."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#adjusting-the-rotated-x-axis-text-label",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#adjusting-the-rotated-x-axis-text-label",
+    "title": "Hands-on_Ex05",
+    "section": "15.4.5 Adjusting the rotated x-axis text label",
+    "text": "15.4.5 Adjusting the rotated x-axis text label\n\nggparcoord(\n  data = wh,\n  columns = c(7:12),\n  groupColumn = 2,\n  scale = \"uniminmax\",\n  alphaLines = 0.2,\n  boxplot = TRUE,\n  title = \"Multiple Parallel Coordinates Plots of World Happiness Variables by Region\"\n) +\n  facet_wrap(~Region, ncol = 3) +\n  theme(\n    plot.title = element_text(size = 14),\n    axis.text.x = element_text(angle = 30, hjust = 1, size = 6),\n    axis.text.y = element_text(size = 7),\n    axis.title.x = element_text(size = 10),\n    axis.title.y = element_text(size = 10),\n    strip.text = element_text(size = 8),\n    legend.position = \"bottom\",\n    legend.title = element_text(size = 9),\n    legend.text = element_text(size = 7)\n  ) +\n  guides(colour = guide_legend(nrow = 2))\n\n\n\n\n\n\n\n\nExplanation:\nThis version controls the facet layout so each panel has more space.\nSmaller text and a wider panel layout make the plot easier to read and closer to a report-ready format.\nExplanation:\nThis code creates faceted parallel coordinates plots for different world regions.\nThe x-axis labels are rotated by 30 degrees and right-aligned to reduce overlap and improve readability."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#plotting-interactive-parallel-coordinates-plot-parallelplot-methods",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#plotting-interactive-parallel-coordinates-plot-parallelplot-methods",
+    "title": "Hands-on_Ex05",
+    "section": "15.5 Plotting Interactive Parallel Coordinates Plot: parallelPlot methods",
+    "text": "15.5 Plotting Interactive Parallel Coordinates Plot: parallelPlot methods"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#the-basic-plot-1",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#the-basic-plot-1",
+    "title": "Hands-on_Ex05",
+    "section": "15.5.1 The basic plot",
+    "text": "15.5.1 The basic plot\n\nwh &lt;- wh %&gt;%\n  select(\"Happiness score\", c(7:12))\nparallelPlot(wh,\n             width = 320,\n             height = 250)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#rotate-axis-label",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#rotate-axis-label",
+    "title": "Hands-on_Ex05",
+    "section": "15.5.2 Rotate axis label",
+    "text": "15.5.2 Rotate axis label\n\nparallelPlot(wh,\n             rotateTitle = TRUE)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#changing-the-colour-scheme",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#changing-the-colour-scheme",
+    "title": "Hands-on_Ex05",
+    "section": "15.5.3 Changing the colour scheme",
+    "text": "15.5.3 Changing the colour scheme\n\nparallelPlot(\n  wh,\n  continuousCS = \"YlOrRd\",\n  rotateTitle = TRUE\n)\n\n\n\n\n\nExplanation:\nThis code creates a parallel coordinate plot for the wh dataset using the \"YlOrRd\" colour scheme.\nThe plot title is rotated to improve readability and make the overall layout clearer."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#parallel-coordinates-plot-with-histogram",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#parallel-coordinates-plot-with-histogram",
+    "title": "Hands-on_Ex05",
+    "section": "15.5.4 Parallel coordinates plot with histogram",
+    "text": "15.5.4 Parallel coordinates plot with histogram\n\nhistoVisibility &lt;- rep(TRUE, ncol(wh))\n\nparallelPlot(\n  wh,\n  rotateTitle = TRUE,\n  histoVisibility = histoVisibility\n)\n\n\n\n\n\nExplanation:\nThis code creates a parallel coordinate plot and enables histograms for all variables in the dataset.\nThe rotated titles improve readability, while the histograms provide additional information about the distribution of each variable."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#treemap-visualisation-with-r",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#treemap-visualisation-with-r",
+    "title": "Hands-on_Ex05",
+    "section": "16 Treemap Visualisation with R",
+    "text": "16 Treemap Visualisation with R"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#installing-and-launching-r-packages-4",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#installing-and-launching-r-packages-4",
+    "title": "Hands-on_Ex05",
+    "section": "16.2 Installing and Launching R Packages",
+    "text": "16.2 Installing and Launching R Packages\n\npacman::p_load(treemap, treemapify, tidyverse)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#data-wrangling",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#data-wrangling",
+    "title": "Hands-on_Ex05",
+    "section": "16.3 Data Wrangling",
+    "text": "16.3 Data Wrangling\n\nrealis2018 &lt;- read_csv(\"realis2018.csv\")"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#grouped-summaries-without-the-pipe",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#grouped-summaries-without-the-pipe",
+    "title": "Hands-on_Ex05",
+    "section": "16.3.3 Grouped summaries without the Pipe",
+    "text": "16.3.3 Grouped summaries without the Pipe\n\nrealis2018_grouped &lt;- group_by(realis2018, `Project Name`,\n                               `Planning Region`, `Planning Area`, \n                               `Property Type`, `Type of Sale`)\nrealis2018_summarised &lt;- summarise(realis2018_grouped, \n                          `Total Unit Sold` = sum(`No. of Units`, na.rm = TRUE),\n                          `Total Area` = sum(`Area (sqm)`, na.rm = TRUE),\n                          `Median Unit Price ($ psm)` = median(`Unit Price ($ psm)`, na.rm = TRUE), \n                          `Median Transacted Price` = median(`Transacted Price ($)`, na.rm = TRUE))"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#grouped-summaries-with-the-pipe",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#grouped-summaries-with-the-pipe",
+    "title": "Hands-on_Ex05",
+    "section": "16.3.4 Grouped summaries with the pipe",
+    "text": "16.3.4 Grouped summaries with the pipe\n\nrealis2018_summarised &lt;- realis2018 %&gt;%\n  group_by(\n    `Project Name`, `Planning Region`,\n    `Planning Area`, `Property Type`,\n    `Type of Sale`\n  ) %&gt;%\n  summarise(\n    `Total Unit Sold` = sum(`No. of Units`, na.rm = TRUE),\n    `Total Area` = sum(`Area (sqm)`, na.rm = TRUE),\n    `Median Unit Price ($ psm)` = median(`Unit Price ($ psm)`, na.rm = TRUE),\n    `Median Transacted Price` = median(`Transacted Price ($)`, na.rm = TRUE)\n  )\n\nExplanation:\nThis code groups the 2018 real estate data by project and property-related categories.\nIt then calculates the total units sold, total area, median unit price per square metre, and median transacted price for each group."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#designing-treemap-with-treemap-package",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#designing-treemap-with-treemap-package",
+    "title": "Hands-on_Ex05",
+    "section": "16.4 Designing Treemap with treemap Package",
+    "text": "16.4 Designing Treemap with treemap Package"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#designing-a-static-treemap",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#designing-a-static-treemap",
+    "title": "Hands-on_Ex05",
+    "section": "16.4.1 Designing a static treemap",
+    "text": "16.4.1 Designing a static treemap\n\nrealis2018_selected &lt;- realis2018_summarised %&gt;%\n  filter(`Property Type` == \"Condominium\", `Type of Sale` == \"Resale\")\n\nExplanation:\nThis code filters the summarized real estate dataset to keep only resale condominium transactions.\nIt helps focus the analysis on a specific property type and sale category."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#using-the-basic-arguments",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#using-the-basic-arguments",
+    "title": "Hands-on_Ex05",
+    "section": "16.4.2 Using the basic arguments",
+    "text": "16.4.2 Using the basic arguments\n\ntreemap(\n  realis2018_selected,\n  index = c(\"Planning Region\", \"Planning Area\", \"Project Name\"),\n  vSize = \"Total Unit Sold\",\n  vColor = \"Median Unit Price ($ psm)\",\n  title = \"Resale Condominium by Planning Region and Area, 2017\",\n  title.legend = \"Median Unit Price (S$ per sq. m)\"\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a treemap of resale condominium projects grouped by planning region, planning area, and project name.\nThe box size represents the total number of units sold, while the colour shows the median unit price per square metre."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#working-with-vcolor-and-type-arguments",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#working-with-vcolor-and-type-arguments",
+    "title": "Hands-on_Ex05",
+    "section": "16.4.3 Working with vColor and type arguments",
+    "text": "16.4.3 Working with vColor and type arguments\n\ntreemap(\n  realis2018_selected,\n  index = c(\"Planning Region\", \"Planning Area\", \"Project Name\"),\n  vSize = \"Total Unit Sold\",\n  vColor = \"Median Unit Price ($ psm)\",\n  type = \"value\",\n  title = \"Resale Condominium by Planning Region and Area, 2017\",\n  title.legend = \"Median Unit Price (S$ per sq. m)\"\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a treemap of resale condominium projects and colours the boxes based on the actual values of median unit price per square metre.\nThe box size shows total units sold, while the colour intensity reflects the price level directly."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#the-value-type-treemap",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#the-value-type-treemap",
+    "title": "Hands-on_Ex05",
+    "section": "16.4.5 The “value” type treemap",
+    "text": "16.4.5 The “value” type treemap\n\ntreemap(\n  realis2018_selected,\n  index = c(\"Planning Region\", \"Planning Area\", \"Project Name\"),\n  vSize = \"Total Unit Sold\",\n  vColor = \"Median Unit Price ($ psm)\",\n  type = \"value\",\n  palette = \"RdYlBu\",\n  title = \"Resale Condominium by Planning Region and Area, 2017\",\n  title.legend = \"Median Unit Price (S$ per sq. m)\"\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a treemap for resale condominium projects, where box size represents total units sold and box colour represents the median unit price per square metre.\nThe RdYlBu palette adds a diverging colour scheme, making differences in price levels easier to distinguish."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#the-manual-type-treemap",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#the-manual-type-treemap",
+    "title": "Hands-on_Ex05",
+    "section": "16.4.6 The “manual” type treemap",
+    "text": "16.4.6 The “manual” type treemap\n\ntreemap(\n  realis2018_selected,\n  index = c(\"Planning Region\", \"Planning Area\", \"Project Name\"),\n  vSize = \"Total Unit Sold\",\n  vColor = \"Median Unit Price ($ psm)\",\n  type = \"manual\",\n  palette = \"RdYlBu\",\n  title = \"Resale Condominium by Planning Region and Area, 2017\",\n  title.legend = \"Median Unit Price (S$ per sq. m)\"\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a treemap for resale condominium projects, where box size represents the total number of units sold.\nWith type = \"manual\", the colour palette is applied manually to the values of median unit price per square metre.\n\ntreemap(\n  realis2018_selected,\n  index = c(\"Planning Region\", \"Planning Area\", \"Project Name\"),\n  vSize = \"Total Unit Sold\",\n  vColor = \"Median Unit Price ($ psm)\",\n  type = \"manual\",\n  palette = \"Blues\",\n  title = \"Resale Condominium by Planning Region and Area, 2017\",\n  title.legend = \"Median Unit Price (S$ per sq. m)\"\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a treemap of resale condominium projects, where the box size represents the total number of units sold.\nThe Blues palette is used to manually colour the boxes according to the median unit price per square metre."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#working-with-algorithm-argument",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#working-with-algorithm-argument",
+    "title": "Hands-on_Ex05",
+    "section": "16.4.8 Working with algorithm argument",
+    "text": "16.4.8 Working with algorithm argument\n\ntreemap(\n  realis2018_selected,\n  index = c(\"Planning Region\", \"Planning Area\", \"Project Name\"),\n  vSize = \"Total Unit Sold\",\n  vColor = \"Median Unit Price ($ psm)\",\n  type = \"manual\",\n  palette = \"Blues\",\n  algorithm = \"squarified\",\n  title = \"Resale Condominium by Planning Region and Area, 2017\",\n  title.legend = \"Median Unit Price (S$ per sq. m)\"\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a treemap of resale condominium projects, with box size showing total units sold and colour showing the median unit price per square metre.\nThe squarified algorithm arranges the rectangles into more balanced shapes, making the treemap easier to read."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#using-sortid",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#using-sortid",
+    "title": "Hands-on_Ex05",
+    "section": "16.4.9 Using sortID",
+    "text": "16.4.9 Using sortID\n\ntreemap(realis2018_selected,\n        index=c(\"Planning Region\", \"Planning Area\", \"Project Name\"),\n        vSize=\"Total Unit Sold\",\n        vColor=\"Median Unit Price ($ psm)\",\n        type=\"manual\",\n        palette=\"Blues\", \n        algorithm = \"pivotSize\",\n        sortID = \"Median Transacted Price\",\n        title=\"Resale Condominium by Planning Region and Area, 2017\",\n        title.legend = \"Median Unit Price (S$ per sq. m)\"\n        )"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#designing-treemap-using-treemapify-package",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#designing-treemap-using-treemapify-package",
+    "title": "Hands-on_Ex05",
+    "section": "16.5 Designing Treemap using treemapify Package",
+    "text": "16.5 Designing Treemap using treemapify Package"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#designing-a-basic-treemap",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#designing-a-basic-treemap",
+    "title": "Hands-on_Ex05",
+    "section": "16.5.1 Designing a basic treemap",
+    "text": "16.5.1 Designing a basic treemap\n\nggplot(\n  data = realis2018_selected,\n  aes(\n    area = `Total Unit Sold`,\n    fill = `Median Unit Price ($ psm)`\n  ),\n  layout = \"scol\",\n  start = \"bottomleft\"\n) +\n  geom_treemap() +\n  scale_fill_gradient(low = \"lightblue\", high = \"blue\")\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a treemap using ggplot2, where the rectangle size represents the total number of units sold.\nThe fill colour uses a light-to-dark blue gradient to show differences in median unit price per square metre."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#defining-hierarchy",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#defining-hierarchy",
+    "title": "Hands-on_Ex05",
+    "section": "16.5.2 Defining hierarchy",
+    "text": "16.5.2 Defining hierarchy\n\nggplot(\n  data = realis2018_selected,\n  aes(\n    area = `Total Unit Sold`,\n    fill = `Median Unit Price ($ psm)`,\n    subgroup = `Planning Region`\n  ),\n  start = \"topleft\"\n) +\n  geom_treemap()\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a treemap where the rectangle size shows the total number of units sold and the fill colour represents the median unit price per square metre.\nThe subgroup aesthetic groups the treemap by planning region, helping to organize the projects into larger regional sections. ## Group by Planning Area\n\nggplot(data=realis2018_selected, \n       aes(area = `Total Unit Sold`,\n           fill = `Median Unit Price ($ psm)`,\n           subgroup = `Planning Region`,\n           subgroup2 = `Planning Area`)) + \n  geom_treemap()"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#adding-boundary-line",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#adding-boundary-line",
+    "title": "Hands-on_Ex05",
+    "section": "Adding boundary line",
+    "text": "Adding boundary line\n\nggplot(data=realis2018_selected, \n       aes(area = `Total Unit Sold`,\n           fill = `Median Unit Price ($ psm)`,\n           subgroup = `Planning Region`,\n           subgroup2 = `Planning Area`)) + \n  geom_treemap() +\n  geom_treemap_subgroup2_border(colour = \"gray40\",\n                                size = 2) +\n  geom_treemap_subgroup_border(colour = \"gray20\")"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#designing-interactive-treemap-using-d3treer",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#designing-interactive-treemap-using-d3treer",
+    "title": "Hands-on_Ex05",
+    "section": "16.6 Designing Interactive Treemap using d3treeR",
+    "text": "16.6 Designing Interactive Treemap using d3treeR\n16.6.1 Installing d3treeR package\n\ninstall.packages(\"devtools\", repos = \"https://cloud.r-project.org\")\n\n\nThe downloaded binary packages are in\n    /var/folders/bx/cb2qyl_52jl6z3qcj996g9qc0000gn/T//Rtmp2EfXry/downloaded_packages\n\nlibrary(devtools)\ninstall_github(\"timelyportfolio/d3treeR\")\nlibrary(d3treeR)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#designing-an-interactive-treemap",
+    "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#designing-an-interactive-treemap",
+    "title": "Hands-on_Ex05",
+    "section": "16.6.2 Designing An Interactive Treemap",
+    "text": "16.6.2 Designing An Interactive Treemap\n\ntm &lt;- treemap(\n  realis2018_summarised,\n  index = c(\"Planning Region\", \"Planning Area\"),\n  vSize = \"Total Unit Sold\",\n  vColor = \"Median Unit Price ($ psm)\",\n  type = \"value\",\n  title = \"Private Residential Property Sold, 2017\",\n  title.legend = \"Median Unit Price (S$ per sq. m)\"\n)\n\n\n\n\n\n\n\n\nExplanation:\nThis code creates a treemap of private residential property sales grouped by planning region and planning area.\nThe box size represents the total number of units sold, while the colour shows the median unit price per square metre.\n\nd3tree(\n  tm,\n  rootname = \"Private Residential Property Sales in Singapore\"\n)\n\n\n\n\n\nExplanation:\nThis version keeps the same interactive tree but gives it more horizontal space in the webpage output.\nIt helps the labels and hierarchy display more clearly."
   }
 ]
