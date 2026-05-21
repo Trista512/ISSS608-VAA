@@ -5112,6 +5112,7 @@ The logistic regression complements the earlier visual analysis by testing wheth
 
 # 6. Conclusion and Recommendations
 
+
 ## 6.1 Key Findings
 
 - **Premium is concentrated in lower-to-medium bands.**  
