@@ -1622,5 +1622,145 @@
     "title": "ISSS608-VAA Hands-on Exercise 1",
     "section": "1.11.1 Working with theme",
     "text": "1.11.1 Working with theme\nCode chunk below creates a horizontal bar chart and applies the gray theme.\n\nggplot(data = exam_data, \n       aes(x = RACE)) +\n  geom_bar() +\n  coord_flip() +\n  theme_gray()\n\n\n\n\n\n\n\n\nExplanation\nThis code chunk creates a bar chart for the variable RACE, flips the coordinates, and applies a theme. The variable RACE is mapped to the x-axis, and geom_bar() counts the number of observations in each category and displays them as bars. coord_flip() switches the axes so that the bars become horizontal, which can improve readability. theme_gray() applies the default gray theme in ggplot2, which controls the overall appearance of the plot, including the background, grid lines, and text style.\nCode chunk below creates a horizontal bar chart and applies the classic theme.\n\nggplot(data = exam_data, \n       aes(x = RACE)) +\n  geom_bar() +\n  coord_flip() +\n  theme_classic()\n\n\n\n\n\n\n\n\nExplanation\nThis code chunk creates a bar chart for the variable RACE, flips the coordinates, and applies a theme. The variable RACE is mapped to the x-axis, and geom_bar() counts the number of observations in each category and displays them as bars. coord_flip() switches the axes so that the bars become horizontal, which makes the chart easier to read. theme_classic() changes the overall appearance of the plot by removing the gray background and grid lines, giving the chart a cleaner and simpler style.\nCode chunk below creates a horizontal bar chart and applies the minimal theme.\n\nggplot(data = exam_data, \n       aes(x = RACE)) +\n  geom_bar() +\n  coord_flip() +\n  theme_minimal()\n\n\n\n\n\n\n\n\nExplanation\nThis code chunk creates a bar chart for the variable RACE, flips the coordinates, and applies a theme. The variable RACE is mapped to the x-axis, and geom_bar() counts the number of observations in each category and displays them as bars. coord_flip() switches the axes so that the bars become horizontal, which improves readability. theme_minimal() changes the overall appearance of the plot by using a clean and simple style with fewer visual distractions, making the chart look more modern and uncluttered."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#contents",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#contents",
+    "title": "Motor Insurance Portfolio Visual Analytics",
+    "section": "Contents",
+    "text": "Contents\n\nResearch Objective\n\nPortfolio Structure\n\nClaim Sparsity and Loss Ratio Structure\n\nSegment-level Profitability\n\nFrequency-Severity Decomposition\n\nStatistical Validation\n\nRecommendations\n\n\nThis slide outlines the structure of the executive summary. The presentation moves from portfolio-level patterns to segment-level visual analytics, followed by statistical validation and final recommendations."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#research-objective",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#research-objective",
+    "title": "Motor Insurance Portfolio Visual Analytics",
+    "section": "Research Objective",
+    "text": "Research Objective\n\nIdentify profitability and volatility patterns in the motor insurance portfolio.\nExamine how premium, claims, loss ratio and underwriting segments interact.\nUse visual analytics to support underwriting and pricing recommendations.\n\n\nThe objective is to understand how profitability varies across the insurance portfolio. The analysis focuses on loss ratio, claim frequency, claim severity and pure premium. These indicators are used to identify high-risk segments and support portfolio monitoring decisions."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#portfolio-structure",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#portfolio-structure",
+    "title": "ISSS608-VAA",
+    "section": "Portfolio Structure",
+    "text": "Portfolio Structure\n\n\nMost policies are concentrated in lower-to-medium premium bands.\nA smaller group contributes to the higher-premium tail.\nPortfolio income is unevenly distributed across policies.\n\n\nThe premium distribution shows that the portfolio income base is not evenly spread across policies. Most policies are concentrated in lower-to-medium premium bands, while a smaller group contributes higher premium. This motivates the need to examine profitability at segment level rather than relying only on aggregate premium."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#executive-summary",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#executive-summary",
+    "title": "Motor Insurance Portfolio Visual Analytics",
+    "section": "Executive Summary",
+    "text": "Executive Summary\nHU YUE\nISSS608 Visual Analytics and Applications\n\nThis cover slide introduces the executive summary presentation for the motor insurance portfolio visual analytics project. The presentation summarises the key portfolio patterns, segment-level profitability findings, statistical validation results and business recommendations."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#motor-insurance-portfolio-visual-analytics",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#motor-insurance-portfolio-visual-analytics",
+    "title": "ISSS608-VAA",
+    "section": "Motor Insurance Portfolio Visual Analytics",
+    "text": "Motor Insurance Portfolio Visual Analytics\nSegment-level Profitability, Claim Risk and Underwriting Insights\nHU YUE\nISSS608 Visual Analytics and Applications\n\n\nThis cover slide introduces the executive summary presentation for the motor insurance portfolio visual analytics project. The main message is that aggregate portfolio averages are not sufficient. Although most policies generate no incurred claims, profitability risk is concentrated in claim-generating policies and selected high-risk underwriting segments."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#contents-and-analytical-storyline",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#contents-and-analytical-storyline",
+    "title": "ISSS608-VAA",
+    "section": "Contents and Analytical Storyline",
+    "text": "Contents and Analytical Storyline\n\n\n\n\n\n\n\n\nStage\nFocus\nMain Evidence\n\n\n\n\nPortfolio structure\nPremium, claim and loss ratio distribution\nDensity, ECDF, loss ratio groups\n\n\nSegment risk\nWhere profitability differs\nHeatmap, bubble plot, treemap\n\n\nDistributional risk\nHow risk varies by group\nRidgeline, raincloud\n\n\nStatistical validation\nWhether patterns are supported\nKruskal-Wallis, logistic regression\n\n\nRecommendations\nWhat to act on\nSegment-level monitoring\n\n\n\n\nThis slide outlines the analytical storyline. The presentation first summarises the overall portfolio structure, then moves to segment-level profitability patterns, distributional risk, statistical validation and final recommendations. The purpose is to convert visual patterns into practical underwriting and pricing insights."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#analytical-objective-and-key-indicators",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#analytical-objective-and-key-indicators",
+    "title": "ISSS608-VAA",
+    "section": "Analytical Objective and Key Indicators",
+    "text": "Analytical Objective and Key Indicators\nObjective\n\nIdentify profitability and volatility patterns in the motor insurance portfolio.\nExamine how premium, claim cost, loss ratio and underwriting segments interact.\nTranslate visual patterns into underwriting and pricing recommendations.\n\nKey indicators\n\n\n\nIndicator\nMeaning\n\n\n\n\nLoss ratio\nIncurred claims relative to premium\n\n\nClaim frequency\nClaim count relative to exposure\n\n\nClaim severity\nAverage cost per claim\n\n\nPure premium\nIncurred claims relative to exposure\n\n\n\n\nThis slide defines the analytical objective and the main insurance indicators used throughout the project. Loss ratio is the main profitability indicator, while claim frequency and claim severity help explain whether risk is driven by claim occurrence or claim cost. Pure premium summarises claim cost per exposure."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#claim-costs-are-sparse-but-tail-risk-remains-important",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#claim-costs-are-sparse-but-tail-risk-remains-important",
+    "title": "ISSS608-VAA",
+    "section": "Claim Costs Are Sparse but Tail Risk Remains Important",
+    "text": "Claim Costs Are Sparse but Tail Risk Remains Important\n\nFinding: Claim costs are highly sparse.\nEvidence: Around 88.1% of policies have zero incurred claims, while 11.9% have positive incurred claims.\nImplication: Positive-claim policies should be monitored separately because they contain upper-tail risk.\n\nThis slide highlights the sparse nature of claim costs. Most policies generate no incurred claims, but the positive-claim portion still contains meaningful upper-tail risk. A small group of claim-generating policies can therefore have a material impact on portfolio profitability."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#loss-ratio-reveals-a-clear-profitability-split",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#loss-ratio-reveals-a-clear-profitability-split",
+    "title": "ISSS608-VAA",
+    "section": "Loss Ratio Reveals a Clear Profitability Split",
+    "text": "Loss Ratio Reveals a Clear Profitability Split\n\nFinding: Most policies have zero loss ratio, but the unprofitable tail remains important.\nEvidence: Around 88.1% of policies have LR = 0, while 9.0% have LR &gt; 1.\nImplication: Aggregate averages may hide the risk embedded in claim-generating policies.\n\nThe loss ratio structure confirms the same pattern as claim costs. Zero-loss policies dominate the portfolio, but the unprofitable positive-loss tail is important. Policies above the break-even threshold create profitability pressure and should be analysed separately from the full portfolio average."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#portfolio-exposure-is-uneven-across-segments",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#portfolio-exposure-is-uneven-across-segments",
+    "title": "ISSS608-VAA",
+    "section": "Portfolio Exposure Is Uneven across Segments",
+    "text": "Portfolio Exposure Is Uneven across Segments\n\nFinding: Portfolio exposure is concentrated in dominant categories.\nEvidence: Bonus score G, fuel type D, business type NB, and policy type CC dominate the portfolio.\nImplication: Large groups can strongly influence aggregate portfolio results.\n\nThe categorical composition chart shows that the portfolio is highly uneven across key segmentation variables. Some categories dominate policy count, which means their claim behaviour can strongly influence aggregate results. This also means smaller high-risk groups should be interpreted together with their exposure size."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#driver-age-and-vehicle-age-jointly-reveal-high-risk-segments",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#driver-age-and-vehicle-age-jointly-reveal-high-risk-segments",
+    "title": "ISSS608-VAA",
+    "section": "Driver Age and Vehicle Age Jointly Reveal High-risk Segments",
+    "text": "Driver Age and Vehicle Age Jointly Reveal High-risk Segments\n\nFinding: Risk is not explained by driver age or vehicle age alone.\nEvidence: Drivers aged 45–54 with vehicles aged 0–2 and 10–14 show high loss ratios.\nImplication: Underwriting segmentation should consider interaction effects.\n\nThe heatmap shows that driver age and vehicle age should be considered jointly. Some combinations perform much worse than others, especially drivers aged 45–54 with very new or older vehicles. This suggests that underwriting rules based on single variables may miss important risk interactions."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#frequency-severity-decomposition-explains-risk-mechanisms",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#frequency-severity-decomposition-explains-risk-mechanisms",
+    "title": "ISSS608-VAA",
+    "section": "Frequency-Severity Decomposition Explains Risk Mechanisms",
+    "text": "Frequency-Severity Decomposition Explains Risk Mechanisms\nFinding: Profitability pressure can come from different claim mechanisms.\n\n\n\n\n\n\n\n\nMechanism\nInterpretation\nUnderwriting implication\n\n\n\n\nHigh frequency\nClaims occur more often\nReview claim occurrence drivers\n\n\nHigh severity\nClaims are costlier when they occur\nReview coverage and large-loss exposure\n\n\nHigh frequency + high severity\nMost concerning risk profile\nPrioritise for pricing and underwriting review\n\n\n\nImplication: Segments should not be managed only by loss ratio; claim frequency and severity should be separated.\n\nThe frequency-severity decomposition shows that the same loss ratio can arise from different claim mechanisms. Some segments are risky because claims occur frequently, while others are risky because claims are severe when they occur. This distinction is important for choosing the right underwriting or pricing intervention."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#portfolio-exposure-concentration",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#portfolio-exposure-concentration",
+    "title": "ISSS608-VAA",
+    "section": "Portfolio Exposure Concentration",
+    "text": "Portfolio Exposure Concentration\n\n\n\n\n\nFinding\nExposure is concentrated in a few dominant groups.\n\nEvidence\n\nBonus score G\nFuel type D\nPolicy type CC\nBusiness type NB\n\n\nImplication\nLarge groups strongly affect aggregate results.\n\n\n\nThe categorical composition chart shows that portfolio exposure is highly uneven across key segmentation variables. Bonus score G, fuel type D, business type NB and policy type CC dominate policy count. This means aggregate portfolio results are strongly influenced by these large groups, while smaller high-risk groups should be interpreted together with exposure size."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#bonus-score-groups-show-distributional-differences",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#bonus-score-groups-show-distributional-differences",
+    "title": "ISSS608-VAA",
+    "section": "Bonus Score Groups Show Distributional Differences",
+    "text": "Bonus Score Groups Show Distributional Differences\n\n\n\n\n\nFinding\nPositive loss ratios are right-skewed across bonus score groups.\n\nEvidence\n\nDistributions show long upper tails.\nSome groups extend beyond the break-even threshold.\nMedian level alone is not enough.\n\n\nImplication\nBonus score should be assessed with tail behaviour and distributional spread, not only average loss ratio.\n\n\n\nThe ridgeline plot shows that positive loss ratio distributions differ across bonus score groups. The key insight is not only the median level, but also the spread and upper-tail behaviour. This suggests that bonus score remains useful as a risk segmentation variable, but it should be combined with other underwriting factors and interpreted together with tail risk."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#premium-contribution-and-loss-ratio-must-be-read-together",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#premium-contribution-and-loss-ratio-must-be-read-together",
+    "title": "ISSS608-VAA",
+    "section": "Premium Contribution and Loss Ratio Must Be Read Together",
+    "text": "Premium Contribution and Loss Ratio Must Be Read Together\n\nFinding: Large premium segments do not always have low loss ratios.\nEvidence: Some large rectangles show moderate-to-high loss ratios.\nImplication: Large high-loss or above-average segments should be prioritised because they affect total portfolio profitability.\n\nThe treemap links premium contribution and profitability in a single view. Rectangle size shows premium exposure, while colour shows loss ratio. This helps distinguish small high-risk groups from large segments that can have a stronger impact on aggregate profitability."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#policy-types-differ-in-positive-loss-ratio-distribution",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#policy-types-differ-in-positive-loss-ratio-distribution",
+    "title": "ISSS608-VAA",
+    "section": "Policy Types Differ in Positive Loss Ratio Distribution",
+    "text": "Policy Types Differ in Positive Loss Ratio Distribution\n\n\n\n\n\nFinding\nPositive loss ratios vary across policy types.\n\nEvidence\n\nDifferent median levels\nHeavy right tails\nWider dispersion in some policy types\nSome observations exceed break-even threshold\n\n\nImplication\nPolicy type should be monitored using distributional risk, not only average loss ratio.\n\n\n\nThe raincloud plot shows distributional differences across policy types. Because the chart focuses only on positive-loss policies, the loss ratios are much higher than the overall portfolio average. The important insight is that policy types differ not only in central tendency, but also in dispersion and upper-tail behaviour. This supports monitoring policy type using distributional visual analytics rather than relying only on average loss ratio."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#portfolio-performance-deteriorated-in-2024",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#portfolio-performance-deteriorated-in-2024",
+    "title": "ISSS608-VAA",
+    "section": "Portfolio Performance Deteriorated in 2024",
+    "text": "Portfolio Performance Deteriorated in 2024\n\nFinding: Portfolio performance worsened in 2024.\nEvidence: Loss ratio increased to around 74.7%, and claim frequency rose to around 0.312.\nImplication: The deterioration appears to reflect both claim occurrence and claim cost pressure.\n\nThe time-series small multiples show that portfolio performance deteriorated in 2024. Loss ratio, claim frequency, claim severity and pure premium all increased. This suggests that worsening profitability was not caused by one factor alone, but by both claim occurrence and claim cost pressure."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#statistical-validation-supports-the-visual-findings",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#statistical-validation-supports-the-visual-findings",
+    "title": "ISSS608-VAA",
+    "section": "Statistical Validation Supports the Visual Findings",
+    "text": "Statistical Validation Supports the Visual Findings\n\n\n\n\n\nKruskal-Wallis tests\n\nPolicy type differs significantly in positive loss ratio distribution.\nBonus score also differs significantly.\nEffect sizes are small, so practical interpretation is required.\n\n\nLogistic regression\n\nClaim occurrence rate is around 14.3%.\nSome policy types show higher claim odds.\nSome vehicle age groups, fuel types and bonus score groups show lower claim odds.\n\n\nImplication\nStatistical evidence supports the visual findings, but decisions should combine p-values, effect size, exposure and business context.\n\n\n\nThe statistical validation supports the visual findings. Kruskal-Wallis tests show that positive loss ratio distributions differ across policy type and bonus score, although the effect sizes are small. Logistic regression further shows that selected underwriting variables are associated with claim occurrence. These results should be treated as supporting evidence rather than a complete pricing model."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#claim-occurrence-is-associated-with-underwriting-variables",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#claim-occurrence-is-associated-with-underwriting-variables",
+    "title": "ISSS608-VAA",
+    "section": "Claim Occurrence Is Associated with Underwriting Variables",
+    "text": "Claim Occurrence Is Associated with Underwriting Variables\n\nFinding: Selected underwriting variables are associated with claim occurrence.\nEvidence: Some policy types show higher claim odds, while some vehicle age groups and fuel types show lower claim odds.\nImplication: Claim occurrence risk should be incorporated into segment-level monitoring.\n\nThe logistic regression odds ratio plot provides statistical support for the relationship between underwriting variables and claim occurrence. Odds ratios above 1 indicate higher claim odds, while odds ratios below 1 indicate lower claim odds. The model should be interpreted as association evidence rather than a full pricing model."
+  },
+  {
+    "objectID": "Take Home Exercise/Take Home Exercise 01/Presentation.html#recommendations-and-conclusion",
+    "href": "Take Home Exercise/Take Home Exercise 01/Presentation.html#recommendations-and-conclusion",
+    "title": "ISSS608-VAA",
+    "section": "Recommendations and Conclusion",
+    "text": "Recommendations and Conclusion\nRecommended actions\n\nMove from aggregate monitoring to segment-level profitability monitoring.\nPrioritise high-risk driver age × vehicle age combinations.\nSeparate frequency-driven and severity-driven risks.\nReview large premium segments with above-average loss ratios.\nInvestigate the 2024 deterioration in loss ratio, frequency and severity.\n\nOverall conclusion:\nPortfolio profitability is shaped by interactions among policy, vehicle, driver and claim characteristics.\n\nThe overall conclusion is that portfolio risk is uneven and segment-specific. High-risk areas emerge from interactions among driver age, vehicle age, policy type, fuel type, bonus score and claim behaviour. Future pricing and underwriting decisions should combine visual analytics, statistical validation and business judgement."
   }
 ]
