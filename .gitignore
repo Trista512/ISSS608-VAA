@@ -8,3 +8,13 @@
 
 /.quarto/
 **/*.quarto_ipynb
+
+Take Home Exercise/Take Home Exercise 01/Data/
+*.csv
+*.xlsx
+*.xls
+*.rds
+*.RData
+.Rhistory
+.Rproj.user/
+.quarto/
