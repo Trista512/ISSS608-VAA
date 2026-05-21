@@ -17,4 +17,4 @@ Take Home Exercise/Take Home Exercise 01/Data/
 *.RData
 .Rhistory
 .Rproj.user/
-.quarto/
+.quarto/_freeze/

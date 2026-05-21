@@ -1432,7 +1432,7 @@
     "href": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#designing-interactive-treemap-using-d3treer",
     "title": "Hands-on_Ex05",
     "section": "16.6 Designing Interactive Treemap using d3treeR",
-    "text": "16.6 Designing Interactive Treemap using d3treeR\n16.6.1 Installing d3treeR package\n\ninstall.packages(\"devtools\", repos = \"https://cloud.r-project.org\")\n\n\nThe downloaded binary packages are in\n    /var/folders/bx/cb2qyl_52jl6z3qcj996g9qc0000gn/T//Rtmp2EfXry/downloaded_packages\n\nlibrary(devtools)\ninstall_github(\"timelyportfolio/d3treeR\")\nlibrary(d3treeR)"
+    "text": "16.6 Designing Interactive Treemap using d3treeR\n16.6.1 Installing d3treeR package\n\ninstall.packages(\"devtools\", repos = \"https://cloud.r-project.org\")\n\n\nThe downloaded binary packages are in\n    /var/folders/bx/cb2qyl_52jl6z3qcj996g9qc0000gn/T//RtmphrC1Hn/downloaded_packages\n\nlibrary(devtools)\ninstall_github(\"timelyportfolio/d3treeR\")\nlibrary(d3treeR)"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html#designing-an-interactive-treemap",
