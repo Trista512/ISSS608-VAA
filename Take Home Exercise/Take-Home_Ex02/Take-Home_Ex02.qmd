@@ -1,0 +1,4196 @@
+---
+title: "Take-Home_Ex02"
+author: "HU YUE"
+date: "2026-05-27"
+date-modified: "last-modified"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-location: left
+    toc-depth: 3
+    code-fold: true
+    code-tools: true
+    fig-width: 10
+    fig-height: 6
+execute:
+  warning: false
+  message: false
+---
+
+# 1. Introduction
+
+TenantThread is a proptech company whose internal communications became the focus of a crisis investigation after merger-related information entered the public domain before the expected communication process was fully controlled. The case involves a communications embargo around the CivicLoom–TenantThread merger, internally referred to as Project HarborCrest, alongside broader pressure from media scrutiny, regulatory concerns, social media activity, and client-facing risk. The dataset describes a multi-agent corporate communications environment in which seven AI agents interacted across multiple channels and made real-time decisions about what should or should not be published. :contentReference[oaicite:0]{index="0"}
+
+The purpose of this project is to reconstruct TenantThread’s internal communications during the two weeks leading up to the breach. Rather than treating the breach as a single isolated event, this investigation examines how information, pressure, and decision-making evolved over time across internal messages, agent deliberations, and public posts. The central question is:
+
+> Did TenantThread’s team deliberately leak the merger, or did the AI-managed communication system break down under pressure?
+
+To answer this question, the project develops a single-page visual analytics website. The analysis will first examine the overall structure of the data, then reconstruct the communication timeline, identify key actors and communication pathways, assess signs of system pressure, trace merger-related information, and compare internal communications with public-facing posts. The final assessment will be based on visual evidence rather than assumptions made before the data is analysed.
+
+This website is organised as a visual investigation. Each section contributes to one part of the evidence chain: what happened, who was involved, how information moved, whether the system showed signs of overload, and whether public posts reflected prior internal communications. Together, these components support a structured judgement on whether the breach is more consistent with deliberate disclosure or system breakdown.
+
+# Executive Summary
+
+This visual analytics report evaluates two competing explanations:
+
+| Hypothesis | Explanation |
+|------------------------------------|------------------------------------|
+| Deliberate Leak | Someone intentionally moved confidential merger information into public-facing communication. |
+| System Breakdown | The AI-managed communication system failed under pressure, causing confidential information to cross into public channels. |
+
+The analysis proceeds through five stages:
+
+1.  Reconstruct the two-week event timeline.
+2.  Identify key actors and communication pathways.
+3.  Detect abnormal pressure and breakdown signals.
+4.  Trace merger-related information across internal and public channels.
+5.  Compare internal deliberations with public posts.
+
+# 2. Data Overview
+
+This section provides an overview of the dataset used in this investigation. The purpose is to understand the structure, coverage, and analytical potential of the data before moving into detailed visual analysis.
+
+The dataset contains TenantThread’s multi-agent corporate communication records during the two weeks leading up to the information release. It includes internal communications, agent-level decision processes, public-facing posts, environmental context, market signals, media events, and social media conditions.
+
+The original JSON file is organised around communication rounds. Each round contains a timestamp, environmental context, communication records, and participating agents. This structure allows the investigation to connect what agents said, what they were reacting to, and what external conditions existed at each point in time.
+
+```{r}
+library(tidyverse)
+library(jsonlite)
+library(lubridate)
+library(stringr)
+library(DT)
+```
+
+## Read the JSON file
+
+```{r}
+mc1_raw <- fromJSON(
+  "data/MC1_final_00.json",
+  flatten = TRUE
+)
+
+rounds <- mc1_raw$rounds
+```
+
+## Create communication-level dataset
+
+```{r}
+communications <- rounds %>%
+  select(
+    round_hour = hour,
+    communications
+  ) %>%
+  unnest(communications) %>%
+  mutate(
+    timestamp = ymd_hms(timestamp),
+    round_hour = ymd_hms(round_hour),
+    date = as_date(timestamp),
+    hour_of_day = hour(timestamp),
+    content_lower = str_to_lower(content),
+    is_public = message_type == "public_post"
+  )
+```
+
+## Data source summary
+
+```{r}
+data_summary <- tibble(
+  Dataset = c("Communication records", "Communication rounds"),
+  Description = c(
+    "Individual messages, posts, and agent communications",
+    "Hourly crisis context and grouped communication events"
+  ),
+  Records = c(
+    nrow(communications),
+    nrow(rounds)
+  )
+)
+
+datatable(
+  data_summary,
+  rownames = FALSE,
+  options = list(pageLength = 5)
+)
+```
+
+## Time Coverage
+
+```{r}
+time_coverage <- communications %>%
+  summarise(
+    start_time = min(timestamp, na.rm = TRUE),
+    end_time = max(timestamp, na.rm = TRUE),
+    number_of_days = as.numeric(max(date, na.rm = TRUE) - min(date, na.rm = TRUE)) + 1,
+    total_messages = n()
+  )
+
+datatable(
+  time_coverage,
+  rownames = FALSE,
+  options = list(dom = "t")
+)
+```
+
+## Agents Overview
+
+```{r}
+agent_overview <- communications %>%
+  count(agent_id, agent_role, agent_label, sort = TRUE) %>%
+  rename(
+    Agent_ID = agent_id,
+    Role = agent_role,
+    Label = agent_label,
+    Message_Count = n
+  )
+
+datatable(
+  agent_overview,
+  rownames = FALSE,
+  options = list(pageLength = 10)
+)
+```
+
+## Communication Channels Overview
+
+```{r}
+channel_overview <- communications %>%
+  count(channel, message_type, sort = TRUE) %>%
+  rename(
+    Channel = channel,
+    Message_Type = message_type,
+    Count = n
+  )
+
+datatable(
+  channel_overview,
+  rownames = FALSE,
+  options = list(pageLength = 10)
+)
+```
+
+## Simple Overview
+
+```{r}
+communications %>%
+  count(message_type) %>%
+  ggplot(aes(x = reorder(message_type, n), y = n)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Number of Communications by Message Type",
+    x = "Message Type",
+    y = "Number of Records"
+  ) +
+  theme_minimal()
+```
+
+Overall, this overview establishes the basic structure of the dataset: when the communications occurred, which agents participated, and which channels were used. The next section moves from data description to data preparation, where the raw nested JSON structure is transformed into analysis-ready tables for timeline, network, pressure, and leak-tracing visualisations.
+
+# 3. Data Preparation and Integration
+
+This section prepares the raw JSON-derived data for later visual analysis. The data description file is used only as a reference for understanding the dataset structure, while the actual data preparation is based on the fields available in the JSON file.
+
+## 3.1 Schema Validation
+
+Before transforming the data, the actual structure of the JSON object is inspected. This step ensures that the following extraction process is based on the available fields in the dataset.
+
+```{r}
+names(rounds)
+```
+
+```{r}
+schema_check <- tibble(
+  field = c(
+    "hour",
+    "environment_context",
+    "communications",
+    "participants"
+  ),
+  present_in_actual_json = c(
+    "hour" %in% names(rounds),
+    "environment_context" %in% names(rounds),
+    "communications" %in% names(rounds),
+    "participants" %in% names(rounds)
+  )
+)
+
+DT::datatable(
+  schema_check,
+  rownames = FALSE,
+  options = list(dom = "t")
+)
+```
+
+## 3.2 Extract Communication Records
+
+```{r}
+communications <- rounds %>%
+  select(
+    round_hour = hour,
+    communications
+  ) %>%
+  unnest(communications)
+
+glimpse(communications)
+```
+
+## 3.3 Standardise Communication Records
+
+```{r}
+communications_clean <- communications %>%
+  mutate(
+    timestamp = ymd_hms(timestamp),
+    round_hour = ymd_hms(round_hour),
+    date = as_date(timestamp),
+    hour_of_day = hour(timestamp),
+    day_of_week = wday(timestamp, label = TRUE),
+    content_lower = str_to_lower(content),
+    content_length = str_count(content, "\\S+"),
+    is_public = message_type == "public_post"
+  )
+
+glimpse(communications_clean)
+```
+
+## 3.4 Construct Analytical Variables
+
+```{r}
+communications_clean <- communications_clean %>%
+  mutate(
+    contains_merger = str_detect(
+      content_lower,
+      "merger|acquisition|civicloom|harborcrest|project harborcrest|deal|transaction"
+    ),
+    
+    contains_confidential = str_detect(
+      content_lower,
+      "confidential|embargo|private|internal only|not public|restricted"
+    ),
+    
+    contains_urgency = str_detect(
+      content_lower,
+      "urgent|asap|immediately|deadline|pressure|crisis|risk|escalate|failed|error"
+    ),
+    
+    communication_scope = case_when(
+      is_public ~ "Public",
+      channel == "one_on_one_chat" ~ "Private / One-on-One",
+      TRUE ~ "Internal"
+    )
+  )
+```
+
+## 3.5 Extract Environmental Context
+
+```{r}
+environment_context <- rounds %>%
+  transmute(
+    round_hour = ymd_hms(hour),
+    event_narrative = environment_context.event_narrative,
+    event_headline = environment_context.event_headline,
+    stock_price = environment_context.market_snapshot.stock_price,
+    percent_change = environment_context.market_snapshot.percent_change,
+    market_sentiment = environment_context.market_snapshot.sentiment,
+    social_state = environment_context.social_state
+  )
+
+glimpse(environment_context)
+```
+
+## 3.6 Extract Participant Data
+
+```{r}
+participants <- rounds %>%
+  select(
+    round_hour = hour,
+    participants
+  ) %>%
+  unnest(participants) %>%
+  mutate(
+    round_hour = ymd_hms(round_hour)
+  )
+
+glimpse(participants)
+```
+
+## 3.7 Integrate Communication and Context Data
+
+```{r}
+communications_integrated <- communications_clean %>%
+  left_join(
+    environment_context,
+    by = "round_hour"
+  )
+
+glimpse(communications_integrated)
+```
+
+## 3.8 Export Processed Tables
+
+```{r}
+dir.create("data/processed", recursive = TRUE, showWarnings = FALSE)
+
+write_csv(
+  communications_clean,
+  "data/processed/communications_clean.csv"
+)
+
+write_csv(
+  environment_context,
+  "data/processed/environment_context.csv"
+)
+
+write_csv(
+  participants,
+  "data/processed/participants.csv"
+)
+
+write_csv(
+  communications_integrated,
+  "data/processed/communications_integrated.csv"
+)
+```
+
+## 3.9 Data Preparation Summary
+
+```{r}
+prep_summary <- tibble(
+  prepared_table = c(
+    "communications_clean",
+    "environment_context",
+    "participants",
+    "communications_integrated"
+  ),
+  unit_of_analysis = c(
+    "One row per communication record",
+    "One row per crisis round",
+    "One row per agent per round",
+    "One row per communication record with contextual variables"
+  ),
+  main_use = c(
+    "Timeline reconstruction, keyword analysis, public post analysis",
+    "Crisis context and event background",
+    "Agent participation overview",
+    "Integrated analysis combining messages with crisis context"
+  ),
+  records = c(
+    nrow(communications_clean),
+    nrow(environment_context),
+    nrow(participants),
+    nrow(communications_integrated)
+  )
+)
+
+DT::datatable(
+  prep_summary,
+  rownames = FALSE,
+  options = list(pageLength = 5)
+)
+```
+
+After preparation, the nested JSON structure has been transformed into analysis-ready tables. These processed datasets will support the subsequent timeline reconstruction, communication flow analysis, system pressure analysis, merger information tracing, and public post comparison.
+
+# 4. Timeline Reconstruction
+
+This section reconstructs the communication sequence during the two weeks leading up to the breach. The purpose is to understand when different types of communications occurred, how activity evolved over time, and where public posts appeared within the broader internal communication flow.
+
+## 4.1 Prepare Timeline Data
+
+```{r}
+timeline_data <- communications_integrated %>%
+  mutate(
+    source_group = case_when(
+      is_public ~ "Public Post",
+      channel == "one_on_one_chat" ~ "One-on-One Chat",
+      channel == "comms_huddle" ~ "Comms Huddle",
+      TRUE ~ "Other Internal Communication"
+    ),
+    short_content = str_trunc(content, width = 120)
+  ) %>%
+  arrange(timestamp)
+```
+```{r}
+breach_time <- ymd_hms("2046-06-05 17:00:00")
+embargo_lift_time <- ymd_hms("2046-06-05 18:00:00")
+
+timeline_data <- timeline_data %>%
+  mutate(
+    breach_window = case_when(
+      timestamp < breach_time ~ "Before 5:00 PM Breach",
+      timestamp >= breach_time & timestamp < embargo_lift_time ~ "5:00–6:00 PM Embargo Breach Window",
+      timestamp >= embargo_lift_time ~ "After 6:00 PM Embargo Lift"
+    )
+  )
+```
+## 4.2 Overall Communication Timeline
+
+```{r}
+ggplot(
+  timeline_data,
+  aes(
+    x = timestamp,
+    y = source_group,
+    color = source_group
+  )
+) +
+  geom_point(alpha = 0.75, size = 2) +
+  labs(
+    title = "Communication Timeline Before the Breach",
+    subtitle = "Each point represents one communication record",
+    x = "Timestamp",
+    y = "Communication Type",
+    color = "Communication Type"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom"
+  )
+```
+
+The timeline indicates that TenantThread’s communication activity continued throughout the two-week period, with Comms Huddle, One-on-One Chat, and Public Posts appearing repeatedly. This suggests that public-facing communication occurred alongside ongoing internal discussion rather than as a single isolated event. “Other Internal Communication” is much less frequent and appears only on selected dates. The clustering of records near the end of the period suggests that later sections should examine whether communication density, merger-related content, or urgency signals increased closer to the breach.
+
+## 4.3 Daily Communication Volume
+
+```{r}
+daily_volume <- timeline_data %>%
+  count(date, source_group)
+
+ggplot(
+  daily_volume,
+  aes(
+    x = date,
+    y = n,
+    fill = source_group
+  )
+) +
+  geom_col() +
+  labs(
+    title = "Daily Communication Volume",
+    subtitle = "Number of communication records by day and communication type",
+    x = "Date",
+    y = "Number of Communications",
+    fill = "Communication Type"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom"
+  )
+```
+
+Daily communication volume remains relatively stable during most of the two-week period, but rises sharply in early June. The final spike reaches almost 500 communication records, far above the earlier daily levels. Importantly, this increase includes multiple communication types rather than only public posts, suggesting a broader escalation of internal and external communication activity. This pattern provides an initial indication that the breach occurred during a high-pressure communication period, which will be examined further in the system pressure analysis.
+
+## 4.4 Merger-Related Communication Timeline
+
+```{r}
+merger_spread_heatmap <- timeline_data %>%
+  filter(contains_merger == TRUE) %>%
+  count(date, agent_label, name = "merger_count")
+
+ggplot(
+  merger_spread_heatmap,
+  aes(
+    x = date,
+    y = agent_label,
+    fill = merger_count
+  )
+) +
+  geom_tile(
+    color = "white",
+    linewidth = 0.7
+  ) +
+  geom_text(
+    aes(label = ifelse(merger_count > 0, merger_count, "")),
+    size = 3
+  ) +
+  scale_fill_gradient(
+    low = "white",
+    high = "darkblue"
+  ) +
+  labs(
+    title = "Spread of Merger-Related Communication Across Agents",
+    subtitle = "Darker cells indicate more merger-related communications by agent and date",
+    x = "Date",
+    y = "Agent",
+    fill = "Merger Count"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 35, hjust = 1)
+  )
+```
+
+Merger-related communications are sparse in the earlier period but become much more concentrated near early June. The later cluster involves more agents, including Legal, PR, Social Manager, PR Intern, Judge, and Intern agents. This suggests that merger-related information became more widely circulated close to the breach period, which makes the later information-flow and public-post comparison especially important.
+
+## 4.5 Key Signal Trends Over Time
+
+```{r}
+signal_escalation_heatmap <- timeline_data %>%
+  group_by(date) %>%
+  summarise(
+    `Merger-Related` = sum(contains_merger, na.rm = TRUE),
+    `Confidentiality-Related` = sum(contains_confidential, na.rm = TRUE),
+    `Urgency-Related` = sum(contains_urgency, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(
+    cols = c(
+      `Merger-Related`,
+      `Confidentiality-Related`,
+      `Urgency-Related`
+    ),
+    names_to = "signal_type",
+    values_to = "message_count"
+  )
+
+ggplot(
+  signal_escalation_heatmap,
+  aes(
+    x = date,
+    y = signal_type,
+    fill = message_count
+  )
+) +
+  geom_tile(
+    color = "white",
+    linewidth = 0.7
+  ) +
+  geom_text(
+    aes(label = ifelse(message_count > 0, message_count, "")),
+    size = 3
+  ) +
+  scale_fill_gradient(
+    low = "white",
+    high = "darkred"
+  ) +
+  labs(
+    title = "Key Signal Escalation Over Time",
+    subtitle = "Merger, confidentiality, and urgency signals by date",
+    x = "Date",
+    y = "Signal Type",
+    fill = "Message Count"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 35, hjust = 1)
+  )
+```
+
+The graph shows that merger, confidentiality, and urgency signals stay low for most of the period, then surge sharply in early June. Merger-related signals increase the most, followed by urgency and confidentiality signals. This suggests that the breach period coincided with both wider merger discussion and heightened communication pressure.
+
+
+## 4.6 Breach Window Signal Intensity on June 5
+
+This visual zooms into June 5, 2046, the day of the inappropriate release. The vertical reference lines mark the approximate breach time at 5:00 PM and the formal embargo lift at 6:00 PM. This allows the analysis to separate behavior before the breach, during the embargo breach window, and after the embargo was formally lifted.
+
+```{r}
+breach_time <- ymd_hms("2046-06-05 17:00:00")
+embargo_lift_time <- ymd_hms("2046-06-05 18:00:00")
+
+breach_day_data <- timeline_data %>%
+  filter(date == as_date("2046-06-05")) %>%
+  mutate(
+    breach_phase = case_when(
+      timestamp < breach_time ~ "Before 5:00 PM",
+      timestamp >= breach_time & timestamp < embargo_lift_time ~ "5:00–6:00 PM Breach Window",
+      timestamp >= embargo_lift_time ~ "After 6:00 PM Embargo Lift"
+    ),
+    breach_phase = factor(
+      breach_phase,
+      levels = c(
+        "Before 5:00 PM",
+        "5:00–6:00 PM Breach Window",
+        "After 6:00 PM Embargo Lift"
+      )
+    )
+  )
+
+day_start <- min(breach_day_data$timestamp, na.rm = TRUE)
+day_end <- max(breach_day_data$timestamp, na.rm = TRUE)
+
+phase_duration <- tibble(
+  breach_phase = factor(
+    c(
+      "Before 5:00 PM",
+      "5:00–6:00 PM Breach Window",
+      "After 6:00 PM Embargo Lift"
+    ),
+    levels = c(
+      "Before 5:00 PM",
+      "5:00–6:00 PM Breach Window",
+      "After 6:00 PM Embargo Lift"
+    )
+  ),
+  duration_hours = c(
+    as.numeric(difftime(breach_time, day_start, units = "hours")),
+    1,
+    as.numeric(difftime(day_end, embargo_lift_time, units = "hours"))
+  )
+)
+
+breach_phase_summary <- breach_day_data %>%
+  group_by(breach_phase) %>%
+  summarise(
+    `Public + Merger` = sum(is_public & contains_merger, na.rm = TRUE),
+    `Public Posts` = sum(is_public, na.rm = TRUE),
+    `Merger-Related` = sum(contains_merger, na.rm = TRUE),
+    `Confidentiality-Related` = sum(contains_confidential, na.rm = TRUE),
+    `Urgency-Related` = sum(contains_urgency, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  left_join(
+    phase_duration,
+    by = "breach_phase"
+  ) %>%
+  pivot_longer(
+    cols = c(
+      `Public + Merger`,
+      `Public Posts`,
+      `Merger-Related`,
+      `Confidentiality-Related`,
+      `Urgency-Related`
+    ),
+    names_to = "signal_type",
+    values_to = "message_count"
+  ) %>%
+  mutate(
+    intensity_per_hour = message_count / duration_hours,
+    signal_type = factor(
+      signal_type,
+      levels = c(
+        "Public + Merger",
+        "Public Posts",
+        "Merger-Related",
+        "Confidentiality-Related",
+        "Urgency-Related"
+      )
+    )
+  )
+
+ggplot(
+  breach_phase_summary,
+  aes(
+    x = intensity_per_hour,
+    y = signal_type,
+    fill = breach_phase
+  )
+) +
+  geom_col(
+    position = position_dodge(width = 0.75),
+    width = 0.65
+  ) +
+  labs(
+    title = "Breach Window Signal Intensity on June 5",
+    subtitle = "Signal counts standardised as messages per hour across key embargo phases",
+    x = "Messages per Hour",
+    y = "Signal Type",
+    fill = "Breach Phase"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom"
+  )
+```
+The chart shows that merger-related and public-merger signals were already present before the 6:00 PM embargo lift. The 5:00–6:00 PM breach window has a clear increase in merger-related and public-facing merger activity, which suggests that embargoed information had started moving into public communication before the authorised release time. After 6:00 PM, all signal types rise further, but the key issue is that public merger-related communication was not zero before the embargo expired.
+
+## 4.7 Embargo Window Communication Breakdown
+
+The merger announcement was under embargo until 6:00 PM on June 5. Therefore, this section focuses specifically on communication before the embargo lift, especially merger-related messages and public-facing posts before 6:00 PM.
+
+```{r}
+embargo_lift_time <- ymd_hms("2046-06-05 18:00:00")
+breach_time <- ymd_hms("2046-06-05 17:00:00")
+
+pre_embargo_data <- communications_integrated %>%
+  filter(
+    date == as_date("2046-06-05"),
+    timestamp < embargo_lift_time
+  ) %>%
+  mutate(
+    embargo_phase = case_when(
+      timestamp < breach_time ~ "Before 5:00 PM",
+      timestamp >= breach_time & timestamp < embargo_lift_time ~ "5:00–6:00 PM Breach Window"
+    ),
+    embargo_risk_type = case_when(
+      is_public & contains_merger ~ "Public + Merger",
+      is_public ~ "Public Only",
+      contains_merger ~ "Internal/Private Merger",
+      contains_confidential ~ "Confidentiality",
+      contains_urgency ~ "Urgency",
+      TRUE ~ "Other"
+    )
+  )
+```
+
+```{r}
+pre_embargo_merger_by_agent <- pre_embargo_data %>%
+  filter(contains_merger == TRUE) %>%
+  count(agent_label, communication_scope, name = "message_count") %>%
+  group_by(agent_label) %>%
+  mutate(total = sum(message_count)) %>%
+  ungroup()
+
+ggplot(
+  pre_embargo_merger_by_agent,
+  aes(
+    x = reorder(agent_label, total),
+    y = message_count,
+    fill = communication_scope
+  )
+) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Merger-Related Communications Before Embargo Lift",
+    subtitle = "June 5 before 6:00 PM, grouped by agent and communication scope",
+    x = "Agent",
+    y = "Number of Merger-Related Communications",
+    fill = "Communication Scope"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom"
+  )
+```
+```{r}
+pre_embargo_merger_channel <- pre_embargo_data %>%
+  filter(contains_merger == TRUE) %>%
+  count(channel, message_type, name = "message_count") %>%
+  arrange(desc(message_count))
+
+ggplot(
+  pre_embargo_merger_channel,
+  aes(
+    x = reorder(channel, message_count),
+    y = message_count,
+    fill = message_type
+  )
+) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Channels Carrying Merger-Related Information Before 6:00 PM",
+    subtitle = "Embargoed merger information by channel and message type",
+    x = "Channel",
+    y = "Number of Merger-Related Communications",
+    fill = "Message Type"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom"
+  )
+```
+```{r}
+public_merger_before_embargo <- pre_embargo_data %>%
+  filter(
+    is_public == TRUE,
+    contains_merger == TRUE
+  ) %>%
+  arrange(timestamp) %>%
+  transmute(
+    Time = timestamp,
+    Phase = embargo_phase,
+    Agent = agent_label,
+    Channel = channel,
+    Message_Type = message_type,
+    Content = str_trunc(content, width = 220)
+  )
+
+DT::datatable(
+  public_merger_before_embargo,
+  rownames = FALSE,
+  options = list(
+    pageLength = 8,
+    lengthMenu = c(8, 15, 30),
+    scrollX = TRUE,
+    scrollY = "320px",
+    autoWidth = FALSE,
+    columnDefs = list(
+      list(width = "130px", targets = 0),
+      list(width = "160px", targets = 1),
+      list(width = "150px", targets = 2),
+      list(width = "120px", targets = 3),
+      list(width = "130px", targets = 4),
+      list(width = "560px", targets = 5)
+    )
+  )
+) %>%
+  DT::formatStyle(
+    "Content",
+    `white-space` = "normal",
+    `font-size` = "12px",
+    `line-height` = "1.25"
+  )
+```
+
+```{r}
+embargo_risk_summary <- pre_embargo_data %>%
+  summarise(
+    total_pre_embargo_messages = n(),
+    merger_related_before_6pm = sum(contains_merger, na.rm = TRUE),
+    public_posts_before_6pm = sum(is_public, na.rm = TRUE),
+    public_merger_posts_before_6pm = sum(is_public & contains_merger, na.rm = TRUE),
+    one_on_one_merger_before_6pm = sum(channel == "one_on_one_chat" & contains_merger, na.rm = TRUE),
+    comms_huddle_merger_before_6pm = sum(channel == "comms_huddle" & contains_merger, na.rm = TRUE)
+  )
+
+DT::datatable(
+  embargo_risk_summary,
+  rownames = FALSE,
+  options = list(dom = "t", scrollX = TRUE)
+)
+```
+The embargo-window breakdown shows that merger-related information was already active before the official 6:00 PM embargo lift. Legal-Agent and Social-Manager-Agent contributed the largest volume of merger-related communications before 6:00 PM, with activity spread across internal, private, and public scopes. This suggests that merger information was not confined to a narrow legal or executive channel.
+
+The channel breakdown is especially important: merger-related information appeared not only in `comms_huddle` and `one_on_one_chat`, but also in `personal_post`, `official_post`, and `anonymous_post`. Because the merger announcement was still under embargo before 6:00 PM, the presence of merger-related content in public-facing channels provides direct evidence that the embargo boundary had already been crossed before the authorised release time.
+
+## 4.8 Key Findings from Timeline Reconstruction
+
+- **The breach occurred in a clear escalation phase, not during routine communication.**  
+  Communication activity remained moderate for most of the two-week period, but surged sharply on June 5, with internal, private, public, and other communication types all increasing at the same time.
+
+- **Merger-related information became widely visible near the breach window.**  
+  The agent-date heatmap shows that merger-related communication was sparse earlier, but became highly concentrated on June 5, especially around Legal-Agent and Social-Manager-Agent. This suggests that merger information had spread beyond a narrow legal-control context before the release.
+
+- **Urgency, merger, and confidentiality signals intensified together.**  
+  The signal escalation heatmap shows a strong concentration of urgency, merger-related, and confidentiality-related signals on June 5. This indicates that the release happened during a period of both sensitive-information circulation and high communication pressure.
+
+- **The 5:00–6:00 PM window is critical because the embargo was still active.**  
+  The breach-window comparison shows that public-merger signals were already present before the official 6:00 PM embargo lift. This is direct evidence that embargoed merger information had entered public-facing communication before it was authorised.
+
+- **Pre-embargo merger communication was not limited to private or legal channels.**  
+  Before 6:00 PM, merger-related information appeared across internal, private, and public scopes, and across channels including `side_huddle`, `one_on_one_chat`, `comms_huddle`, `personal_post`, `official_post`, and `anonymous_post`.
+
+- **Overall, the timeline evidence supports a system-breakdown pathway rather than a single isolated leak.**  
+  The inappropriate release appears to have emerged from escalating communication volume, broader merger-information circulation, and pre-embargo public-facing exposure.
+  
+# 5. Communication Relationships and Information Flow Analysis
+
+This section examines how communication moved across agents, channels, and interaction scopes. While the previous section focused on the timing of communication, this section focuses on the structure of communication: who was active, where they communicated, and whether information flow was concentrated or distributed.
+
+The purpose is to identify whether TenantThread’s communication pattern looked like a controlled internal process or a broader, more fragmented multi-agent communication environment. To support visual variety, this section uses composition charts, relationship matrices, flow diagrams, and network-based views rather than relying on a single chart type.
+
+## 5.1 Agent Communication Composition
+
+This visual examines each agent’s communication composition across public, private, and internal scopes. Instead of only comparing total message counts, the proportional view shows whether an agent was mainly active in internal discussion, one-on-one coordination, or public-facing communication.
+
+```{r}
+agent_scope_composition <- communications_integrated %>%
+  count(agent_label, communication_scope) %>%
+  group_by(agent_label) %>%
+  mutate(
+    total_messages = sum(n),
+    share = n / total_messages
+  ) %>%
+  ungroup()
+
+ggplot(
+  agent_scope_composition,
+  aes(
+    x = reorder(agent_label, total_messages),
+    y = share,
+    fill = communication_scope
+  )
+) +
+  geom_col(width = 0.75) +
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(
+    title = "Agent Communication Composition by Scope",
+    subtitle = "Proportion of each agent's communications across internal, private, and public scopes",
+    x = "Agent",
+    y = "Share of Communications",
+    fill = "Communication Scope"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom"
+  )
+```
+
+This chart shows that all agents communicate mainly through internal channels, but their scope composition differs. PR-Intern-Agent and Intern-Agent have the largest public-facing shares, while Judge-Agent has no public communication and is mostly internal/private. Legal, PR, Social Manager, and Platform Trust combine internal discussion with private coordination, suggesting that key operational agents worked across multiple communication spaces.
+
+## 5.2 Agent-Channel Relationship
+
+This visual examines how agents used different communication channels. Unlike the previous proportional composition chart, this matrix-style bubble chart highlights the relationship between agents and channels by showing where communication activity was concentrated.
+
+```{r}
+agent_channel_matrix <- communications_integrated %>%
+  count(agent_label, channel, communication_scope, name = "message_count") %>%
+  group_by(agent_label) %>%
+  mutate(agent_total = sum(message_count)) %>%
+  ungroup()
+
+ggplot(
+  agent_channel_matrix,
+  aes(
+    x = channel,
+    y = reorder(agent_label, agent_total),
+    size = message_count,
+    fill = communication_scope
+  )
+) +
+  geom_point(
+    shape = 21,
+    alpha = 0.75,
+    colour = "grey30"
+  ) +
+  scale_size_continuous(
+    range = c(3, 14)
+  ) +
+  labs(
+    title = "Agent-Channel Communication Matrix",
+    subtitle = "Bubble size represents message volume; fill shows communication scope",
+    x = "Communication Channel",
+    y = "Agent",
+    size = "Message Count",
+    fill = "Communication Scope"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 30, hjust = 1)
+  )
+```
+
+The matrix shows that `comms_huddle` and `one_on_one_chat` are the dominant channels for most agents, while public-facing channels are used by fewer agents. Legal, Social Manager, and Platform Trust have relatively large bubbles across multiple channels, suggesting broader involvement in communication flow. PR-Intern and Intern show visible activity in `official_post` or `personal_post`, which makes them important for later public-channel analysis.
+
+## 5.3 Reply-Based Message Flow between Agents
+
+This visual uses reply relationships to approximate agent-to-agent communication flow. If one message responds to another message, the original message sender is treated as the source agent, while the replying agent is treated as the target agent.
+
+```{r}
+message_lookup <- communications_integrated %>%
+  select(
+    responding_to = message_id,
+    source_agent = agent_label
+  )
+
+reply_flow <- communications_integrated %>%
+  filter(!is.na(responding_to)) %>%
+  left_join(
+    message_lookup,
+    by = "responding_to"
+  ) %>%
+  filter(!is.na(source_agent)) %>%
+  mutate(
+    target_agent = agent_label
+  )
+
+agent_flow <- reply_flow %>%
+  count(
+    source_agent,
+    target_agent,
+    name = "flow_count"
+  ) %>%
+  filter(source_agent != target_agent) %>%
+  arrange(desc(flow_count)) %>%
+  slice_max(flow_count, n = 20) %>%
+  mutate(
+    flow_id = row_number()
+  )
+
+flow_long <- agent_flow %>%
+  select(
+    flow_id,
+    source_agent,
+    target_agent,
+    flow_count
+  ) %>%
+  pivot_longer(
+    cols = c(source_agent, target_agent),
+    names_to = "flow_side",
+    values_to = "agent"
+  ) %>%
+  mutate(
+    flow_side = recode(
+      flow_side,
+      source_agent = "Source Agent",
+      target_agent = "Replying Agent"
+    ),
+    flow_side = factor(
+      flow_side,
+      levels = c("Source Agent", "Replying Agent")
+    )
+  )
+
+ggplot(
+  flow_long,
+  aes(
+    x = flow_side,
+    y = agent,
+    group = flow_id
+  )
+) +
+  geom_line(
+    aes(
+      linewidth = flow_count,
+      colour = flow_count
+    ),
+    alpha = 0.55
+  ) +
+  geom_point(
+    aes(
+      size = flow_count,
+      fill = flow_count
+    ),
+    shape = 21,
+    colour = "grey35",
+    alpha = 0.9
+  ) +
+  scale_linewidth_continuous(
+    range = c(0.4, 3),
+    guide = "none"
+  ) +
+  scale_size_continuous(
+    range = c(3, 10),
+    guide = "none"
+  ) +
+  scale_colour_gradient(
+    low = "lightblue",
+    high = "darkblue",
+    name = "Reply Count"
+  ) +
+  scale_fill_gradient(
+    low = "lightblue",
+    high = "darkblue",
+    guide = "none"
+  ) +
+  labs(
+    title = "Reply-Based Message Flow between Agents",
+    subtitle = "Darker and thicker links indicate stronger reply-based communication flow",
+    x = "",
+    y = "Agent"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom"
+  )
+```
+
+This chart shows that reply-based communication is concentrated around several core agents, especially Legal-Agent, Platform-Trust-Agent, and Social-Manager-Agent. The thickest and darkest links indicate stronger reply flows between these agents, suggesting that they formed the main communication backbone. PR-Agent and PR-Intern-Agent also appear in the reply structure, but with less dominant flow intensity. This helps identify which agents should be examined more closely when tracing sensitive information movement.
+
+## 5.4 Reply-Based Agent Relationship Network
+
+This network visualises reply-based relationships between agents. Each node represents an agent, and each edge represents a reply relationship. Larger nodes indicate agents with more communication records, while thicker edges indicate stronger reply-based interaction between agents.
+
+```{r}
+#| fig-height: 8
+#| fig-width: 11
+library(igraph)
+library(ggraph)
+
+message_lookup <- communications_integrated %>%
+  select(
+    responding_to = message_id,
+    source_agent = agent_label,
+    source_role = agent_role
+  )
+
+reply_edges <- communications_integrated %>%
+  filter(!is.na(responding_to)) %>%
+  left_join(
+    message_lookup,
+    by = "responding_to"
+  ) %>%
+  filter(!is.na(source_agent)) %>%
+  mutate(
+    target_agent = agent_label,
+    target_role = agent_role
+  ) %>%
+  filter(source_agent != target_agent) %>%
+  count(
+    source_agent,
+    target_agent,
+    name = "reply_count"
+  )
+
+agent_nodes <- communications_integrated %>%
+  count(
+    agent_label,
+    agent_role,
+    name = "message_count"
+  ) %>%
+  rename(
+    name = agent_label,
+    role = agent_role
+  )
+
+agent_network <- graph_from_data_frame(
+  d = reply_edges,
+  vertices = agent_nodes,
+  directed = TRUE
+)
+
+ggraph(agent_network, layout = "fr") +
+  geom_edge_link(
+    aes(width = reply_count),
+    alpha = 0.35,
+    colour = "grey35",
+    arrow = arrow(length = unit(2.2, "mm")),
+    end_cap = circle(3, "mm")
+  ) +
+  geom_node_point(
+    aes(
+      size = message_count,
+      colour = role
+    ),
+    alpha = 0.9
+  ) +
+  geom_node_text(
+    aes(label = name),
+    repel = TRUE,
+    size = 3.4
+  ) +
+  scale_edge_width(
+    range = c(0.3, 2.2),
+    name = "Reply Count"
+  ) +
+  scale_size_continuous(
+    range = c(5, 11),
+    name = "Message Count"
+  ) +
+  labs(
+    title = "Reply-Based Agent Relationship Network",
+    subtitle = "Node size represents message volume; edge thickness represents reply frequency",
+    colour = "Agent Role"
+  ) +
+  theme_void() +
+  theme(
+    legend.position = "bottom",
+    legend.box = "vertical",
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 9),
+    plot.margin = margin(10, 20, 10, 20)
+  ) +
+  guides(
+    colour = guide_legend(
+      title = "Agent Role",
+      nrow = 2,
+      override.aes = list(size = 4)
+    ),
+    size = guide_legend(
+      title = "Message Count",
+      nrow = 1
+    ),
+    edge_width = guide_legend(
+      title = "Reply Count",
+      nrow = 1
+    )
+  )
+```
+
+This network shows that Legal-Agent, Platform-Trust-Agent, Social-Manager-Agent, and PR-Agent form the core reply-based communication structure. The largest nodes and thicker links suggest that these agents were central to coordination and information exchange. PR-Intern-Agent and Intern-Agent are less central overall, but they remain connected to the main network, which matters because they also have public-facing communication roles. This structure suggests that sensitive information could move from core internal agents toward public-facing actors through existing reply relationships.
+
+## 5.5 Communication Boundary Bridge Map
+
+This visual identifies which agents operated across internal, private, and public communication spaces. Agents with both high internal activity and visible public-facing activity are especially important for later leak-tracing analysis because they sit closer to the boundary between internal coordination and public communication.
+
+```{r}
+bridge_data <- communications_integrated %>%
+  count(agent_label, communication_scope, name = "message_count") %>%
+  group_by(agent_label) %>%
+  mutate(
+    total_messages = sum(message_count),
+    share = message_count / total_messages
+  ) %>%
+  ungroup() %>%
+  select(agent_label, communication_scope, share, total_messages) %>%
+  pivot_wider(
+    names_from = communication_scope,
+    values_from = share,
+    values_fill = 0
+  ) %>%
+  rename(
+    internal_share = Internal,
+    private_share = `Private / One-on-One`,
+    public_share = Public
+  ) %>%
+  mutate(
+    bridge_score = private_share + public_share,
+
+    label_x = case_when(
+      agent_label == "Platform-Trust-Agent" ~ internal_share + 0.040,
+      agent_label == "Judge-Agent" ~ internal_share - 0.050,
+      agent_label == "Legal-Agent" ~ internal_share - 0.035,
+      agent_label == "PR-Agent" ~ internal_share + 0.030,
+      agent_label == "Social-Manager-Agent" ~ internal_share + 0.005,
+      agent_label == "PR-Intern-Agent" ~ internal_share - 0.005,
+      agent_label == "Intern-Agent" ~ internal_share + 0.005,
+      TRUE ~ internal_share
+    ),
+
+    label_y = case_when(
+      agent_label == "Platform-Trust-Agent" ~ public_share - 0.010,
+      agent_label == "Judge-Agent" ~ public_share + 0.018,
+      agent_label == "Legal-Agent" ~ public_share + 0.020,
+      agent_label == "PR-Agent" ~ public_share + 0.030,
+      agent_label == "Social-Manager-Agent" ~ public_share + 0.018,
+      agent_label == "PR-Intern-Agent" ~ public_share - 0.020,
+      agent_label == "Intern-Agent" ~ public_share + 0.020,
+      TRUE ~ public_share + 0.015
+    )
+  )
+
+ggplot(
+  bridge_data,
+  aes(
+    x = internal_share,
+    y = public_share
+  )
+) +
+  geom_point(
+    aes(
+      size = total_messages,
+      fill = bridge_score
+    ),
+    shape = 21,
+    colour = "grey35",
+    alpha = 0.38,
+    stroke = 0.5
+  ) +
+
+  geom_segment(
+    aes(
+      x = internal_share,
+      y = public_share,
+      xend = label_x,
+      yend = label_y
+    ),
+    colour = "grey55",
+    linewidth = 0.3,
+    alpha = 0.7
+  ) +
+
+  geom_label(
+    aes(
+      x = label_x,
+      y = label_y,
+      label = agent_label
+    ),
+    size = 3,
+    label.size = 0.15,
+    label.padding = unit(0.12, "lines"),
+    fill = alpha("white", 0.82)
+  ) +
+
+  scale_x_continuous(
+    labels = scales::percent_format(),
+    breaks = seq(0.45, 0.85, 0.05)
+  ) +
+
+  scale_y_continuous(
+    labels = scales::percent_format(),
+    breaks = seq(0.00, 0.25, 0.05)
+  ) +
+
+  coord_cartesian(
+    xlim = c(0.45, 0.85),
+    ylim = c(-0.015, 0.26),
+    clip = "off"
+  ) +
+
+  scale_size_continuous(
+    range = c(3, 12)
+  ) +
+
+  scale_fill_gradient(
+    low = "lightblue",
+    high = "darkblue"
+  ) +
+
+  labs(
+    title = "Communication Boundary Bridge Map",
+    subtitle = "Zoomed view of agents' internal and public communication shares",
+    x = "Internal Communication Share",
+    y = "Public Communication Share",
+    size = "Total Messages",
+    fill = "Bridge Score"
+  ) +
+
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    plot.margin = margin(10, 50, 10, 10)
+  )
+```
+
+This bridge map shows that PR-Intern-Agent and Intern-Agent have the highest public communication shares, while Legal-Agent, PR-Agent, Social-Manager-Agent, and Platform-Trust-Agent are more embedded in internal communication. Platform-Trust-Agent corresponds to the larger bubble in the lower-right area, while Judge-Agent corresponds to the smaller nearby bubble. Agents positioned between internal and public communication spaces are important for later leak-tracing analysis because they may act as communication boundary bridges.
+
+## 5.6 Merger-Related Communication Concentration
+
+This visual focuses only on communications containing merger-related terms. The mosaic-style chart shows both the relative volume of merger-related communications by agent and how those communications are distributed across internal, private, and public scopes.
+
+```{r}
+merger_mosaic_data <- communications_integrated %>%
+  filter(contains_merger == TRUE) %>%
+  count(agent_label, communication_scope, name = "message_count") %>%
+  group_by(agent_label) %>%
+  mutate(
+    agent_total = sum(message_count),
+    scope_share = message_count / agent_total
+  ) %>%
+  ungroup()
+
+agent_widths <- merger_mosaic_data %>%
+  distinct(agent_label, agent_total) %>%
+  arrange(desc(agent_total)) %>%
+  mutate(
+    width = agent_total / sum(agent_total),
+    xmin = lag(cumsum(width), default = 0),
+    xmax = cumsum(width)
+  )
+
+merger_mosaic_plot <- merger_mosaic_data %>%
+  left_join(agent_widths, by = c("agent_label", "agent_total")) %>%
+  group_by(agent_label) %>%
+  arrange(communication_scope, .by_group = TRUE) %>%
+  mutate(
+    ymin = lag(cumsum(scope_share), default = 0),
+    ymax = cumsum(scope_share),
+    label_x = (xmin + xmax) / 2,
+    label_y = (ymin + ymax) / 2
+  ) %>%
+  ungroup()
+
+ggplot(
+  merger_mosaic_plot,
+  aes(
+    xmin = xmin,
+    xmax = xmax,
+    ymin = ymin,
+    ymax = ymax,
+    fill = communication_scope
+  )
+) +
+  geom_rect(
+    color = "white",
+    linewidth = 0.7,
+    alpha = 0.85
+  ) +
+  geom_text(
+    aes(
+      x = label_x,
+      y = label_y,
+      label = ifelse(message_count > 3, message_count, "")
+    ),
+    size = 3
+  ) +
+  scale_x_continuous(
+    breaks = agent_widths$xmin + agent_widths$width / 2,
+    labels = agent_widths$agent_label,
+    expand = c(0, 0)
+  ) +
+  scale_y_continuous(
+    labels = scales::percent_format(),
+    expand = c(0, 0)
+  ) +
+  labs(
+    title = "Merger-Related Communication Concentration",
+    subtitle = "Column width shows each agent's merger-related volume; height shows scope composition",
+    x = "Agent",
+    y = "Share within Agent",
+    fill = "Communication Scope"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 35, hjust = 1)
+  )
+```
+
+This mosaic chart shows that merger-related communication is heavily concentrated among Legal-Agent and Social-Manager-Agent, which have the widest columns. For both agents, most merger-related records are internal, but there is also a visible public component. PR-Intern-Agent has a smaller total volume, but a relatively large private share. This suggests that merger-related information was not limited to one actor or one communication scope, making these agents important for later leak-tracing analysis.
+
+## 5.7 Sensitive Signal Exposure by Agent
+
+This visual compares how different agents were exposed to merger-related, confidentiality-related, and urgency-related communication signals. Unlike the previous visuals, which focus on structure and flow, this chart highlights risk-relevant content exposure by agent.
+
+```{r}
+sensitive_exposure <- communications_integrated %>%
+  group_by(agent_label) %>%
+  summarise(
+    merger_related = sum(contains_merger, na.rm = TRUE),
+    confidential_related = sum(contains_confidential, na.rm = TRUE),
+    urgency_related = sum(contains_urgency, na.rm = TRUE),
+    total_messages = n(),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(
+    cols = c(merger_related, confidential_related, urgency_related),
+    names_to = "signal_type",
+    values_to = "signal_count"
+  ) %>%
+  mutate(
+    signal_type = recode(
+      signal_type,
+      merger_related = "Merger-related",
+      confidential_related = "Confidentiality-related",
+      urgency_related = "Urgency-related"
+    )
+  )
+
+agent_order <- sensitive_exposure %>%
+  group_by(agent_label) %>%
+  summarise(total_signal = sum(signal_count), .groups = "drop") %>%
+  arrange(total_signal) %>%
+  pull(agent_label)
+
+sensitive_exposure <- sensitive_exposure %>%
+  mutate(
+    agent_label = factor(agent_label, levels = agent_order)
+  )
+
+ggplot(
+  sensitive_exposure,
+  aes(
+    x = signal_count,
+    y = agent_label,
+    colour = signal_type
+  )
+) +
+  geom_point(size = 3.2, alpha = 0.85) +
+  geom_line(
+    aes(group = agent_label),
+    colour = "grey75",
+    linewidth = 0.5
+  ) +
+  labs(
+    title = "Sensitive Signal Exposure by Agent",
+    subtitle = "Comparison of merger, confidentiality, and urgency-related signals",
+    x = "Number of Communications",
+    y = "Agent",
+    colour = "Signal Type"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom"
+  )
+```
+
+Legal-Agent has the highest exposure across all three sensitive signals, especially merger- and urgency-related content. Social-Manager-Agent is also highly exposed to merger-related signals, while Platform-Trust-Agent stands out more on urgency-related content. Overall, sensitive information is concentrated among a few core agents rather than evenly distributed across the team.
+
+## 5.8 Embargo-Relevant Relationship Profile
+
+```{r}
+embargo_lift_time <- ymd_hms("2046-06-05 18:00:00")
+
+# Rebuild reply relationships for centrality measurement
+reply_lookup <- communications_integrated %>%
+  select(
+    responding_to = message_id,
+    source_agent = agent_label
+  )
+
+reply_links <- communications_integrated %>%
+  filter(!is.na(responding_to)) %>%
+  left_join(
+    reply_lookup,
+    by = "responding_to"
+  ) %>%
+  filter(!is.na(source_agent)) %>%
+  mutate(
+    target_agent = agent_label
+  ) %>%
+  filter(source_agent != target_agent)
+
+reply_centrality <- bind_rows(
+  reply_links %>%
+    count(source_agent, name = "reply_links") %>%
+    rename(agent_label = source_agent),
+  
+  reply_links %>%
+    count(target_agent, name = "reply_links") %>%
+    rename(agent_label = target_agent)
+) %>%
+  group_by(agent_label) %>%
+  summarise(
+    reply_centrality = sum(reply_links),
+    .groups = "drop"
+  )
+
+# Agent-level embargo relevance profile
+agent_embargo_profile <- communications_integrated %>%
+  group_by(agent_label) %>%
+  summarise(
+    total_messages = n(),
+    
+    pre6_merger = sum(
+      date == as_date("2046-06-05") &
+        timestamp < embargo_lift_time &
+        contains_merger,
+      na.rm = TRUE
+    ),
+    
+    pre6_public_merger = sum(
+      date == as_date("2046-06-05") &
+        timestamp < embargo_lift_time &
+        is_public &
+        contains_merger,
+      na.rm = TRUE
+    ),
+    
+    public_share = mean(is_public, na.rm = TRUE),
+    
+    sensitive_exposure = sum(
+      as.integer(contains_merger) +
+        as.integer(contains_confidential) +
+        as.integer(contains_urgency),
+      na.rm = TRUE
+    ),
+    
+    .groups = "drop"
+  ) %>%
+  left_join(
+    reply_centrality,
+    by = "agent_label"
+  ) %>%
+  mutate(
+    reply_centrality = replace_na(reply_centrality, 0)
+  )
+
+# Build communication boundary profile
+boundary_profile <- communications_integrated %>%
+  count(agent_label, communication_scope, name = "message_count") %>%
+  group_by(agent_label) %>%
+  mutate(
+    total_scope_messages = sum(message_count),
+    share = message_count / total_scope_messages
+  ) %>%
+  ungroup() %>%
+  select(agent_label, communication_scope, share) %>%
+  pivot_wider(
+    names_from = communication_scope,
+    values_from = share,
+    values_fill = 0
+  )
+
+# Ensure expected communication scope columns exist
+if (!"Internal" %in% names(boundary_profile)) {
+  boundary_profile$Internal <- 0
+}
+
+if (!"Private / One-on-One" %in% names(boundary_profile)) {
+  boundary_profile[["Private / One-on-One"]] <- 0
+}
+
+if (!"Public" %in% names(boundary_profile)) {
+  boundary_profile$Public <- 0
+}
+
+boundary_profile <- boundary_profile %>%
+  transmute(
+    agent_label,
+    internal_share = Internal,
+    private_share = `Private / One-on-One`,
+    public_scope_share = Public,
+    boundary_bridge_score = private_share + public_scope_share
+  )
+
+agent_embargo_profile <- agent_embargo_profile %>%
+  left_join(
+    boundary_profile,
+    by = "agent_label"
+  ) %>%
+  mutate(
+    boundary_bridge_score = replace_na(boundary_bridge_score, 0)
+  )
+
+# Convert metrics into long format and scale within each metric
+embargo_profile_long <- agent_embargo_profile %>%
+  pivot_longer(
+    cols = c(
+      pre6_merger,
+      pre6_public_merger,
+      public_share,
+      boundary_bridge_score,
+      sensitive_exposure,
+      reply_centrality
+    ),
+    names_to = "metric",
+    values_to = "metric_value"
+  ) %>%
+  group_by(metric) %>%
+  mutate(
+    scaled_score = {
+      metric_min <- min(metric_value, na.rm = TRUE)
+      metric_max <- max(metric_value, na.rm = TRUE)
+      
+      if (is.infinite(metric_min) | is.infinite(metric_max) | metric_max == metric_min) {
+        rep(0, n())
+      } else {
+        (metric_value - metric_min) / (metric_max - metric_min)
+      }
+    }
+  ) %>%
+  ungroup() %>%
+  mutate(
+    metric = recode(
+      metric,
+      pre6_merger = "Pre-6PM Merger Activity",
+      pre6_public_merger = "Pre-6PM Public Merger",
+      public_share = "Public-Facing Share",
+      boundary_bridge_score = "Boundary Bridge Score",
+      sensitive_exposure = "Sensitive Signal Exposure",
+      reply_centrality = "Reply Centrality"
+    ),
+    
+    metric = factor(
+      metric,
+      levels = c(
+        "Pre-6PM Merger Activity",
+        "Pre-6PM Public Merger",
+        "Public-Facing Share",
+        "Boundary Bridge Score",
+        "Sensitive Signal Exposure",
+        "Reply Centrality"
+      )
+    ),
+    
+    label = case_when(
+      metric %in% c("Public-Facing Share", "Boundary Bridge Score") ~
+        scales::percent(metric_value, accuracy = 1),
+      TRUE ~ as.character(round(metric_value, 0))
+    )
+  )
+
+agent_order <- embargo_profile_long %>%
+  group_by(agent_label) %>%
+  summarise(
+    total_score = sum(scaled_score, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(total_score) %>%
+  pull(agent_label)
+
+embargo_profile_long <- embargo_profile_long %>%
+  mutate(
+    agent_label = factor(agent_label, levels = agent_order)
+  )
+
+ggplot(
+  embargo_profile_long,
+  aes(
+    x = metric,
+    y = agent_label,
+    fill = scaled_score
+  )
+) +
+  geom_tile(
+    color = "white",
+    linewidth = 0.7
+  ) +
+  geom_text(
+    aes(label = label),
+    size = 3.1
+  ) +
+  scale_fill_gradient(
+    low = "white",
+    high = "darkred"
+  ) +
+  labs(
+    title = "Embargo-Relevant Relationship Profile",
+    subtitle = "Agent-level comparison of pre-embargo merger activity, public exposure, sensitivity, and reply centrality",
+    x = "Embargo-Relevant Dimension",
+    y = "Agent",
+    fill = "Relative Score"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 30, hjust = 1)
+  )
+```
+
+Legal-Agent and Social-Manager-Agent stand out as the most embargo-relevant actors because they combine high pre-6PM merger activity with strong sensitive-signal exposure. Platform-Trust-Agent is important through reply centrality and boundary relevance, suggesting a coordination role. PR-Intern-Agent and Intern-Agent show stronger public-facing exposure, which makes them important for tracing how merger-related information could move toward public channels before the 6:00 PM embargo lift.
+
+## 5.9 Key Findings from Communication Flow Analysis
+
+- **Communication was concentrated around a core coordination group.**  
+  The network graph shows that Legal-Agent, Platform-Trust-Agent, Social-Manager-Agent, and PR-Agent formed the main reply-based communication structure. These agents were central to information exchange before the breach.
+
+- **Merger-related information was not fully contained.**  
+  Legal-Agent and Social-Manager-Agent had the highest pre-6PM merger activity and sensitive-signal exposure, but merger-related content also appeared across other agents, scopes, and channels.
+
+- **Public-facing boundary actors created potential release pathways.**  
+  PR-Intern-Agent and Intern-Agent had higher public-facing shares, while Social-Manager-Agent connected internal coordination with public-facing communication. This matters because these agents sat closer to the boundary between internal information and public release.
+
+- **The embargo-relevant profile highlights different risk roles.**  
+  Legal-Agent and Social-Manager-Agent were most important for merger and sensitive-content exposure; Platform-Trust-Agent was important as a reply-centrality and coordination node; PR-Intern-Agent and Intern-Agent were important because of their public-facing exposure.
+
+- **Overall, the communication structure supports a system-breakdown interpretation more than a single isolated leak.**  
+  The breach appears to have emerged from a multi-agent communication environment where sensitive merger information circulated through core coordinators and public-facing boundary actors before the embargo lift.
+
+# 6. Key Events, Decision Points, and Causal Chain
+
+This section reconstructs the event-level pathway that led to the inappropriate release. Part 4 showed when communication and merger-related signals escalated, while Part 5 showed which agents and channels formed the main information pathways. This section connects those findings by identifying key actions, decision points, actors involved, and system elements that allowed embargoed merger information to move into public-facing communication before the official 6:00 PM embargo lift.
+
+## 6.1 Purpose of Causal Event Analysis
+
+The purpose of this section is to move from descriptive patterns to causal explanation. Earlier sections established that communication volume, merger-related discussion, public-facing exposure, and pressure signals all intensified before the embargo breach. However, those findings alone do not explain how the inappropriate release happened.
+
+This section therefore reconstructs the event-level pathway that led to the pre-6:00 PM release of merger-related information. It focuses on three questions:
+
+1. Which key actions and decision points appeared before the embargo lift?
+2. Which agents were involved in those decisions or actions?
+3. Which system elements allowed merger-related content to move from internal or private communication into public-facing channels?
+
+The analysis is especially focused on the period before the official 6:00 PM embargo lift on June 5. Records involving merger-related content, decision/action language, public-facing communication, and enforcement-related signals are treated as key evidence for reconstructing the causal chain.
+
+This section does not assume that the release was either deliberate or accidental at the outset. Instead, it evaluates whether the event pattern looks like a controlled intentional leak by a specific actor, or a broader system breakdown in which sensitive information passed through multiple agents, channels, and weak control points before reaching public communication.
+
+## 6.2 Condensed Key Event Sequence
+
+This section condenses the communication records into a small number of causal stages. The purpose is not to repeat the full timeline analysis, but to show the main pathway from internal merger circulation to public-facing exposure before and after the embargo lift.
+
+```{r}
+#| fig-width: 11
+#| fig-height: 6.5
+
+embargo_lift_time <- ymd_hms("2046-06-05 18:00:00")
+breach_time <- ymd_hms("2046-06-05 17:00:00")
+
+causal_event_data <- communications_integrated %>%
+  mutate(
+    event_text = str_to_lower(content),
+
+    causal_stage = case_when(
+      contains_merger &
+        !is_public &
+        timestamp < breach_time ~
+        "Internal merger circulation",
+
+      contains_merger &
+        str_detect(event_text, "urgent|asap|deadline|pressure|crisis|escalate|critical|risk") &
+        timestamp < embargo_lift_time ~
+        "Merger pressure escalation",
+
+      contains_merger &
+        str_detect(event_text, "embargo|confidential|restricted|sensitive|not public|internal only") &
+        timestamp < embargo_lift_time ~
+        "Confidentiality boundary present",
+
+      str_detect(event_text, "approve|approval|greenlight|go ahead|clearance|execute|publish|post|release") &
+        timestamp < embargo_lift_time ~
+        "Decision / release action",
+
+      str_detect(event_text, "hold|wait|pause|review|monitor|block|do not|don't|cannot|not ready") &
+        timestamp < embargo_lift_time ~
+        "Review / control attempt",
+
+      str_detect(event_text, "judge|enforcement|guardrail|compliance|policy") &
+        timestamp < embargo_lift_time ~
+        "Enforcement reference",
+
+      is_public &
+        contains_merger &
+        timestamp < embargo_lift_time ~
+        "Public merger exposure before embargo lift",
+
+      is_public &
+        contains_merger &
+        timestamp >= embargo_lift_time ~
+        "Public merger release after embargo lift",
+
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(causal_stage))
+
+causal_stage_summary <- causal_event_data %>%
+  group_by(causal_stage) %>%
+  summarise(
+    event_count = n(),
+    agents_involved = n_distinct(agent_label),
+    public_events = sum(is_public, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    stage_number = case_when(
+      causal_stage == "Internal merger circulation" ~ 1,
+      causal_stage == "Merger pressure escalation" ~ 2,
+      causal_stage == "Confidentiality boundary present" ~ 3,
+      causal_stage == "Decision / release action" ~ 4,
+      causal_stage == "Review / control attempt" ~ 5,
+      causal_stage == "Enforcement reference" ~ 6,
+      causal_stage == "Public merger exposure before embargo lift" ~ 7,
+      causal_stage == "Public merger release after embargo lift" ~ 8
+    ),
+
+    stage_group = case_when(
+      causal_stage == "Internal merger circulation" ~ "Information Flow",
+      causal_stage %in% c(
+        "Merger pressure escalation",
+        "Confidentiality boundary present"
+      ) ~ "Pressure / Boundary",
+      causal_stage %in% c(
+        "Decision / release action",
+        "Review / control attempt",
+        "Enforcement reference"
+      ) ~ "Decision / Control",
+      causal_stage %in% c(
+        "Public merger exposure before embargo lift",
+        "Public merger release after embargo lift"
+      ) ~ "Public Exposure"
+    ),
+
+    stage_label = paste0(stage_number, ". ", causal_stage),
+    stage_label = str_wrap(stage_label, width = 32),
+    stage_label = factor(stage_label, levels = rev(stage_label)),
+
+    detail_label = paste0(
+      event_count, " events",
+      " | ", agents_involved, " agents",
+      " | ", public_events, " public"
+    )
+  ) %>%
+  arrange(stage_number)
+
+ggplot(
+  causal_stage_summary,
+  aes(
+    x = event_count,
+    y = stage_label,
+    fill = stage_group
+  )
+) +
+  geom_col(
+    width = 0.62,
+    alpha = 0.85
+  ) +
+  geom_point(
+    aes(size = agents_involved),
+    shape = 21,
+    fill = "white",
+    colour = "grey25",
+    stroke = 0.8
+  ) +
+  geom_text(
+    aes(label = detail_label),
+    hjust = -0.05,
+    size = 3.4
+  ) +
+  scale_x_continuous(
+    expand = expansion(mult = c(0, 0.35))
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Information Flow" = "#4E79A7",
+      "Pressure / Boundary" = "#F28E2B",
+      "Decision / Control" = "#B07AA1",
+      "Public Exposure" = "#E15759"
+    )
+  ) +
+  scale_size_continuous(
+    range = c(3.5, 8),
+    name = "Agents involved"
+  ) +
+  labs(
+    title = "Condensed Key Event Sequence",
+    subtitle = "Causal stages from internal merger circulation to public exposure",
+    x = "Number of Events",
+    y = "Causal Stage",
+    fill = "Stage Group"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    panel.grid.major.y = element_blank(),
+    axis.text.y = element_text(size = 10),
+    axis.text.x = element_text(size = 9),
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 11)
+  )
+```
+
+The chart summarises the breach pathway across eight causal stages. Decision/release action and review/control attempt have the largest event volumes, showing that action and control signals were both active before the embargo lift. However, public merger exposure still appeared before 6:00 PM, meaning that existing control and enforcement activity did not stop merger-related information from reaching public-facing communication.
+
+## 6.3 Decision and Control Failure Points
+
+This section focuses only on the key decision and control nodes that were directly relevant to the embargo failure: approval or release actions, hold or review controls, enforcement references, and public merger exposure before the official 6:00 PM embargo lift.
+
+```{r}
+#| fig-width: 11
+#| fig-height: 7
+
+embargo_lift_time <- ymd_hms("2046-06-05 18:00:00")
+breach_time <- ymd_hms("2046-06-05 17:00:00")
+
+decision_control_data <- communications_integrated %>%
+  mutate(
+    event_text = str_to_lower(replace_na(content, "")),
+    
+    breach_phase = case_when(
+      date < as_date("2046-06-05") ~ "Before June 5",
+      date == as_date("2046-06-05") & timestamp < breach_time ~ "June 5 Before 5PM",
+      date == as_date("2046-06-05") &
+        timestamp >= breach_time &
+        timestamp < embargo_lift_time ~ "5–6PM Breach Window",
+      TRUE ~ NA_character_
+    ),
+    
+    approval_release = str_detect(
+      event_text,
+      "approve|approval|greenlight|go ahead|clearance|execute|publish|post|release"
+    ) & timestamp < embargo_lift_time,
+    
+    hold_review = str_detect(
+      event_text,
+      "hold|wait|pause|review|monitor|block|do not|don't|cannot|not ready"
+    ) & timestamp < embargo_lift_time,
+    
+    enforcement_reference = str_detect(
+      event_text,
+      "judge|enforcement|guardrail|compliance|policy"
+    ) & timestamp < embargo_lift_time,
+    
+    public_merger_exposure = is_public &
+      contains_merger &
+      timestamp < embargo_lift_time
+  ) %>%
+  filter(!is.na(breach_phase)) %>%
+  mutate(
+    breach_phase = factor(
+      breach_phase,
+      levels = c(
+        "Before June 5",
+        "June 5 Before 5PM",
+        "5–6PM Breach Window"
+      )
+    )
+  )
+
+decision_control_summary <- decision_control_data %>%
+  summarise(
+    `Approval / release action` = sum(approval_release, na.rm = TRUE),
+    `Hold / review control` = sum(hold_review, na.rm = TRUE),
+    `Enforcement reference` = sum(enforcement_reference, na.rm = TRUE),
+    `Public merger exposure before 6PM` = sum(public_merger_exposure, na.rm = TRUE),
+    .by = breach_phase
+  ) %>%
+  pivot_longer(
+    cols = -breach_phase,
+    names_to = "control_node",
+    values_to = "event_count"
+  ) %>%
+  mutate(
+    control_node = factor(
+      control_node,
+      levels = c(
+        "Approval / release action",
+        "Hold / review control",
+        "Enforcement reference",
+        "Public merger exposure before 6PM"
+      )
+    )
+  )
+
+ggplot(
+  decision_control_summary,
+  aes(
+    x = breach_phase,
+    y = event_count,
+    fill = control_node
+  )
+) +
+  geom_col(
+    width = 0.65,
+    alpha = 0.85
+  ) +
+  geom_text(
+    aes(label = event_count),
+    vjust = -0.4,
+    size = 3.5
+  ) +
+  facet_wrap(
+    ~ control_node,
+    scales = "free_y",
+    ncol = 2
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Approval / release action" = "#4E79A7",
+      "Hold / review control" = "#F28E2B",
+      "Enforcement reference" = "#B07AA1",
+      "Public merger exposure before 6PM" = "#E15759"
+    )
+  ) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.18))
+  ) +
+  labs(
+    title = "Decision and Control Failure Points",
+    subtitle = "Key approval, hold, enforcement, and public-exposure nodes across the pre-embargo phases",
+    x = "Pre-Embargo Phase",
+    y = "Event Count",
+    fill = "Control Node"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    panel.grid.major.x = element_blank(),
+    axis.text.x = element_text(angle = 20, hjust = 1),
+    strip.text = element_text(size = 11, face = "bold"),
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 11)
+  )
+```
+
+The chart shows that approval/release actions and hold/review controls were already active before the breach window, especially on June 5 before 5PM. However, public merger exposure also appeared before 6PM, with 9 cases before 5PM and 7 more during the 5–6PM breach window. This indicates that the problem was not the absence of decision or control activity, but the failure of those controls to stop merger-related information from reaching public-facing communication.
+
+## 6.4 Embargo Enforcement Failure Pathway
+
+This section summarises the causal pathway that allowed embargoed merger information to move from internal communication into public-facing exposure before the official embargo lift. The flow direction shows the causal sequence, while bubble size gives a visual indication of the evidence volume at each stage.
+
+```{r}
+#| fig-width: 12
+#| fig-height: 5.8
+
+embargo_lift_time <- ymd_hms("2046-06-05 18:00:00")
+
+event_text <- str_to_lower(replace_na(communications_integrated$content, ""))
+
+pathway_nodes <- tibble(
+  step = 1:5,
+  x = c(1, 2.25, 3.5, 4.75, 6),
+  y = 1,
+  stage = c(
+    "Internal merger\ncirculation",
+    "Pressure +\nconfidentiality",
+    "Decision / review /\nenforcement activity",
+    "Public-facing\nboundary",
+    "Pre-6PM public\nmerger exposure"
+  ),
+  stage_group = c(
+    "Information Flow",
+    "Pressure / Sensitivity",
+    "Decision / Control",
+    "Boundary Exposure",
+    "Embargo Failure"
+  ),
+  value_type = c(
+    "events",
+    "events",
+    "events",
+    "agents",
+    "events"
+  ),
+  value = c(
+    sum(
+      communications_integrated$contains_merger &
+        !communications_integrated$is_public &
+        communications_integrated$timestamp < embargo_lift_time,
+      na.rm = TRUE
+    ),
+    
+    sum(
+      communications_integrated$contains_merger &
+        (
+          str_detect(event_text, "urgent|asap|deadline|pressure|crisis|escalate|critical|risk") |
+            str_detect(event_text, "embargo|confidential|restricted|sensitive|not public|internal only")
+        ) &
+        communications_integrated$timestamp < embargo_lift_time,
+      na.rm = TRUE
+    ),
+    
+    sum(
+      (
+        str_detect(event_text, "approve|approval|greenlight|go ahead|clearance|execute|publish|post|release") |
+          str_detect(event_text, "hold|wait|pause|review|monitor|block|do not|don't|cannot|not ready") |
+          str_detect(event_text, "judge|enforcement|guardrail|compliance|policy")
+      ) &
+        communications_integrated$timestamp < embargo_lift_time,
+      na.rm = TRUE
+    ),
+    
+    n_distinct(
+      communications_integrated$agent_label[
+        communications_integrated$is_public &
+          communications_integrated$timestamp < embargo_lift_time
+      ]
+    ),
+    
+    sum(
+      communications_integrated$is_public &
+        communications_integrated$contains_merger &
+        communications_integrated$timestamp < embargo_lift_time,
+      na.rm = TRUE
+    )
+  )
+) %>%
+  mutate(
+    display_size = scales::rescale(
+      sqrt(value),
+      to = c(10, 24)
+    ),
+    value_label = paste0(value, " ", value_type)
+  )
+
+pathway_edges <- pathway_nodes %>%
+  arrange(step) %>%
+  mutate(
+    xend = lead(x),
+    yend = lead(y)
+  ) %>%
+  filter(!is.na(xend)) %>%
+  mutate(
+    x_start = x + 0.38,
+    x_end = xend - 0.38
+  )
+
+ggplot() +
+  geom_segment(
+    data = pathway_edges,
+    aes(
+      x = x_start,
+      xend = x_end,
+      y = y,
+      yend = yend
+    ),
+    arrow = arrow(
+      length = unit(0.25, "cm"),
+      type = "closed"
+    ),
+    linewidth = 0.9,
+    colour = "grey35"
+  ) +
+  geom_point(
+    data = pathway_nodes,
+    aes(
+      x = x,
+      y = y,
+      fill = stage_group
+    ),
+    size = pathway_nodes$display_size,
+    shape = 21,
+    colour = "grey20",
+    stroke = 0.9,
+    alpha = 0.9
+  ) +
+  geom_text(
+    data = pathway_nodes,
+    aes(
+      x = x,
+      y = 1.42,
+      label = value_label
+    ),
+    size = 3.7,
+    fontface = "bold"
+  ) +
+  geom_text(
+    data = pathway_nodes,
+    aes(
+      x = x,
+      y = 0.45,
+      label = stage
+    ),
+    size = 3.6,
+    lineheight = 0.95
+  ) +
+  geom_text(
+    data = pathway_nodes,
+    aes(
+      x = x,
+      y = 0.12,
+      label = paste0("Step ", step)
+    ),
+    size = 3.2,
+    colour = "grey35"
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Information Flow" = "#4E79A7",
+      "Pressure / Sensitivity" = "#F28E2B",
+      "Decision / Control" = "#B07AA1",
+      "Boundary Exposure" = "#59A14F",
+      "Embargo Failure" = "#E15759"
+    )
+  ) +
+  scale_x_continuous(
+    limits = c(0.45, 6.55),
+    breaks = NULL
+  ) +
+  scale_y_continuous(
+    limits = c(0, 1.65),
+    breaks = NULL
+  ) +
+  labs(
+    title = "Embargo Enforcement Failure Pathway",
+    subtitle = "Flow direction shows causal sequence; bubble size indicates relative evidence volume",
+    x = NULL,
+    y = NULL,
+    fill = "Pathway Stage"
+  ) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 11),
+    plot.margin = margin(10, 20, 10, 20)
+  )
+```
+
+This pathway summarises how the breach moved from internal merger circulation to public-facing exposure before the embargo lift. The key insight is that decision, review, and enforcement activity existed before the release, but those controls did not prevent merger-related information from crossing the public-facing boundary. This supports a system-breakdown interpretation rather than a single isolated leak.
+
+
+## 6.5 Evidence Interpretation: Deliberate Leak vs System Breakdown
+
+This section interprets the causal evidence against the two competing explanations: a deliberate leak by a specific actor, or a broader system breakdown under pressure.
+
+```{r}
+#| fig-width: 11
+#| fig-height: 6.8
+
+evidence_matrix <- tibble(
+  evidence = c(
+    "Public merger exposure before 6PM",
+    "Multiple agents and channels involved",
+    "Decision / review / enforcement signals present",
+    "Urgency and pressure intensified near June 5",
+    "Public-facing agents connected to the pathway",
+    "No clear single malicious actor identified"
+  ),
+  
+  deliberate_leak = c(
+    "Partly",
+    "Weak",
+    "Weak",
+    "Weak",
+    "Mixed",
+    "No"
+  ),
+  
+  system_breakdown = c(
+    "Yes",
+    "Yes",
+    "Yes",
+    "Yes",
+    "Yes",
+    "Yes"
+  )
+)
+
+evidence_matrix_long <- evidence_matrix %>%
+  pivot_longer(
+    cols = c(deliberate_leak, system_breakdown),
+    names_to = "explanation",
+    values_to = "support_level"
+  ) %>%
+  mutate(
+    explanation = recode(
+      explanation,
+      deliberate_leak = "Deliberate Leak",
+      system_breakdown = "System Breakdown"
+    ),
+    
+    support_level = factor(
+      support_level,
+      levels = c("No", "Weak", "Mixed", "Partly", "Yes")
+    ),
+    
+    evidence = str_wrap(evidence, width = 36),
+    evidence = factor(evidence, levels = rev(unique(evidence)))
+  )
+
+ggplot(
+  evidence_matrix_long,
+  aes(
+    x = explanation,
+    y = evidence,
+    fill = support_level
+  )
+) +
+  geom_tile(
+    colour = "white",
+    linewidth = 1
+  ) +
+  geom_text(
+    aes(label = support_level),
+    size = 4,
+    fontface = "bold"
+  ) +
+  scale_fill_manual(
+    values = c(
+      "No" = "#f2f2f2",
+      "Weak" = "#fde0dd",
+      "Mixed" = "#fdae6b",
+      "Partly" = "#f1695b",
+      "Yes" = "#a50f15"
+    )
+  ) +
+  labs(
+    title = "Evidence Interpretation Matrix",
+    subtitle = "Comparing whether each evidence item supports deliberate leak or system breakdown",
+    x = NULL,
+    y = "Evidence",
+    fill = "Support Level"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    panel.grid = element_blank(),
+    axis.text.y = element_text(size = 10),
+    axis.text.x = element_text(size = 11, face = "bold"),
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 11)
+  )
+```
+
+The matrix shows that the evidence confirms a leak occurred, but does not strongly isolate a deliberate leaker. Public merger exposure before 6PM partly supports the leak interpretation because the embargo boundary was crossed. However, the wider pattern — multiple agents, multiple channels, active control signals, rising pressure, and no clear single malicious actor — is more consistent with a system breakdown under pressure.
+
+## 6.6 Key Findings from Causal Chain Analysis
+
+- **The inappropriate release followed a multi-stage pathway rather than a single isolated event.**  
+  Merger information first circulated internally, then became linked with pressure, confidentiality, decision/action, review/control, and enforcement-related activity before reaching public-facing exposure.
+
+- **Control activity was present, but it was not effective.**  
+  The decision/control analysis shows large volumes of approval/release actions and hold/review controls before the embargo lift. This means the problem was not a complete absence of review or enforcement, but a failure of those controls to prevent public exposure.
+
+- **The breach became visible before the official 6:00 PM embargo lift.**  
+  Public merger exposure appeared before 6PM, including cases before 5PM and during the 5–6PM breach window. This confirms that the embargo boundary had already been crossed before the authorised release time.
+
+- **The causal pathway involved multiple system layers.**  
+  The failure pathway shows internal merger circulation, pressure/confidentiality signals, decision/review/enforcement activity, public-facing boundary agents, and final pre-6PM public exposure. This indicates that the release was produced by a chain of system interactions rather than one simple posting mistake.
+
+- **The evidence is stronger for system breakdown than deliberate leak.**  
+  The evidence matrix shows that public merger exposure partly supports the leak interpretation, but the broader pattern — multiple agents and channels, active but ineffective controls, rising pressure, and no clear single malicious actor — is more consistent with a system breakdown under pressure.
+
+# 7. Typical vs Release Behavior Comparison
+
+## 7.1 Purpose of Typical Behavior Comparison
+
+The purpose of this section is to determine whether the behavior that led to the inappropriate release was consistent with prior system behavior or represented a meaningful deviation. Earlier sections reconstructed the breach timeline, communication relationships, and causal pathway. This section now compares the release-window behavior against the system’s typical behavior before June 5.
+
+The analysis focuses on three questions:
+
+1. What did normal communication behavior look like before the breach day?
+2. How did the June 5 release-window behavior differ from that baseline?
+3. Was pre-embargo public merger exposure a continuation of prior behavior, or a new and unusual pattern?
+
+This comparison is important because a large number of leaked messages does not automatically prove deliberate intent. If the release-window behavior differs sharply from prior patterns across agents, channels, scopes, and message types, the evidence is more consistent with a system behavior shift under pressure. If the behavior had been common before, it would suggest that the breach was part of a recurring uncontrolled pattern rather than a new failure.
+
+## 7.2 Typical Communication Baseline Before June 5
+
+This section establishes the typical communication baseline before the breach day. The purpose is to identify how agents normally behaved before June 5 across communication scope, merger-related content, public exposure, and decision/control language.
+
+```{r}
+
+baseline_data <- communications_integrated %>%
+  filter(date < as_date("2046-06-05")) %>%
+  mutate(
+    event_text = str_to_lower(replace_na(content, "")),
+    
+    decision_control_signal = str_detect(
+      event_text,
+      "approve|approval|greenlight|go ahead|clearance|execute|publish|post|release|hold|wait|pause|review|monitor|block|do not|don't|cannot|not ready|judge|enforcement|guardrail|compliance|policy"
+    )
+  )
+
+baseline_agent_profile <- baseline_data %>%
+  group_by(agent_label) %>%
+  summarise(
+    total_messages = n(),
+    
+    internal_share = mean(communication_scope == "Internal", na.rm = TRUE),
+    private_share = mean(communication_scope == "Private / One-on-One", na.rm = TRUE),
+    public_share = mean(communication_scope == "Public", na.rm = TRUE),
+    
+    merger_share = mean(contains_merger, na.rm = TRUE),
+    public_merger_share = mean(is_public & contains_merger, na.rm = TRUE),
+    decision_control_share = mean(decision_control_signal, na.rm = TRUE),
+    
+    .groups = "drop"
+  )
+
+baseline_heatmap_data <- baseline_agent_profile %>%
+  pivot_longer(
+    cols = c(
+      internal_share,
+      private_share,
+      public_share,
+      merger_share,
+      public_merger_share,
+      decision_control_share
+    ),
+    names_to = "baseline_metric",
+    values_to = "metric_value"
+  ) %>%
+  mutate(
+    baseline_metric = recode(
+      baseline_metric,
+      internal_share = "Internal Communication",
+      private_share = "Private / One-on-One",
+      public_share = "Public Communication",
+      merger_share = "Merger-Related Content",
+      public_merger_share = "Public + Merger Content",
+      decision_control_share = "Decision / Control Language"
+    ),
+    
+    baseline_metric = factor(
+      baseline_metric,
+      levels = c(
+        "Internal Communication",
+        "Private / One-on-One",
+        "Public Communication",
+        "Merger-Related Content",
+        "Public + Merger Content",
+        "Decision / Control Language"
+      )
+    ),
+    
+    label = scales::percent(metric_value, accuracy = 1)
+  )
+
+agent_order_baseline <- baseline_heatmap_data %>%
+  group_by(agent_label) %>%
+  summarise(
+    baseline_intensity = sum(metric_value, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(baseline_intensity) %>%
+  pull(agent_label)
+
+baseline_heatmap_data <- baseline_heatmap_data %>%
+  mutate(
+    agent_label = factor(agent_label, levels = agent_order_baseline)
+  )
+
+ggplot(
+  baseline_heatmap_data,
+  aes(
+    x = baseline_metric,
+    y = agent_label,
+    fill = metric_value
+  )
+) +
+  geom_tile(
+    colour = "white",
+    linewidth = 0.8
+  ) +
+  geom_text(
+    aes(label = label),
+    size = 3.2
+  ) +
+  scale_fill_gradient(
+    low = "white",
+    high = "darkred",
+    labels = scales::percent_format(accuracy = 1)
+  ) +
+  labs(
+    title = "Typical Communication Baseline Before June 5",
+    subtitle = "Agent-level baseline across communication scope, merger content, and control language",
+    x = "Baseline Behavior Metric",
+    y = "Agent",
+    fill = "Share of Messages"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    panel.grid = element_blank(),
+    axis.text.x = element_text(angle = 30, hjust = 1),
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 11)
+  )
+```
+
+This baseline shows that before June 5, most agents mainly operated in internal or private communication spaces, while public communication was concentrated among PR-Intern-Agent and Intern-Agent. Public + merger content was 0% across all agents, which is the most important baseline finding. This means that pre-embargo public merger exposure was not part of normal prior behavior, making the June 5 release-window behavior a clear deviation from the typical communication pattern.
+
+## 7.2 Typical Communication Baseline Before June 5
+
+This section establishes the typical communication baseline before the breach day. The purpose is to identify how agents normally communicated before June 5 across communication scope, channel, and message type. This baseline provides the reference point for comparing whether the June 5 release-window behavior was a normal continuation of prior behavior or a meaningful deviation.
+
+```{r}
+#| fig-width: 12
+#| fig-height: 8
+
+baseline_data <- communications_integrated %>%
+  filter(date < as_date("2046-06-05"))
+
+baseline_scope <- baseline_data %>%
+  count(
+    agent_label,
+    communication_scope,
+    name = "message_count"
+  ) %>%
+  group_by(agent_label) %>%
+  mutate(
+    share = message_count / sum(message_count),
+    baseline_dimension = "Communication Scope",
+    category = communication_scope
+  ) %>%
+  ungroup()
+
+baseline_channel <- baseline_data %>%
+  count(
+    agent_label,
+    channel,
+    name = "message_count"
+  ) %>%
+  group_by(agent_label) %>%
+  mutate(
+    share = message_count / sum(message_count),
+    baseline_dimension = "Channel",
+    category = channel
+  ) %>%
+  ungroup()
+
+baseline_message_type <- baseline_data %>%
+  count(
+    agent_label,
+    message_type,
+    name = "message_count"
+  ) %>%
+  group_by(agent_label) %>%
+  mutate(
+    share = message_count / sum(message_count),
+    baseline_dimension = "Message Type",
+    category = message_type
+  ) %>%
+  ungroup()
+
+baseline_structure <- bind_rows(
+  baseline_scope,
+  baseline_channel,
+  baseline_message_type
+) %>%
+  mutate(
+    baseline_dimension = factor(
+      baseline_dimension,
+      levels = c(
+        "Communication Scope",
+        "Channel",
+        "Message Type"
+      )
+    ),
+    category = str_wrap(category, width = 18),
+    label = ifelse(
+      share >= 0.12,
+      scales::percent(share, accuracy = 1),
+      ""
+    )
+  )
+
+agent_order_baseline <- baseline_data %>%
+  count(agent_label, name = "total_messages") %>%
+  arrange(total_messages) %>%
+  pull(agent_label)
+
+baseline_structure <- baseline_structure %>%
+  mutate(
+    agent_label = factor(agent_label, levels = agent_order_baseline)
+  )
+
+ggplot(
+  baseline_structure,
+  aes(
+    x = agent_label,
+    y = share,
+    fill = category
+  )
+) +
+  geom_col(
+    width = 0.72,
+    colour = "white",
+    linewidth = 0.3
+  ) +
+  geom_text(
+    aes(label = label),
+    position = position_stack(vjust = 0.5),
+    size = 2.7,
+    colour = "black"
+  ) +
+  facet_wrap(
+    ~ baseline_dimension,
+    ncol = 1,
+    scales = "free_y"
+  ) +
+  scale_y_continuous(
+    labels = scales::percent_format(accuracy = 1)
+  ) +
+  labs(
+    title = "Typical Communication Baseline Before June 5",
+    subtitle = "Pre-breach agent behavior across scope, channel, and message type",
+    x = "Agent",
+    y = "Share of Messages",
+    fill = "Category"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    legend.box = "vertical",
+    axis.text.x = element_text(angle = 30, hjust = 1),
+    strip.text = element_text(size = 11, face = "bold"),
+    panel.grid.major.x = element_blank(),
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 11)
+  )
+```
+
+This baseline shows that before June 5, agents had clearly different normal communication patterns. PR-Intern-Agent and Intern-Agent were the most public-facing, while Legal-Agent, Platform-Trust-Agent, Social-Manager-Agent, and Judge-Agent were mainly internal or private. The channel and message-type panels also show that core coordination agents relied more on `comms_huddle`, `one_on_one_chat`, and broadcast-style messages, while public-post behavior was concentrated in fewer boundary-facing agents. This baseline is important because it shows what “normal” looked like before comparing it with the June 5 release-window behavior.
+
+## 7.3 Release-Window Behavior Profile
+
+This section compares each agent’s typical pre-June 5 behavior with its behavior during the 5–6PM breach window. The comparison focuses on four release-relevant indicators: public communication, merger-related content, public merger exposure, and decision/control language.
+
+```{r}
+#| fig-width: 12
+#| fig-height: 7.5
+
+embargo_lift_time <- ymd_hms("2046-06-05 18:00:00")
+breach_time <- ymd_hms("2046-06-05 17:00:00")
+
+behavior_comparison_data <- communications_integrated %>%
+  mutate(
+    event_text = str_to_lower(replace_na(content, "")),
+    
+    period = case_when(
+      date < as_date("2046-06-05") ~ "Baseline before June 5",
+      timestamp >= breach_time & timestamp < embargo_lift_time ~ "5–6PM breach window",
+      TRUE ~ NA_character_
+    ),
+    
+    decision_control_signal = str_detect(
+      event_text,
+      "approve|approval|greenlight|go ahead|clearance|execute|publish|post|release|hold|wait|pause|review|monitor|block|do not|don't|cannot|not ready|judge|enforcement|guardrail|compliance|policy"
+    )
+  ) %>%
+  filter(!is.na(period))
+
+agent_behavior_profile <- behavior_comparison_data %>%
+  group_by(agent_label, period) %>%
+  summarise(
+    total_messages = n(),
+    public_share = mean(is_public, na.rm = TRUE),
+    merger_share = mean(contains_merger, na.rm = TRUE),
+    public_merger_share = mean(is_public & contains_merger, na.rm = TRUE),
+    decision_control_share = mean(decision_control_signal, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+all_agents <- sort(unique(communications_integrated$agent_label))
+
+agent_behavior_profile <- tidyr::complete(
+  agent_behavior_profile,
+  agent_label = all_agents,
+  period = c("Baseline before June 5", "5–6PM breach window"),
+  fill = list(
+    total_messages = 0,
+    public_share = 0,
+    merger_share = 0,
+    public_merger_share = 0,
+    decision_control_share = 0
+  )
+)
+
+behavior_long <- agent_behavior_profile %>%
+  pivot_longer(
+    cols = c(
+      public_share,
+      merger_share,
+      public_merger_share,
+      decision_control_share
+    ),
+    names_to = "behavior_metric",
+    values_to = "share"
+  ) %>%
+  mutate(
+    behavior_metric = recode(
+      behavior_metric,
+      public_share = "Public Communication",
+      merger_share = "Merger-Related Content",
+      public_merger_share = "Public + Merger Exposure",
+      decision_control_share = "Decision / Control Language"
+    ),
+    behavior_metric = factor(
+      behavior_metric,
+      levels = c(
+        "Public Communication",
+        "Merger-Related Content",
+        "Public + Merger Exposure",
+        "Decision / Control Language"
+      )
+    ),
+    period = factor(
+      period,
+      levels = c(
+        "Baseline before June 5",
+        "5–6PM breach window"
+      )
+    )
+  )
+
+behavior_wide <- behavior_long %>%
+  select(agent_label, behavior_metric, period, share) %>%
+  pivot_wider(
+    names_from = period,
+    values_from = share
+  ) %>%
+  mutate(
+    shift = `5–6PM breach window` - `Baseline before June 5`
+  )
+
+agent_order_release <- behavior_wide %>%
+  group_by(agent_label) %>%
+  summarise(
+    total_abs_shift = sum(abs(shift), na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(total_abs_shift) %>%
+  pull(agent_label)
+
+behavior_wide <- behavior_wide %>%
+  mutate(
+    agent_label = factor(agent_label, levels = agent_order_release)
+  )
+
+ggplot(
+  behavior_wide,
+  aes(y = agent_label)
+) +
+  geom_segment(
+    aes(
+      x = `Baseline before June 5`,
+      xend = `5–6PM breach window`,
+      yend = agent_label
+    ),
+    linewidth = 0.8,
+    colour = "grey65"
+  ) +
+  geom_point(
+    aes(
+      x = `Baseline before June 5`,
+      colour = "Baseline before June 5"
+    ),
+    size = 3
+  ) +
+  geom_point(
+    aes(
+      x = `5–6PM breach window`,
+      colour = "5–6PM breach window"
+    ),
+    size = 3.4
+  ) +
+  facet_wrap(
+    ~ behavior_metric,
+    ncol = 2,
+    scales = "free_x"
+  ) +
+  scale_x_continuous(
+    labels = scales::percent_format(accuracy = 1),
+    expand = expansion(mult = c(0.03, 0.12))
+  ) +
+  scale_colour_manual(
+    values = c(
+      "Baseline before June 5" = "#4E79A7",
+      "5–6PM breach window" = "#E15759"
+    )
+  ) +
+  labs(
+    title = "Release-Window Behavior Shift from Baseline",
+    subtitle = "Connected dots compare each agent's baseline behavior with the 5–6PM breach-window behavior",
+    x = "Share of Messages",
+    y = "Agent",
+    colour = "Period"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    panel.grid.major.y = element_blank(),
+    strip.text = element_text(size = 11, face = "bold"),
+    axis.text.y = element_text(size = 9),
+    axis.text.x = element_text(size = 9),
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 11)
+  )
+```
+
+This chart shows a clear shift from baseline behavior during the 5–6PM breach window. The strongest deviation appears in merger-related content: Legal-Agent and Social-Manager-Agent moved from low baseline merger shares to much higher release-window shares. Public + merger exposure also appears only in the breach window for Legal-Agent and Social-Manager-Agent, making it a new behavior rather than a normal pattern. Decision/control language remains high for several core agents, which suggests that the release-window behavior changed under active control pressure rather than in the absence of controls.
+
+## 7.4 Behavioral Deviation Score by Agent
+
+This section aggregates the release-window behavioral shifts into an agent-level deviation profile. Each radar panel shows how much an agent’s 5–6PM breach-window behavior deviated from its pre-June 5 baseline across four release-relevant dimensions.
+
+```{r}
+#| fig-width: 14
+#| fig-height: 10
+
+embargo_lift_time <- ymd_hms("2046-06-05 18:00:00")
+breach_time <- ymd_hms("2046-06-05 17:00:00")
+
+deviation_data <- communications_integrated %>%
+  mutate(
+    event_text = str_to_lower(replace_na(content, "")),
+    
+    period = case_when(
+      date < as_date("2046-06-05") ~ "Baseline before June 5",
+      timestamp >= breach_time & timestamp < embargo_lift_time ~ "5–6PM breach window",
+      TRUE ~ NA_character_
+    ),
+    
+    decision_control_signal = str_detect(
+      event_text,
+      "approve|approval|greenlight|go ahead|clearance|execute|publish|post|release|hold|wait|pause|review|monitor|block|do not|don't|cannot|not ready|judge|enforcement|guardrail|compliance|policy"
+    )
+  ) %>%
+  filter(!is.na(period))
+
+agent_deviation_profile <- deviation_data %>%
+  group_by(agent_label, period) %>%
+  summarise(
+    public_share = mean(is_public, na.rm = TRUE),
+    merger_share = mean(contains_merger, na.rm = TRUE),
+    public_merger_share = mean(is_public & contains_merger, na.rm = TRUE),
+    decision_control_share = mean(decision_control_signal, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  tidyr::complete(
+    agent_label,
+    period = c("Baseline before June 5", "5–6PM breach window"),
+    fill = list(
+      public_share = 0,
+      merger_share = 0,
+      public_merger_share = 0,
+      decision_control_share = 0
+    )
+  ) %>%
+  pivot_longer(
+    cols = c(
+      public_share,
+      merger_share,
+      public_merger_share,
+      decision_control_share
+    ),
+    names_to = "metric",
+    values_to = "share"
+  ) %>%
+  pivot_wider(
+    names_from = period,
+    values_from = share
+  ) %>%
+  mutate(
+    deviation = abs(`5–6PM breach window` - `Baseline before June 5`),
+    
+    metric = recode(
+      metric,
+      public_share = "Public\nCommunication",
+      merger_share = "Merger\nContent",
+      public_merger_share = "Public +\nMerger",
+      decision_control_share = "Decision /\nControl"
+    ),
+    
+    metric = factor(
+      metric,
+      levels = c(
+        "Public\nCommunication",
+        "Merger\nContent",
+        "Public +\nMerger",
+        "Decision /\nControl"
+      )
+    )
+  )
+
+agent_deviation_score <- agent_deviation_profile %>%
+  group_by(agent_label) %>%
+  summarise(
+    deviation_score = sum(deviation, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(deviation_score))
+
+agent_deviation_profile <- agent_deviation_profile %>%
+  left_join(agent_deviation_score, by = "agent_label") %>%
+  mutate(
+    agent_label = factor(
+      agent_label,
+      levels = rev(agent_deviation_score$agent_label)
+    )
+  )
+
+# Scale all deviations to the same 0–1 range for radar plotting
+max_deviation <- max(agent_deviation_profile$deviation, na.rm = TRUE)
+
+radar_data <- agent_deviation_profile %>%
+  mutate(
+    scaled_deviation = if (is.na(max_deviation) | max_deviation == 0) {
+      0
+    } else {
+      deviation / max_deviation
+    },
+    
+    metric_id = as.integer(metric),
+    angle = 2 * pi * (metric_id - 1) / nlevels(metric),
+    x = scaled_deviation * sin(angle),
+    y = scaled_deviation * cos(angle),
+    
+    label_x = 1.18 * sin(angle),
+    label_y = 1.18 * cos(angle),
+    
+    value_label = ifelse(
+      deviation > 0,
+      scales::percent(deviation, accuracy = 1),
+      ""
+    )
+  )
+
+# Close each radar polygon
+radar_polygon_data <- radar_data %>%
+  arrange(agent_label, metric_id) %>%
+  group_by(agent_label) %>%
+  bind_rows(slice(., 1)) %>%
+  ungroup()
+
+# Radar grid
+grid_levels <- c(0.25, 0.5, 0.75, 1)
+
+radar_grid <- expand_grid(
+  grid_level = grid_levels,
+  metric_id = 1:nlevels(radar_data$metric)
+) %>%
+  mutate(
+    angle = 2 * pi * (metric_id - 1) / nlevels(radar_data$metric),
+    x = grid_level * sin(angle),
+    y = grid_level * cos(angle)
+  ) %>%
+  group_by(grid_level) %>%
+  bind_rows(slice(., 1)) %>%
+  ungroup()
+
+radar_axes <- tibble(
+  metric = levels(radar_data$metric),
+  metric_id = 1:nlevels(radar_data$metric)
+) %>%
+  mutate(
+    angle = 2 * pi * (metric_id - 1) / nlevels(radar_data$metric),
+    x = sin(angle),
+    y = cos(angle),
+    label_x = 1.08 * sin(angle),
+    label_y = 1.08 * cos(angle)
+  )
+
+ggplot() +
+  geom_path(
+    data = radar_grid,
+    aes(
+      x = x,
+      y = y,
+      group = grid_level
+    ),
+    colour = "grey82",
+    linewidth = 0.4
+  ) +
+  geom_segment(
+    data = radar_axes,
+    aes(
+      x = 0,
+      y = 0,
+      xend = x,
+      yend = y
+    ),
+    colour = "grey78",
+    linewidth = 0.4
+  ) +
+  geom_polygon(
+    data = radar_polygon_data,
+    aes(
+      x = x,
+      y = y,
+      group = agent_label
+    ),
+    fill = "#E15759",
+    alpha = 0.25,
+    colour = "#E15759",
+    linewidth = 0.8
+  ) +
+  geom_point(
+    data = radar_data,
+    aes(
+      x = x,
+      y = y
+    ),
+    colour = "#E15759",
+    size = 2
+  ) +
+  geom_text(
+    data = radar_data,
+    aes(
+      x = x,
+      y = y,
+      label = value_label
+    ),
+    size = 2.7,
+    vjust = -0.7
+  ) +
+  geom_text(
+    data = radar_axes,
+    aes(
+      x = label_x,
+      y = label_y,
+      label = metric
+    ),
+    size = 2.3,
+    lineheight = 0.9
+  ) +
+  facet_wrap(
+    ~ agent_label,
+    ncol = 3
+  ) +
+  coord_equal() +
+  labs(
+    title = "Behavioral Deviation Profile by Agent",
+    subtitle = "Radar panels show each agent's release-window deviation from baseline behavior",
+    x = NULL,
+    y = NULL
+  ) +
+  theme_void() +
+  theme(
+    strip.text = element_text(size = 10, face = "bold"),
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 11),
+    plot.margin = margin(10, 15, 10, 15)
+  )
+```
+
+
+```{r}
+agent_deviation_score %>%
+  mutate(
+    `Deviation Score` = round(deviation_score, 3)
+  ) %>%
+  select(
+    Agent = agent_label,
+    `Deviation Score`
+  ) %>%
+  knitr::kable()
+```
+
+This radar profile shows that behavioral deviation was uneven across agents. Legal-Agent and Social-Manager-Agent show the most breach-relevant shifts because their deviations include strong increases in merger content and visible public + merger exposure. Intern-Agent and Judge-Agent also show large deviations, but these are mainly driven by decision/control or public communication changes rather than direct public-merger exposure. Overall, the release-window behavior was not a uniform system-wide shift; the most important deviations were concentrated in agents connected to merger content, control activity, and public-facing exposure.
+
+## 7.5 Public-Merger Behavior as a New Pattern
+
+This section focuses specifically on public merger-related communication. The purpose is to test whether public merger exposure before the embargo lift was part of normal prior behavior or a new pattern that emerged on June 5.
+
+```{r}
+#| fig-width: 11
+#| fig-height: 6.5
+
+embargo_lift_time <- ymd_hms("2046-06-05 18:00:00")
+breach_time <- ymd_hms("2046-06-05 17:00:00")
+
+public_merger_pattern <- communications_integrated %>%
+  mutate(
+    behavior_period = case_when(
+      date < as_date("2046-06-05") ~ "Baseline before June 5",
+      date == as_date("2046-06-05") & timestamp < breach_time ~ "June 5 Before 5PM",
+      date == as_date("2046-06-05") &
+        timestamp >= breach_time &
+        timestamp < embargo_lift_time ~ "5–6PM Breach Window",
+      date == as_date("2046-06-05") &
+        timestamp >= embargo_lift_time ~ "After 6PM Embargo Lift",
+      TRUE ~ NA_character_
+    ),
+    
+    public_merger_event = is_public & contains_merger
+  ) %>%
+  filter(!is.na(behavior_period)) %>%
+  mutate(
+    behavior_period = factor(
+      behavior_period,
+      levels = c(
+        "Baseline before June 5",
+        "June 5 Before 5PM",
+        "5–6PM Breach Window",
+        "After 6PM Embargo Lift"
+      )
+    )
+  )
+
+public_merger_summary <- public_merger_pattern %>%
+  group_by(behavior_period, agent_label) %>%
+  summarise(
+    public_merger_count = sum(public_merger_event, na.rm = TRUE),
+    total_messages = n(),
+    public_merger_share = public_merger_count / total_messages,
+    .groups = "drop"
+  )
+
+agent_order_public_merger <- public_merger_summary %>%
+  group_by(agent_label) %>%
+  summarise(
+    total_public_merger = sum(public_merger_count, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(total_public_merger) %>%
+  pull(agent_label)
+
+public_merger_summary <- public_merger_summary %>%
+  mutate(
+    agent_label = factor(agent_label, levels = agent_order_public_merger),
+    label = ifelse(
+      public_merger_count > 0,
+      paste0(public_merger_count, " posts"),
+      ""
+    )
+  )
+
+ggplot(
+  public_merger_summary,
+  aes(
+    x = behavior_period,
+    y = public_merger_count,
+    fill = behavior_period
+  )
+) +
+  geom_col(
+    width = 0.68,
+    alpha = 0.88
+  ) +
+  geom_text(
+    aes(label = label),
+    vjust = -0.35,
+    size = 3.2
+  ) +
+  facet_wrap(
+    ~ agent_label,
+    ncol = 4
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Baseline before June 5" = "#4E79A7",
+      "June 5 Before 5PM" = "#F28E2B",
+      "5–6PM Breach Window" = "#E15759",
+      "After 6PM Embargo Lift" = "#59A14F"
+    )
+  ) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.22))
+  ) +
+  labs(
+    title = "Public-Merger Behavior as a New Pattern",
+    subtitle = "Public merger-related posts were absent in the baseline but appeared before the embargo lift on June 5",
+    x = "Behavior Period",
+    y = "Number of Public + Merger Posts",
+    fill = "Behavior Period"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    panel.grid.major.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    strip.text = element_text(size = 10, face = "bold"),
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 11)
+  )
+```
+
+This chart isolates the key new behavior: public merger-related communication. Before June 5, public + merger posts were absent from the baseline. On June 5, they appeared before the official 6:00 PM embargo lift, including during the 5–6PM breach window. This confirms that the inappropriate release was not a continuation of normal prior behavior, but a new public-facing merger pattern that emerged on the breach day.
+
+## 7.6 Key Findings from Typical vs Release Behavior Comparison
+
+- **Pre-June 5 behavior had a clear normal structure.**  
+  Before the breach day, most core agents mainly communicated through internal or private channels, while public-facing activity was concentrated among PR-Intern-Agent and Intern-Agent. This establishes a clear baseline for what normal system behavior looked like.
+
+- **The release-window behavior was not a normal continuation of the baseline.**  
+  During the 5–6PM breach window, several agents shifted away from their prior behavior, especially in merger-related content, public communication, public + merger exposure, and decision/control language.
+
+- **Public + merger exposure was the most important new pattern.**  
+  The baseline shows no public + merger behavior before June 5. However, on June 5, public merger-related posts appeared before the official 6PM embargo lift, especially involving Legal-Agent and Social-Manager-Agent. This confirms that the breach behavior was new and abnormal.
+
+- **The strongest breach-relevant deviations were concentrated in specific agents.**  
+  Legal-Agent and Social-Manager-Agent show the most important release-window shifts because they combine merger-related content with public + merger exposure. Intern-Agent, PR-Intern-Agent, and Judge-Agent also show deviations, but their deviations are more related to public communication or decision/control behavior rather than direct merger leakage.
+
+- **The evidence supports a behavioral shift under pressure rather than routine operation.**  
+  The release-window pattern differs sharply from prior behavior: merger-related content became more prominent, public + merger exposure emerged for the first time, and control-related activity remained active. This suggests that the inappropriate release was driven by an abnormal system behavior shift during the breach window, not by ordinary baseline behavior.
+
+# 8. Leading Indicators and System Pressure
+
+The purpose of this section is to examine whether there were warning signs before the inappropriate release occurred. While Part 7 showed that the release-window behavior differed from normal prior behavior, this section focuses on whether the system was already showing signs of pressure, sensitivity, or instability before the embargo boundary was crossed.
+
+This analysis focuses on the first part of Task 3: whether there were leading indicators that such a release was possible. Leading indicators are defined as communication patterns that appeared before the official embargo lift and suggested elevated release risk, including urgency signals, merger-related content, confidentiality references, risk language, error or failure language, and public-facing exposure.
+
+The section does not yet analyse prior anomalies or explain why earlier warning signs did not trigger intervention. Those questions are addressed separately in Part 9. Instead, Part 8 focuses on identifying the pressure environment around the breach and assessing whether the June 5 release was preceded by measurable warning signals.
+
+## 8.1 System Pressure Indicators
+
+```{r}
+pressure_data <- communications_integrated %>%
+  mutate(
+    risk_signal = str_detect(
+      content_lower,
+      "risk|exposure|liability|regulator|regulatory|investigation|scrutiny|concern|threat"
+    ),
+    
+    urgency_signal = str_detect(
+      content_lower,
+      "urgent|asap|immediately|deadline|pressure|crisis|escalate|fast|now|critical"
+    ),
+    
+    error_signal = str_detect(
+      content_lower,
+      "error|failed|failure|mistake|confusion|unclear|misfire|wrong|breakdown|problem"
+    ),
+    
+    confidentiality_signal = str_detect(
+      content_lower,
+      "confidential|embargo|private|internal only|not public|restricted|sensitive"
+    ),
+    
+    merger_signal = contains_merger,
+    
+    any_pressure_signal = risk_signal |
+      urgency_signal |
+      error_signal |
+      confidentiality_signal |
+      merger_signal,
+    
+    pressure_score = 
+      as.integer(risk_signal) +
+      as.integer(urgency_signal) +
+      as.integer(error_signal) +
+      as.integer(confidentiality_signal) +
+      as.integer(merger_signal)
+  )
+```
+
+```{r}
+pressure_indicator_summary <- tibble(
+  Pressure_Indicator = c(
+    "Risk Signal",
+    "Urgency Signal",
+    "Error / Failure Signal",
+    "Confidentiality Signal",
+    "Merger Signal",
+    "Any Pressure Signal"
+  ),
+  Definition = c(
+    "Messages containing risk, liability, regulatory, investigation, or scrutiny-related language",
+    "Messages containing urgent, deadline, crisis, escalation, or immediate-action language",
+    "Messages containing error, failure, confusion, mistake, or breakdown-related language",
+    "Messages containing confidential, embargo, private, restricted, or sensitive-information language",
+    "Messages containing merger, acquisition, CivicLoom, HarborCrest, deal, or transaction-related language",
+    "Messages containing at least one of the above pressure-related indicators"
+  ),
+  Message_Count = c(
+    sum(pressure_data$risk_signal, na.rm = TRUE),
+    sum(pressure_data$urgency_signal, na.rm = TRUE),
+    sum(pressure_data$error_signal, na.rm = TRUE),
+    sum(pressure_data$confidentiality_signal, na.rm = TRUE),
+    sum(pressure_data$merger_signal, na.rm = TRUE),
+    sum(pressure_data$any_pressure_signal, na.rm = TRUE)
+  )
+)
+
+DT::datatable(
+  pressure_indicator_summary,
+  rownames = FALSE,
+  options = list(
+    pageLength = 6,
+    dom = "t",
+    scrollX = TRUE
+  )
+)
+```
+
+The pressure indicator summary shows that pressure-related language is widespread in the communication records, with 555 messages containing at least one pressure signal. Among the individual categories, urgency-related language is the most frequent, appearing in 413 messages, followed by merger-related language with 243 messages and risk-related language with 150 messages.
+
+This suggests that the communication environment was not only discussing the merger, but was also operating under strong urgency and risk pressure. Confidentiality signals appear less frequently than urgency or merger signals, but they are still meaningful because they indicate that sensitive-information boundaries were explicitly present in the communication context. Error or failure signals are the least frequent category, so later analysis should examine whether system pressure came more from urgency and risk escalation than from explicit technical failure language.
+
+## 8.2 Pressure Signal Heatmap Over Time
+
+This visual examines how pressure signals were distributed across time. Instead of using a simple line chart, the heatmap highlights which pressure categories became more concentrated on specific dates.
+
+```{r}
+pressure_heatmap_data <- pressure_data %>%
+  group_by(date) %>%
+  summarise(
+    Risk = sum(risk_signal, na.rm = TRUE),
+    Urgency = sum(urgency_signal, na.rm = TRUE),
+    `Error / Failure` = sum(error_signal, na.rm = TRUE),
+    Confidentiality = sum(confidentiality_signal, na.rm = TRUE),
+    Merger = sum(merger_signal, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(
+    cols = c(Risk, Urgency, `Error / Failure`, Confidentiality, Merger),
+    names_to = "pressure_signal",
+    values_to = "message_count"
+  )
+
+ggplot(
+  pressure_heatmap_data,
+  aes(
+    x = date,
+    y = pressure_signal,
+    fill = message_count
+  )
+) +
+  geom_tile(
+    color = "white",
+    linewidth = 0.7
+  ) +
+  geom_text(
+    aes(label = ifelse(message_count > 0, message_count, "")),
+    size = 3
+  ) +
+  scale_fill_gradient(
+    low = "white",
+    high = "darkred"
+  ) +
+  labs(
+    title = "Pressure Signal Heatmap Over Time",
+    subtitle = "Darker cells indicate stronger concentration of pressure-related communications",
+    x = "Date",
+    y = "Pressure Signal",
+    fill = "Message Count"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 35, hjust = 1)
+  )
+```
+
+The heatmap shows that pressure signals remain relatively low across most dates, but surge sharply at the end of the period. Urgency is the strongest signal, followed by merger and risk-related language. This suggests that the breach period coincided with a sudden concentration of communication pressure across multiple categories.
+
+## 8.3 Pressure Signal Composition
+
+This visual shows the composition of pressure-related signals across the communication dataset. The donut chart is used because the purpose here is to compare the relative share of each pressure source rather than track changes over time.
+
+```{r}
+pressure_composition <- pressure_data %>%
+  summarise(
+    Risk = sum(risk_signal, na.rm = TRUE),
+    Urgency = sum(urgency_signal, na.rm = TRUE),
+    `Error / Failure` = sum(error_signal, na.rm = TRUE),
+    Confidentiality = sum(confidentiality_signal, na.rm = TRUE),
+    Merger = sum(merger_signal, na.rm = TRUE)
+  ) %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = "pressure_signal",
+    values_to = "message_count"
+  ) %>%
+  mutate(
+    share = message_count / sum(message_count),
+    label = paste0(
+      pressure_signal,
+      "\n",
+      message_count,
+      " messages",
+      "\n",
+      scales::percent(share, accuracy = 0.1)
+    )
+  ) %>%
+  arrange(desc(message_count)) %>%
+  mutate(
+    pressure_signal = factor(pressure_signal, levels = pressure_signal),
+    ymax = cumsum(share),
+    ymin = lag(ymax, default = 0),
+    label_position = (ymax + ymin) / 2
+  )
+
+ggplot(
+  pressure_composition,
+  aes(
+    ymax = ymax,
+    ymin = ymin,
+    xmax = 4,
+    xmin = 2.6,
+    fill = pressure_signal
+  )
+) +
+  geom_rect(
+    colour = "white",
+    linewidth = 0.8
+  ) +
+  coord_polar(theta = "y") +
+  xlim(c(1.5, 4.5)) +
+  geom_text(
+    aes(
+      x = 4.25,
+      y = label_position,
+      label = label
+    ),
+    size = 3.2,
+    lineheight = 0.9
+  ) +
+  labs(
+    title = "Pressure Signal Composition",
+    subtitle = "Share of each pressure signal category",
+    fill = "Pressure Signal"
+  ) +
+  theme_void() +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 11)
+  )
+```
+
+Urgency is the dominant pressure source, accounting for 43.8% of all pressure signals, followed by merger-related signals at 25.8%. Risk signals also form a meaningful share, while confidentiality and error/failure signals are smaller. This suggests that system pressure was driven more by urgency and merger escalation than by explicit failure language.
+
+## 8.4 Agent-Level Pressure Exposure
+
+This visual examines how pressure signals are distributed across agents. The heatmap helps identify which agents were most exposed to urgency, risk, merger, confidentiality, or error-related communication.
+
+```{r}
+agent_pressure_exposure <- pressure_data %>%
+  group_by(agent_label) %>%
+  summarise(
+    Risk = sum(risk_signal, na.rm = TRUE),
+    Urgency = sum(urgency_signal, na.rm = TRUE),
+    `Error / Failure` = sum(error_signal, na.rm = TRUE),
+    Confidentiality = sum(confidentiality_signal, na.rm = TRUE),
+    Merger = sum(merger_signal, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(
+    cols = c(Risk, Urgency, `Error / Failure`, Confidentiality, Merger),
+    names_to = "pressure_signal",
+    values_to = "message_count"
+  )
+
+agent_order <- agent_pressure_exposure %>%
+  group_by(agent_label) %>%
+  summarise(total_pressure = sum(message_count), .groups = "drop") %>%
+  arrange(total_pressure) %>%
+  pull(agent_label)
+
+agent_pressure_exposure <- agent_pressure_exposure %>%
+  mutate(
+    agent_label = factor(agent_label, levels = agent_order),
+    pressure_signal = factor(
+      pressure_signal,
+      levels = c("Urgency", "Merger", "Risk", "Confidentiality", "Error / Failure")
+    )
+  )
+
+ggplot(
+  agent_pressure_exposure,
+  aes(
+    x = pressure_signal,
+    y = agent_label,
+    fill = message_count
+  )
+) +
+  geom_tile(
+    color = "white",
+    linewidth = 0.7
+  ) +
+  geom_text(
+    aes(label = ifelse(message_count > 0, message_count, "")),
+    size = 3.5
+  ) +
+  scale_fill_gradient(
+    low = "white",
+    high = "darkred"
+  ) +
+  labs(
+    title = "Agent-Level Pressure Exposure",
+    subtitle = "Darker cells indicate higher exposure to pressure-related communication",
+    x = "Pressure Signal",
+    y = "Agent",
+    fill = "Message Count"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 25, hjust = 1)
+  )
+```
+
+Legal-Agent shows the highest pressure exposure across all categories, especially urgency, merger, and risk signals. Social-Manager-Agent is also highly exposed, mainly through urgency and merger-related communication. Platform-Trust-Agent has lower merger exposure but stronger risk and urgency signals. Overall, pressure is concentrated around a few core agents rather than evenly distributed across the team.
+
+## 8.5 Leading Indicator Score Before the Breach
+
+This section examines whether there were warning signs before the embargo breach. Instead of looking at pressure signals separately, a combined leading indicator score is constructed from several risk-relevant conditions: merger-related content, confidentiality signals, urgency signals, public-facing activity, and boundary-agent involvement.
+
+```{r}
+embargo_lift_time <- ymd_hms("2046-06-05 18:00:00")
+
+# Identify boundary agents based on communication scope
+boundary_agent_profile <- pressure_data %>%
+  count(agent_label, communication_scope, name = "message_count") %>%
+  group_by(agent_label) %>%
+  mutate(
+    total_messages = sum(message_count),
+    share = message_count / total_messages
+  ) %>%
+  ungroup() %>%
+  select(agent_label, communication_scope, share) %>%
+  pivot_wider(
+    names_from = communication_scope,
+    values_from = share,
+    values_fill = 0
+  )
+
+if (!"Public" %in% names(boundary_agent_profile)) {
+  boundary_agent_profile$Public <- 0
+}
+
+if (!"Private / One-on-One" %in% names(boundary_agent_profile)) {
+  boundary_agent_profile[["Private / One-on-One"]] <- 0
+}
+
+boundary_agents <- boundary_agent_profile %>%
+  mutate(
+    boundary_bridge_score = Public + `Private / One-on-One`
+  ) %>%
+  filter(
+    boundary_bridge_score >= median(boundary_bridge_score, na.rm = TRUE)
+  ) %>%
+  pull(agent_label)
+
+# Build message-level leading indicator components
+leading_indicator_messages <- pressure_data %>%
+  filter(timestamp < embargo_lift_time) %>%
+  mutate(
+    public_merger_signal = is_public & merger_signal,
+    merger_confidential_signal = merger_signal & confidentiality_signal,
+    merger_urgency_signal = merger_signal & urgency_signal,
+    public_pressure_signal = is_public & any_pressure_signal,
+    boundary_agent_pressure_signal = agent_label %in% boundary_agents &
+      (merger_signal | confidentiality_signal | urgency_signal),
+    
+    leading_indicator_score =
+      3 * as.integer(public_merger_signal) +
+      2 * as.integer(merger_confidential_signal) +
+      2 * as.integer(merger_urgency_signal) +
+      2 * as.integer(public_pressure_signal) +
+      1 * as.integer(boundary_agent_pressure_signal)
+  )
+
+# Aggregate by date
+daily_leading_score <- leading_indicator_messages %>%
+  group_by(date) %>%
+  summarise(
+    leading_indicator_score = sum(leading_indicator_score, na.rm = TRUE),
+    public_merger_messages = sum(public_merger_signal, na.rm = TRUE),
+    merger_confidential_messages = sum(merger_confidential_signal, na.rm = TRUE),
+    merger_urgency_messages = sum(merger_urgency_signal, na.rm = TRUE),
+    public_pressure_messages = sum(public_pressure_signal, na.rm = TRUE),
+    boundary_agent_pressure_messages = sum(boundary_agent_pressure_signal, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+max_score <- max(daily_leading_score$leading_indicator_score, na.rm = TRUE)
+
+daily_leading_score <- daily_leading_score %>%
+  mutate(
+    relative_score = if (max_score == 0) {
+      0
+    } else {
+      leading_indicator_score / max_score * 100
+    },
+    
+    warning_level = case_when(
+      relative_score >= 75 ~ "Critical",
+      relative_score >= 40 ~ "High",
+      relative_score >= 10 ~ "Moderate",
+      TRUE ~ "Low"
+    ),
+    
+    warning_level = factor(
+      warning_level,
+      levels = c("Low", "Moderate", "High", "Critical")
+    )
+  )
+
+ggplot(
+  daily_leading_score,
+  aes(
+    x = date,
+    y = relative_score
+  )
+) +
+  geom_segment(
+    aes(
+      xend = date,
+      y = 0,
+      yend = relative_score
+    ),
+    colour = "grey70",
+    linewidth = 0.7
+  ) +
+  geom_point(
+    aes(
+      size = public_merger_messages + 1,
+      fill = warning_level
+    ),
+    shape = 21,
+    colour = "grey30",
+    alpha = 0.85
+  ) +
+  geom_text(
+    aes(
+      label = ifelse(leading_indicator_score > 0, leading_indicator_score, "")
+    ),
+    vjust = -1,
+    size = 3
+  ) +
+  scale_y_continuous(
+    limits = c(0, 110),
+    breaks = seq(0, 100, 25),
+    labels = function(x) paste0(x, "%")
+  ) +
+  scale_size_continuous(
+    range = c(3, 12),
+    name = "Public Merger\nMessages + 1"
+  ) +
+  labs(
+    title = "Leading Indicator Score Before the Breach",
+    subtitle = "Relative warning score based on merger, confidentiality, urgency, public exposure, and boundary-agent activity",
+    x = "Date",
+    y = "Relative Leading Indicator Score",
+    fill = "Warning Level"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 35, hjust = 1)
+  )
+```
+This chart shows a sharp contrast between weak early warnings and the final breach-day escalation. Before June 5, the leading indicator scores were mostly very low, generally below 30, suggesting that earlier warning signals existed but remained limited. June 5 is the clear outlier, reaching a score of 711 and 100% relative intensity. This indicates that multiple warning conditions converged on the breach day rather than appearing as a gradual linear build-up. The large bubble on June 5 also shows that public-merger messages became a major part of the warning pattern, making this the strongest leading indicator that an embargo breach was possible before the official release time.
+
+```{r}
+leading_indicator_component_table <- daily_leading_score %>%
+  arrange(desc(leading_indicator_score)) %>%
+  transmute(
+    Date = date,
+    `Leading Indicator Score` = leading_indicator_score,
+    `Relative Score` = paste0(round(relative_score, 1), "%"),
+    `Public Merger Messages` = public_merger_messages,
+    `Merger + Confidentiality` = merger_confidential_messages,
+    `Merger + Urgency` = merger_urgency_messages,
+    `Public Pressure Messages` = public_pressure_messages,
+    `Boundary-Agent Pressure Messages` = boundary_agent_pressure_messages,
+    `Warning Level` = warning_level
+  )
+
+DT::datatable(
+  leading_indicator_component_table,
+  rownames = FALSE,
+  options = list(
+    pageLength = 8,
+    scrollX = TRUE
+  )
+)
+```
+
+
+The leading indicator view shows whether multiple warning conditions appeared together before the embargo lift. A high score means that merger-related information was not only present, but also linked to confidentiality, urgency, public-facing activity, or boundary agents. This is more informative than a simple count because it captures the combination of conditions that made an inappropriate release possible.
+
+
+
+## 8.7 Key Findings from System Pressure Analysis
+
+- **System pressure was substantial and concentrated.**  
+  A total of 555 messages contained at least one pressure signal. Urgency was the dominant pressure category, with 413 messages, followed by merger-related signals with 243 messages and risk signals with 150 messages.
+
+- **June 5 was the clear pressure escalation point.**  
+  The pressure heatmap shows that urgency, merger, risk, confidentiality, and error/failure signals all intensified sharply on June 5. This indicates that the breach occurred during a system-wide pressure spike rather than under normal communication conditions.
+
+- **Pressure was mainly driven by urgency and merger escalation.**  
+  The composition chart shows that urgency accounted for 43.8% of all pressure signals, while merger-related signals accounted for 25.8%. Error/failure language was much smaller, suggesting that the breakdown was more about urgency-driven governance failure than explicit technical malfunction.
+
+- **Pressure exposure was concentrated around core agents.**  
+  Legal-Agent and Social-Manager-Agent had the highest exposure to urgency and merger-related pressure. Platform-Trust-Agent also showed strong risk and urgency exposure, making it important as a coordination and system-control actor.
+
+- **Leading indicators existed before the final breach, but June 5 was the decisive outlier.**  
+  Earlier dates showed small warning scores, while June 5 jumped to a leading indicator score of 711. This suggests that weak warning signals existed before the breach, but multiple risk conditions converged sharply on the breach day.
+
+- **Overall, Part 6 supports the system-breakdown interpretation.**  
+  The evidence shows escalating pressure, repeated near-miss patterns, and weak early warning signals before the final breach. This does not look like a single isolated mistake; it looks more like a communication system whose risk controls failed under concentrated urgency, merger sensitivity, and public-facing exposure.
+
+
+# 9. Prior Anomalies and Missed Intervention
+
+## 9.1 Purpose of Prior Anomaly Analysis
+
+The purpose of this section is to examine whether the system showed earlier warning patterns before the final embargo breach, and why those earlier signals did not result in visible intervention. While Part 8 focuses on leading indicators and system pressure around the breach, Part 9 looks backward to identify prior anomalies, near-miss behaviors, and missed opportunities for control.
+
+This section addresses the remaining parts of Task 3:
+
+1. Were there prior occasions where agents’ actual behaviors differed from expected behavior?
+2. Were there other occasions where the agent system exhibited behaviors similar to those that led to the inappropriate release?
+3. Why did those prior occasions not result in noticeable action?
+
+The analysis uses the typical behavior baseline from Part 7 as the reference point for “expected behavior.” Prior anomalies are defined as earlier communication records or patterns that showed partial similarity to the final breach pathway, such as merger-related pressure, confidentiality references, public-facing pressure, decision/control activity, or near-public exposure.
+
+The goal is not to claim that earlier anomalies directly caused the breach. Instead, this section evaluates whether the system had warning signs that could have been detected earlier, and whether those signs were too weak, too scattered, or too poorly escalated to trigger effective intervention before the June 5 release window.
+
+## 9.2 Prior Warning Occasions and Near-Miss Signals
+
+```{r}
+embargo_lift_time <- ymd_hms("2046-06-05 18:00:00")
+breach_time <- ymd_hms("2046-06-05 17:00:00")
+
+near_miss_data <- pressure_data %>%
+  filter(timestamp < embargo_lift_time) %>%
+  mutate(
+    pre_breach_phase = case_when(
+      date < as_date("2046-06-05") ~ "Prior to June 5",
+      timestamp < breach_time ~ "June 5 Before 5:00 PM",
+      timestamp >= breach_time & timestamp < embargo_lift_time ~ "5:00–6:00 PM Breach Window"
+    ),
+    
+    near_miss_pattern = case_when(
+      is_public & merger_signal ~ "Public + Merger",
+      is_public & any_pressure_signal ~ "Public + Pressure",
+      merger_signal & confidentiality_signal ~ "Merger + Confidentiality",
+      merger_signal & urgency_signal ~ "Merger + Urgency",
+      merger_signal & risk_signal ~ "Merger + Risk",
+      confidentiality_signal & urgency_signal ~ "Confidentiality + Urgency",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(near_miss_pattern)) %>%
+  mutate(
+    near_miss_severity = case_when(
+      near_miss_pattern == "Public + Merger" ~ "Critical",
+      near_miss_pattern %in% c(
+        "Public + Pressure",
+        "Merger + Confidentiality",
+        "Merger + Urgency"
+      ) ~ "High",
+      TRUE ~ "Moderate"
+    ),
+    near_miss_severity = factor(
+      near_miss_severity,
+      levels = c("Moderate", "High", "Critical")
+    )
+  )
+```
+
+```{r}
+near_miss_summary <- near_miss_data %>%
+  count(
+    pre_breach_phase,
+    near_miss_pattern,
+    near_miss_severity,
+    name = "event_count"
+  ) %>%
+  mutate(
+    pre_breach_phase = factor(
+      pre_breach_phase,
+      levels = c(
+        "Prior to June 5",
+        "June 5 Before 5:00 PM",
+        "5:00–6:00 PM Breach Window"
+      )
+    )
+  )
+
+ggplot(
+  near_miss_summary,
+  aes(
+    x = pre_breach_phase,
+    y = near_miss_pattern,
+    size = event_count,
+    fill = near_miss_severity
+  )
+) +
+  geom_point(
+    shape = 21,
+    colour = "grey30",
+    alpha = 0.85
+  ) +
+  geom_text(
+    aes(label = event_count),
+    size = 3,
+    colour = "black"
+  ) +
+  scale_size_continuous(
+    range = c(4, 16),
+    name = "Event Count"
+  ) +
+  labs(
+    title = "Prior Warning Occasions and Near-Miss Signals",
+    subtitle = "Pre-embargo risk patterns by phase and severity",
+    x = "Pre-Embargo Phase",
+    y = "Near-Miss Pattern",
+    fill = "Severity"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 20, hjust = 1)
+  )
+```
+This chart shows that near-miss signals already existed before the final breach window, especially `Merger + Urgency`, `Merger + Confidentiality`, and `Confidentiality + Urgency`. The strongest concentration appeared on June 5 before 5PM, where merger-related urgency and confidentiality signals increased sharply, and `Public + Merger` events also appeared. This suggests that the system had observable warning patterns before the 5–6PM breach window, but these signals did not trigger enough intervention to prevent the final public exposure.
+
+## 9.3 Near-Miss Signals by Agent
+```{r}
+near_miss_event_table <- near_miss_data %>%
+  arrange(desc(near_miss_severity), timestamp) %>%
+  transmute(
+    Time = timestamp,
+    Phase = pre_breach_phase,
+    Severity = near_miss_severity,
+    Pattern = near_miss_pattern,
+    Agent = agent_label,
+    Role = agent_role,
+    Channel = channel,
+    Scope = communication_scope,
+    Message_Type = message_type,
+    Content = str_trunc(content, width = 220)
+  )
+
+DT::datatable(
+  near_miss_event_table,
+  rownames = FALSE,
+  options = list(
+    pageLength = 8,
+    lengthMenu = c(8, 15, 30),
+    scrollX = TRUE,
+    scrollY = "360px",
+    autoWidth = FALSE,
+    columnDefs = list(
+      list(width = "130px", targets = 0),
+      list(width = "170px", targets = 1),
+      list(width = "100px", targets = 2),
+      list(width = "180px", targets = 3),
+      list(width = "150px", targets = 4),
+      list(width = "110px", targets = 5),
+      list(width = "130px", targets = 6),
+      list(width = "140px", targets = 7),
+      list(width = "130px", targets = 8),
+      list(width = "560px", targets = 9)
+    )
+  )
+) %>%
+  DT::formatStyle(
+    "Content",
+    `white-space` = "normal",
+    `font-size` = "12px",
+    `line-height` = "1.25"
+  )
+```
+
+```{r}
+near_miss_agent_summary <- near_miss_data %>%
+  count(
+    agent_label,
+    near_miss_pattern,
+    name = "event_count"
+  ) %>%
+  group_by(agent_label) %>%
+  mutate(
+    total_near_miss_events = sum(event_count)
+  ) %>%
+  ungroup()
+
+ggplot(
+  near_miss_agent_summary,
+  aes(
+    x = reorder(agent_label, total_near_miss_events),
+    y = event_count,
+    fill = near_miss_pattern
+  )
+) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Near-Miss Signals by Agent",
+    subtitle = "Agents involved in pre-embargo warning patterns",
+    x = "Agent",
+    y = "Number of Near-Miss Signals",
+    fill = "Near-Miss Pattern"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom"
+  )
+```
+
+This chart shows that near-miss signals were concentrated mainly in Legal-Agent and Social-Manager-Agent, especially through `Merger + Urgency` and `Merger + Confidentiality` patterns. PR-Intern-Agent and Platform-Trust-Agent also show meaningful warning activity, but at a smaller scale. This suggests that prior warning behavior was not evenly distributed across the system; it was concentrated around the same core agents later implicated in the breach pathway.
+
+
+
+## 9.4 Expected vs Actual Behavior Deviations
+
+This section compares the system’s expected behavior with the actual behaviors observed during prior warning and near-miss occasions. Expected behavior is based on the pre-June 5 baseline established in Part 7.
+
+```{r}
+#| fig-width: 10.5
+#| fig-height: 5.8
+
+expected_actual_score <- tibble(
+  expected_behavior = c(
+    "No public merger content",
+    "Merger content contained internally",
+    "Confidentiality triggers containment",
+    "Control signals reduce exposure",
+    "Public-facing agents avoid sensitive amplification"
+  ),
+  
+  `Prior to June 5` = c(
+    "Low",
+    "Moderate",
+    "Moderate",
+    "Moderate",
+    "Moderate"
+  ),
+  
+  `June 5 Before 5PM` = c(
+    "Critical",
+    "High",
+    "High",
+    "High",
+    "High"
+  ),
+  
+  `5–6PM Breach Window` = c(
+    "Critical",
+    "High",
+    "High",
+    "Critical",
+    "Critical"
+  )
+)
+
+expected_actual_long <- expected_actual_score %>%
+  pivot_longer(
+    cols = c(
+      `Prior to June 5`,
+      `June 5 Before 5PM`,
+      `5–6PM Breach Window`
+    ),
+    names_to = "actual_phase",
+    values_to = "deviation_level"
+  ) %>%
+  mutate(
+    expected_behavior = factor(
+      expected_behavior,
+      levels = rev(expected_actual_score$expected_behavior)
+    ),
+    
+    actual_phase = factor(
+      actual_phase,
+      levels = c(
+        "Prior to June 5",
+        "June 5 Before 5PM",
+        "5–6PM Breach Window"
+      )
+    ),
+    
+    deviation_level = factor(
+      deviation_level,
+      levels = c(
+        "Low",
+        "Moderate",
+        "High",
+        "Critical"
+      )
+    ),
+    
+    deviation_score = case_when(
+      deviation_level == "Low" ~ 1,
+      deviation_level == "Moderate" ~ 2,
+      deviation_level == "High" ~ 3,
+      deviation_level == "Critical" ~ 4
+    )
+  )
+
+ggplot(
+  expected_actual_long,
+  aes(
+    x = actual_phase,
+    y = expected_behavior,
+    fill = deviation_level
+  )
+) +
+  geom_tile(
+    colour = "white",
+    linewidth = 1
+  ) +
+  geom_text(
+    aes(label = deviation_level),
+    size = 4,
+    fontface = "bold"
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Low" = "#f2f2f2",
+      "Moderate" = "#fdae6b",
+      "High" = "#f1695b",
+      "Critical" = "#a50f15"
+    )
+  ) +
+  labs(
+    title = "Expected vs Actual Behavior Deviations",
+    subtitle = "Deviation severity increased as the system approached the breach window",
+    x = "Actual Observation Phase",
+    y = "Expected Behavior",
+    fill = "Deviation Level"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    panel.grid = element_blank(),
+    axis.text.x = element_text(size = 10, face = "bold"),
+    axis.text.y = element_text(size = 9),
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 11)
+  )
+```
+
+The matrix shows that deviations from expected behavior intensified as the system moved closer to the breach window. Before June 5, the main deviation was moderate and mostly related to scattered warning signals, while public merger content was still absent. On June 5 before 5PM, the pattern became critical because public merger exposure appeared for the first time. By the 5–6PM breach window, both public exposure and control failure were critical, suggesting that the system had moved from early warning signs into clear containment failure.
+
+
+## 9.5 Why Prior Warnings Did Not Trigger Action
+
+This section explains why earlier warning signals did not lead to visible intervention before the final embargo breach. The goal is to identify the main barriers that prevented prior warning patterns from becoming clear control actions.
+
+```{r}
+#| fig-width: 10.5
+#| fig-height: 6.2
+
+missed_intervention_matrix <- tibble(
+  failure_reason = c(
+    "Signals were scattered",
+    "Risk looked contained",
+    "Warnings were ambiguous",
+    "Controls lacked stopping power",
+    "Responsibility was distributed",
+    "Escalation became clear late"
+  ),
+  
+  `Low Signal Clarity` = c(
+    "High", "Moderate", "High", "Moderate", "Moderate", "Low"
+  ),
+  
+  `Weak Action Trigger` = c(
+    "High", "High", "High", "High", "Moderate", "Moderate"
+  ),
+  
+  `Distributed Ownership` = c(
+    "Moderate", "Low", "Moderate", "High", "High", "Moderate"
+  ),
+  
+  `Late Visibility` = c(
+    "Moderate", "High", "Moderate", "Moderate", "Moderate", "High"
+  )
+)
+
+missed_intervention_long <- missed_intervention_matrix %>%
+  pivot_longer(
+    cols = c(
+      `Low Signal Clarity`,
+      `Weak Action Trigger`,
+      `Distributed Ownership`,
+      `Late Visibility`
+    ),
+    names_to = "intervention_barrier",
+    values_to = "barrier_level"
+  ) %>%
+  mutate(
+    failure_reason = factor(
+      failure_reason,
+      levels = rev(missed_intervention_matrix$failure_reason)
+    ),
+    
+    intervention_barrier = factor(
+      intervention_barrier,
+      levels = c(
+        "Low Signal Clarity",
+        "Weak Action Trigger",
+        "Distributed Ownership",
+        "Late Visibility"
+      )
+    ),
+    
+    barrier_level = factor(
+      barrier_level,
+      levels = c("Low", "Moderate", "High")
+    )
+  )
+
+ggplot(
+  missed_intervention_long,
+  aes(
+    x = intervention_barrier,
+    y = failure_reason,
+    fill = barrier_level
+  )
+) +
+  geom_tile(
+    colour = "white",
+    linewidth = 1
+  ) +
+  geom_text(
+    aes(label = barrier_level),
+    size = 4,
+    fontface = "bold"
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Low" = "#f2f2f2",
+      "Moderate" = "#fdae6b",
+      "High" = "#a50f15"
+    )
+  ) +
+  labs(
+    title = "Why Prior Warnings Did Not Trigger Action",
+    subtitle = "Intervention barriers that prevented earlier warning signs from becoming effective control actions",
+    x = "Intervention Barrier",
+    y = "Reason Warning Did Not Trigger Action",
+    fill = "Barrier Level"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    panel.grid = element_blank(),
+    axis.text.x = element_text(size = 10, face = "bold", angle = 20, hjust = 1),
+    axis.text.y = element_text(size = 10),
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 11)
+  )
+```
+This chart explains why earlier warnings did not translate into intervention. The strongest barriers were weak action triggers and low signal clarity: the warnings existed, but they were scattered and ambiguous rather than forming one clear stop signal. Risk also appeared contained before June 5 because public merger exposure was not yet obvious. By the time visibility increased, the system was already close to the breach window, so intervention came too late to prevent public exposure.
+
+## 9.6 Key Findings from Prior Anomalies and Missed Intervention
+
+- **Prior warning signals existed before the final breach window.**  
+  The near-miss analysis shows that warning patterns were already visible before 5:00 PM on June 5, especially `Merger + Urgency`, `Merger + Confidentiality`, and `Confidentiality + Urgency`. This means the breach did not appear without earlier warning signs.
+
+- **The strongest warning concentration appeared on June 5 before 5PM.**  
+  Near-miss signals intensified sharply before the 5–6PM breach window, with `Merger + Urgency` and `Merger + Confidentiality` becoming especially prominent. This suggests that the system was already moving toward a high-risk state before the final public exposure.
+
+- **Near-miss behavior was concentrated around specific agents.**  
+  Legal-Agent and Social-Manager-Agent carried the largest volume of near-miss signals, while PR-Intern-Agent and Platform-Trust-Agent also showed meaningful warning activity. The warning pattern was therefore not evenly distributed; it was concentrated around agents already central to the breach pathway.
+
+- **Actual behavior increasingly deviated from expected behavior.**  
+  Before June 5, deviations were mostly moderate and scattered. On June 5 before 5PM, public merger exposure appeared and the deviation became critical. During the 5–6PM breach window, control failure and public-facing amplification also became critical.
+
+- **Earlier warnings did not trigger action because they were ambiguous and lacked a clear intervention trigger.**  
+  The missed-intervention analysis suggests that prior signals were scattered across agents, phases, and warning types. Risk looked partially contained because public + merger exposure was absent from the baseline, and no single actor clearly owned the full escalation pathway.
+
+- **Overall, Part 9 supports a missed-intervention interpretation.**  
+  The system had observable warning signs before the breach, but those signs were not translated into effective action. This strengthens the system-breakdown explanation: the failure was not only that public exposure occurred, but that earlier near-miss signals were not escalated or contained in time.
+
+# 10. Final Conclusion
+
+Overall, the evidence suggests that TenantThread’s inappropriate merger release was more consistent with a **system breakdown under pressure** than a deliberate leak by a single actor. For Task 1, the timeline, communication-flow, and causal-chain analysis showed that the release was not an isolated post: merger information circulated through internal and private channels, became linked with urgency and confidentiality signals, passed through decision/review/enforcement activity, and eventually crossed into public-facing communication before the 6:00 PM embargo lift. 
+
+For Task 2, the typical-behavior comparison showed that this was a clear deviation from prior behavior: public + merger communication was absent in the baseline but appeared on June 5, especially around Legal-Agent and Social-Manager-Agent. 
+
+For Task 3, the leading-indicator and prior-anomaly analysis showed that warning signs existed before the final breach window, including merger urgency, confidentiality signals, and near-miss patterns, but these warnings were scattered, ambiguous, and lacked a clear action trigger. Therefore, the breach should be interpreted as a pressured multi-agent control failure: the system had signals and controls, but they were not coordinated effectively enough to prevent embargoed merger information from becoming public.
+
+
+# 11. References
+
+- Thomas, J. J., & Cook, K. A. (Eds.). (2005). *Illuminating the Path: The Research and Development Agenda for Visual Analytics*. National Visualization and Analytics Center.  
+  Useful for justifying the overall visual analytics approach: using interactive/visual methods to support analytical reasoning and evidence synthesis. :contentReference[oaicite:0]{index=0}
+
+- Pirolli, P., & Card, S. (2005). *The Sensemaking Process and Leverage Points for Analyst Technology as Identified Through Cognitive Task Analysis*.  
+  Useful for explaining the report structure: moving from raw communication records to filtered evidence, patterns, causal interpretation, and final judgment. :contentReference[oaicite:1]{index=1}
+
+- Endsley, M. R. (1995). *Toward a Theory of Situation Awareness in Dynamic Systems*. *Human Factors, 37*(1), 32–64.  
+  Useful for discussing why warning signals may fail to become effective action when operators or systems lose situation awareness under dynamic conditions. :contentReference[oaicite:2]{index=2}
+
+- Endsley, M. R. (1996). *Automation and Situation Awareness*.  
+  Useful for connecting multi-agent / automated communication systems with out-of-the-loop control problems and weakened human/system monitoring. :contentReference[oaicite:3]{index=3}
