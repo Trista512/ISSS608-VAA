@@ -2259,5 +2259,369 @@
     "title": "Take-Home_Ex02",
     "section": "9.6 Key Findings from Prior Anomalies and Missed Intervention",
     "text": "9.6 Key Findings from Prior Anomalies and Missed Intervention\n\nPrior warning signals existed before the final breach window.\nThe near-miss analysis shows that warning patterns were already visible before 5:00 PM on June 5, especially Merger + Urgency, Merger + Confidentiality, and Confidentiality + Urgency. This means the breach did not appear without earlier warning signs.\nThe strongest warning concentration appeared on June 5 before 5PM.\nNear-miss signals intensified sharply before the 5–6PM breach window, with Merger + Urgency and Merger + Confidentiality becoming especially prominent. This suggests that the system was already moving toward a high-risk state before the final public exposure.\nNear-miss behavior was concentrated around specific agents.\nLegal-Agent and Social-Manager-Agent carried the largest volume of near-miss signals, while PR-Intern-Agent and Platform-Trust-Agent also showed meaningful warning activity. The warning pattern was therefore not evenly distributed; it was concentrated around agents already central to the breach pathway.\nActual behavior increasingly deviated from expected behavior.\nBefore June 5, deviations were mostly moderate and scattered. On June 5 before 5PM, public merger exposure appeared and the deviation became critical. During the 5–6PM breach window, control failure and public-facing amplification also became critical.\nEarlier warnings did not trigger action because they were ambiguous and lacked a clear intervention trigger.\nThe missed-intervention analysis suggests that prior signals were scattered across agents, phases, and warning types. Risk looked partially contained because public + merger exposure was absent from the baseline, and no single actor clearly owned the full escalation pathway.\nOverall, Part 9 supports a missed-intervention interpretation.\nThe system had observable warning signs before the breach, but those signs were not translated into effective action. This strengthens the system-breakdown explanation: the failure was not only that public exposure occurred, but that earlier near-miss signals were not escalated or contained in time."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\npacman::p_load(igraph, tidygraph, ggraph, \n               visNetwork, lubridate, clock,\n               tidyverse, graphlayouts, \n               concaveman, ggforce)\n\n\nThis code loads the required R packages for data wrangling, time processing, network analysis, and network visualisation. These packages will be used later to prepare the communication data, construct network objects, and create both static and interactive network graphs.\n\n\n\n\nCode\nGAStech_nodes &lt;- read_csv(\"data/GAStech_email_node.csv\")\nGAStech_edges &lt;- read_csv(\"data/GAStech_email_edge-v2.csv\")\n\n\nThis code imports the node and edge datasets from the data folder. The node file contains information about the people or entities in the email network, while the edge file contains the connections or email interactions between them.\n\n\n\n\n\nCode\nglimpse(GAStech_edges)\n\n\nRows: 9,063\nColumns: 8\n$ source      &lt;dbl&gt; 43, 43, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 26, 26, 26…\n$ target      &lt;dbl&gt; 41, 40, 51, 52, 53, 45, 44, 46, 48, 49, 47, 54, 27, 28, 29…\n$ SentDate    &lt;chr&gt; \"6/1/2014\", \"6/1/2014\", \"6/1/2014\", \"6/1/2014\", \"6/1/2014\"…\n$ SentTime    &lt;time&gt; 08:39:00, 08:39:00, 08:58:00, 08:58:00, 08:58:00, 08:58:0…\n$ Subject     &lt;chr&gt; \"GT-SeismicProcessorPro Bug Report\", \"GT-SeismicProcessorP…\n$ MainSubject &lt;chr&gt; \"Work related\", \"Work related\", \"Work related\", \"Work rela…\n$ sourceLabel &lt;chr&gt; \"Sven.Flecha\", \"Sven.Flecha\", \"Kanon.Herrero\", \"Kanon.Herr…\n$ targetLabel &lt;chr&gt; \"Isak.Baza\", \"Lucas.Alcazar\", \"Felix.Resumir\", \"Hideki.Coc…\n\n\n\n\n\n\n\nCode\nGAStech_edges &lt;- GAStech_edges %&gt;%\n  mutate(SendDate = dmy(SentDate)) %&gt;%\n  mutate(Weekday = wday(SentDate,\n                        label = TRUE,\n                        abbr = FALSE))\n\n\n\n\n\n\n\nCode\nGAStech_edges_aggregated &lt;- GAStech_edges %&gt;%\n  filter(MainSubject == \"Work related\") %&gt;%\n  group_by(source, target, Weekday) %&gt;%\n    summarise(Weight = n()) %&gt;%\n  filter(source!=target) %&gt;%\n  filter(Weight &gt; 1) %&gt;%\n  ungroup()\n\n\n\n\n\n\n\n\n\n\nCode\nGAStech_graph &lt;- tbl_graph(nodes = GAStech_nodes,\n                           edges = GAStech_edges_aggregated, \n                           directed = TRUE)\n\n\nThis code creates a directed network graph using the node data and the aggregated edge data. The graph represents email relationships, where the direction of each edge shows who sent emails to whom.\n\n\n\n\n\nCode\nGAStech_graph\n\n\n# A tbl_graph: 54 nodes and 1372 edges\n#\n# A directed multigraph with 1 component\n#\n# Node Data: 54 × 4 (active)\n      id label               Department     Title                               \n   &lt;dbl&gt; &lt;chr&gt;               &lt;chr&gt;          &lt;chr&gt;                               \n 1     1 Mat.Bramar          Administration Assistant to CEO                    \n 2     2 Anda.Ribera         Administration Assistant to CFO                    \n 3     3 Rachel.Pantanal     Administration Assistant to CIO                    \n 4     4 Linda.Lagos         Administration Assistant to COO                    \n 5     5 Ruscella.Mies.Haber Administration Assistant to Engineering Group Mana…\n 6     6 Carla.Forluniau     Administration Assistant to IT Group Manager       \n 7     7 Cornelia.Lais       Administration Assistant to Security Group Manager \n 8    44 Kanon.Herrero       Security       Badging Office                      \n 9    45 Varja.Lagos         Security       Badging Office                      \n10    46 Stenig.Fusil        Security       Building Control                    \n# ℹ 44 more rows\n#\n# Edge Data: 1,372 × 4\n   from    to Weekday Weight\n  &lt;int&gt; &lt;int&gt; &lt;ord&gt;    &lt;int&gt;\n1     1     2 Sunday       5\n2     1     2 Monday       2\n3     1     2 Tuesday      3\n# ℹ 1,369 more rows\n\n\n\n\n\n\n\nCode\nGAStech_graph %&gt;%\n  activate(edges) %&gt;%\n  arrange(desc(Weight))\n\n\n# A tbl_graph: 54 nodes and 1372 edges\n#\n# A directed multigraph with 1 component\n#\n# Edge Data: 1,372 × 4 (active)\n    from    to Weekday   Weight\n   &lt;int&gt; &lt;int&gt; &lt;ord&gt;      &lt;int&gt;\n 1    40    41 Saturday      13\n 2    41    43 Monday        11\n 3    35    31 Tuesday       10\n 4    40    41 Monday        10\n 5    40    43 Monday        10\n 6    36    32 Sunday         9\n 7    40    43 Saturday       9\n 8    41    40 Monday         9\n 9    19    15 Wednesday      8\n10    35    38 Tuesday        8\n# ℹ 1,362 more rows\n#\n# Node Data: 54 × 4\n     id label           Department     Title           \n  &lt;dbl&gt; &lt;chr&gt;           &lt;chr&gt;          &lt;chr&gt;           \n1     1 Mat.Bramar      Administration Assistant to CEO\n2     2 Anda.Ribera     Administration Assistant to CFO\n3     3 Rachel.Pantanal Administration Assistant to CIO\n# ℹ 51 more rows\n\n\nThis code activates the edge table in the network graph and sorts the email connections by Weight in descending order. This helps identify the strongest or most frequent email relationships in the network.\n\n\n\n\n\nCode\nggraph(GAStech_graph) +\n  geom_edge_link() +\n  geom_node_point()\n\n\n\n\n\n\n\n\n\nThis code creates a basic network graph from GAStech_graph. The lines represent email connections, and the points represent the nodes in the network.\n\n\n\n\n\nCode\ng &lt;- ggraph(GAStech_graph) + \n  geom_edge_link(aes()) +\n  geom_node_point(aes())\n\ng + theme_graph()\n\n\n\n\n\n\n\n\n\nThis code creates a network graph object and applies theme_graph() to remove unnecessary chart elements. The result is a cleaner visualisation of the email network.\n\n\n\n\n\nCode\ng &lt;- ggraph(GAStech_graph) + \n  geom_edge_link(aes(colour = 'grey50')) +\n  geom_node_point(aes(colour = 'grey40'))\n\ng + theme_graph(background = 'grey10',\n                text_colour = 'white')\n\n\n\n\n\n\n\n\n\nThis code creates a darker network visualisation by setting grey colours for the edges and nodes, and applying a dark background with white text. This improves contrast and makes the email network easier to view.\n\n\n\n\n\nCode\ng &lt;- ggraph(GAStech_graph, \n            layout = \"fr\") +\n  geom_edge_link(aes()) +\n  geom_node_point(aes())\n\ng + theme_graph()\n\n\n\n\n\n\n\n\n\nThis code uses the Fruchterman-Reingold layout to create a network graph. This layout places closely connected nodes nearer to each other, making the structure of the email network easier to interpret.\n\n\n\n\n\nCode\ng &lt;- ggraph(GAStech_graph, \n            layout = \"nicely\") + \n  geom_edge_link(aes()) +\n  geom_node_point(aes(colour = Department, \n                      size = 3))\n\ng + theme_graph()\n\n\n\n\n\n\n\n\n\nThis code visualises the email network using the nicely layout. The nodes are coloured by department, which helps compare communication patterns across different organisational groups.\n\n\n\n\n\nCode\ng &lt;- ggraph(GAStech_graph, \n            layout = \"nicely\") +\n  geom_edge_link(aes(width = Weight), \n                 alpha = 0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(colour = Department), \n                  size = 3)\n\ng + theme_graph()\n\n\n\n\n\n\n\n\n\nThis code visualises the email network with edge width mapped to Weight. Thicker lines represent stronger or more frequent email connections, while node colours show different departments.\n\n\n\n\n\nCode\nset_graph_style()\n\ng &lt;- ggraph(GAStech_graph, \n            layout = \"nicely\") + \n  geom_edge_link(aes(width = Weight), \n                 alpha = 0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(colour = Department), \n                  size = 2)\n\ng + facet_edges(~Weekday)\n\n\n\n\n\n\n\n\n\nThis code applies a graph style and visualises the email network by weekday. The edge width represents the weight of communication, while the faceting separates the network into different weekday panels.\n\n\n\n\n\nCode\nset_graph_style()\n\ng &lt;- ggraph(GAStech_graph, \n            layout = \"nicely\") + \n  geom_edge_link(aes(width=Weight), \n                 alpha=0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(colour = Department), \n                  size = 2) +\n  theme(legend.position = 'bottom')\n  \ng + facet_edges(~Weekday)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nCode\nset_graph_style() \n\ng &lt;- ggraph(GAStech_graph, \n            layout = \"nicely\") + \n  geom_edge_link(aes(width = Weight), \n                 alpha = 0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(colour = Department), \n                  size = 2)\n  \ng + facet_edges(~Weekday) +\n  th_foreground(foreground = \"grey80\",  \n                border = TRUE) +\n  theme(legend.position = \"bottom\")\n\n\n\n\n\n\n\n\n\nThis code creates a faceted email network by weekday. Edge width shows communication weight, node colour shows department, and the foreground theme improves panel visibility while placing the legend at the bottom.\n\n\n\n\n\nCode\nset_graph_style()\n\ng &lt;- ggraph(GAStech_graph, \n            layout = \"nicely\") + \n  geom_edge_link(aes(width=Weight), \n                 alpha=0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(colour = Department), \n                  size = 2)\n  \ng + facet_nodes(~Department)+\n  th_foreground(foreground = \"grey80\",  \n                border = TRUE) +\n  theme(legend.position = 'bottom')\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nCode\ng &lt;- GAStech_graph %&gt;%\n  mutate(betweenness_centrality = centrality_betweenness()) %&gt;%\n  ggraph(layout = \"fr\") + \n  geom_edge_link(aes(width = Weight), \n                 alpha = 0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(colour = Department,\n                      size = betweenness_centrality))\n\ng + theme_graph()\n\n\n\n\n\n\n\n\n\nThis code calculates betweenness centrality for each node and uses it to control node size in the network graph. Larger nodes represent people who are more important as bridges between different parts of the email network.\n\n\n\n\n\nCode\ng &lt;- GAStech_graph %&gt;%\n  ggraph(layout = \"fr\") + \n  geom_edge_link(aes(width=Weight), \n                 alpha=0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(colour = Department, \n                      size = centrality_betweenness()))\ng + theme_graph()\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nCode\ng &lt;- GAStech_graph %&gt;%\n  mutate(community = as.factor(\n    group_edge_betweenness(\n      weights = Weight, \n      directed = TRUE))) %&gt;%\n  ggraph(layout = \"fr\") + \n  geom_edge_link(\n    aes(\n      width=Weight), \n    alpha=0.2) +\n  scale_edge_width(\n    range = c(0.1, 5)) +\n  geom_node_point(\n    aes(colour = community))  \n\ng + theme_graph()\n\n\n\n\n\n\n\n\n\n\n\nCode\ng &lt;- GAStech_graph %&gt;%\n  activate(nodes) %&gt;%\n  mutate(community = as.factor(\n    group_optimal(weights = Weight)),\n         betweenness_measure = centrality_betweenness()) %&gt;%\n  ggraph(layout = \"fr\") +\n  geom_mark_hull(\n    aes(x, y, \n        group = community, \n        fill = community),  \n    alpha = 0.2,  \n    expand = unit(0.3, \"cm\"),  # Expand\n    radius = unit(0.3, \"cm\")  # Smoothness\n  ) + \n  geom_edge_link(aes(width=Weight), \n                 alpha=0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(fill = Department,\n                      size = betweenness_measure),\n                      color = \"black\",\n                      shape = 21)\n  \ng + theme_graph()\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nCode\nGAStech_edges_aggregated &lt;- GAStech_edges %&gt;%\n  left_join(GAStech_nodes, by = c(\"sourceLabel\" = \"label\")) %&gt;%\n  rename(from = id) %&gt;%\n  left_join(GAStech_nodes, by = c(\"targetLabel\" = \"label\")) %&gt;%\n  rename(to = id) %&gt;%\n  filter(MainSubject == \"Work related\") %&gt;%\n  group_by(from, to) %&gt;%\n    summarise(weight = n()) %&gt;%\n  filter(from!=to) %&gt;%\n  filter(weight &gt; 1) %&gt;%\n  ungroup()\n\n\n\n\n\n\n\nCode\nvisNetwork(GAStech_nodes, \n           GAStech_edges_aggregated)\n\n\n\n\n\n\n\n\n\n\n\nCode\nvisNetwork(GAStech_nodes,\n           GAStech_edges_aggregated) %&gt;%\n  visIgraphLayout(layout = \"layout_with_fr\")\n\n\n\n\n\n\nThis code creates an interactive network graph using visNetwork. The Fruchterman-Reingold layout is applied to position closely connected nodes near each other.\n\n\n\n\n\nCode\nGAStech_nodes &lt;- GAStech_nodes %&gt;%\n  rename(group = Department) \n\n\n\n\nCode\nvisNetwork(GAStech_nodes,\n           GAStech_edges_aggregated) %&gt;%\n  visIgraphLayout(layout = \"layout_with_fr\") %&gt;%\n  visLegend() %&gt;%\n  visLayout(randomSeed = 123)\n\n\n\n\n\n\nThis code creates an interactive network graph with a Fruchterman-Reingold layout. It also adds a legend and uses a fixed random seed so that the network layout remains consistent each time the code is rendered.\n\n\n\n\n\nCode\nvisNetwork(GAStech_nodes,\n           GAStech_edges_aggregated) %&gt;%\n  visIgraphLayout(layout = \"layout_with_fr\") %&gt;%\n  visEdges(arrows = \"to\", \n           smooth = list(enabled = TRUE, \n                         type = \"curvedCW\")) %&gt;%\n  visLegend() %&gt;%\n  visLayout(randomSeed = 123)\n\n\n\n\n\n\n\n\n\n\n\nCode\nvisNetwork(GAStech_nodes,\n           GAStech_edges_aggregated) %&gt;%\n  visIgraphLayout(layout = \"layout_with_fr\") %&gt;%\n  visOptions(highlightNearest = TRUE,\n             nodesIdSelection = TRUE) %&gt;%\n  visLegend() %&gt;%\n  visLayout(randomSeed = 123)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#importing-network-data-from-files",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#importing-network-data-from-files",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nGAStech_nodes &lt;- read_csv(\"data/GAStech_email_node.csv\")\nGAStech_edges &lt;- read_csv(\"data/GAStech_email_edge-v2.csv\")\n\n\nThis code imports the node and edge datasets from the data folder. The node file contains information about the people or entities in the email network, while the edge file contains the connections or email interactions between them."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#reviewing-the-imported-data",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#reviewing-the-imported-data",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nglimpse(GAStech_edges)\n\n\nRows: 9,063\nColumns: 8\n$ source      &lt;dbl&gt; 43, 43, 44, 44, 44, 44, 44, 44, 44, 44, 44, 44, 26, 26, 26…\n$ target      &lt;dbl&gt; 41, 40, 51, 52, 53, 45, 44, 46, 48, 49, 47, 54, 27, 28, 29…\n$ SentDate    &lt;chr&gt; \"6/1/2014\", \"6/1/2014\", \"6/1/2014\", \"6/1/2014\", \"6/1/2014\"…\n$ SentTime    &lt;time&gt; 08:39:00, 08:39:00, 08:58:00, 08:58:00, 08:58:00, 08:58:0…\n$ Subject     &lt;chr&gt; \"GT-SeismicProcessorPro Bug Report\", \"GT-SeismicProcessorP…\n$ MainSubject &lt;chr&gt; \"Work related\", \"Work related\", \"Work related\", \"Work rela…\n$ sourceLabel &lt;chr&gt; \"Sven.Flecha\", \"Sven.Flecha\", \"Kanon.Herrero\", \"Kanon.Herr…\n$ targetLabel &lt;chr&gt; \"Isak.Baza\", \"Lucas.Alcazar\", \"Felix.Resumir\", \"Hideki.Coc…"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#wrangling-time",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#wrangling-time",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nGAStech_edges &lt;- GAStech_edges %&gt;%\n  mutate(SendDate = dmy(SentDate)) %&gt;%\n  mutate(Weekday = wday(SentDate,\n                        label = TRUE,\n                        abbr = FALSE))"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#wrangling-attributes",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#wrangling-attributes",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nGAStech_edges_aggregated &lt;- GAStech_edges %&gt;%\n  filter(MainSubject == \"Work related\") %&gt;%\n  group_by(source, target, Weekday) %&gt;%\n    summarise(Weight = n()) %&gt;%\n  filter(source!=target) %&gt;%\n  filter(Weight &gt; 1) %&gt;%\n  ungroup()"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#creating-network-objects-using-tidygraph",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#creating-network-objects-using-tidygraph",
+    "title": "Hands-on_Ex06",
+    "section": "27.4 Creating network objects using tidygraph",
+    "text": "27.4 Creating network objects using tidygraph"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#using-tbl_graph-to-build-tidygraph-data-model",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#using-tbl_graph-to-build-tidygraph-data-model",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nGAStech_graph &lt;- tbl_graph(nodes = GAStech_nodes,\n                           edges = GAStech_edges_aggregated, \n                           directed = TRUE)\n\n\nThis code creates a directed network graph using the node data and the aggregated edge data. The graph represents email relationships, where the direction of each edge shows who sent emails to whom."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#reviewing-the-output-tidygraphs-graph-object",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#reviewing-the-output-tidygraphs-graph-object",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nGAStech_graph\n\n\n# A tbl_graph: 54 nodes and 1372 edges\n#\n# A directed multigraph with 1 component\n#\n# Node Data: 54 × 4 (active)\n      id label               Department     Title                               \n   &lt;dbl&gt; &lt;chr&gt;               &lt;chr&gt;          &lt;chr&gt;                               \n 1     1 Mat.Bramar          Administration Assistant to CEO                    \n 2     2 Anda.Ribera         Administration Assistant to CFO                    \n 3     3 Rachel.Pantanal     Administration Assistant to CIO                    \n 4     4 Linda.Lagos         Administration Assistant to COO                    \n 5     5 Ruscella.Mies.Haber Administration Assistant to Engineering Group Mana…\n 6     6 Carla.Forluniau     Administration Assistant to IT Group Manager       \n 7     7 Cornelia.Lais       Administration Assistant to Security Group Manager \n 8    44 Kanon.Herrero       Security       Badging Office                      \n 9    45 Varja.Lagos         Security       Badging Office                      \n10    46 Stenig.Fusil        Security       Building Control                    \n# ℹ 44 more rows\n#\n# Edge Data: 1,372 × 4\n   from    to Weekday Weight\n  &lt;int&gt; &lt;int&gt; &lt;ord&gt;    &lt;int&gt;\n1     1     2 Sunday       5\n2     1     2 Monday       2\n3     1     2 Tuesday      3\n# ℹ 1,369 more rows"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#changing-the-active-object",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#changing-the-active-object",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nGAStech_graph %&gt;%\n  activate(edges) %&gt;%\n  arrange(desc(Weight))\n\n\n# A tbl_graph: 54 nodes and 1372 edges\n#\n# A directed multigraph with 1 component\n#\n# Edge Data: 1,372 × 4 (active)\n    from    to Weekday   Weight\n   &lt;int&gt; &lt;int&gt; &lt;ord&gt;      &lt;int&gt;\n 1    40    41 Saturday      13\n 2    41    43 Monday        11\n 3    35    31 Tuesday       10\n 4    40    41 Monday        10\n 5    40    43 Monday        10\n 6    36    32 Sunday         9\n 7    40    43 Saturday       9\n 8    41    40 Monday         9\n 9    19    15 Wednesday      8\n10    35    38 Tuesday        8\n# ℹ 1,362 more rows\n#\n# Node Data: 54 × 4\n     id label           Department     Title           \n  &lt;dbl&gt; &lt;chr&gt;           &lt;chr&gt;          &lt;chr&gt;           \n1     1 Mat.Bramar      Administration Assistant to CEO\n2     2 Anda.Ribera     Administration Assistant to CFO\n3     3 Rachel.Pantanal Administration Assistant to CIO\n# ℹ 51 more rows\n\n\nThis code activates the edge table in the network graph and sorts the email connections by Weight in descending order. This helps identify the strongest or most frequent email relationships in the network."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#plotting-a-basic-network-graph",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#plotting-a-basic-network-graph",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nggraph(GAStech_graph) +\n  geom_edge_link() +\n  geom_node_point()\n\n\n\n\n\n\n\n\n\nThis code creates a basic network graph from GAStech_graph. The lines represent email connections, and the points represent the nodes in the network."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#changing-the-default-network-graph-theme",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#changing-the-default-network-graph-theme",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\ng &lt;- ggraph(GAStech_graph) + \n  geom_edge_link(aes()) +\n  geom_node_point(aes())\n\ng + theme_graph()\n\n\n\n\n\n\n\n\n\nThis code creates a network graph object and applies theme_graph() to remove unnecessary chart elements. The result is a cleaner visualisation of the email network."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#changing-the-coloring-of-the-plot",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#changing-the-coloring-of-the-plot",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\ng &lt;- ggraph(GAStech_graph) + \n  geom_edge_link(aes(colour = 'grey50')) +\n  geom_node_point(aes(colour = 'grey40'))\n\ng + theme_graph(background = 'grey10',\n                text_colour = 'white')\n\n\n\n\n\n\n\n\n\nThis code creates a darker network visualisation by setting grey colours for the edges and nodes, and applying a dark background with white text. This improves contrast and makes the email network easier to view."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#fruchterman-and-reingold-layout",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#fruchterman-and-reingold-layout",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\ng &lt;- ggraph(GAStech_graph, \n            layout = \"fr\") +\n  geom_edge_link(aes()) +\n  geom_node_point(aes())\n\ng + theme_graph()\n\n\n\n\n\n\n\n\n\nThis code uses the Fruchterman-Reingold layout to create a network graph. This layout places closely connected nodes nearer to each other, making the structure of the email network easier to interpret."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#modifying-network-nodes",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#modifying-network-nodes",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\ng &lt;- ggraph(GAStech_graph, \n            layout = \"nicely\") + \n  geom_edge_link(aes()) +\n  geom_node_point(aes(colour = Department, \n                      size = 3))\n\ng + theme_graph()\n\n\n\n\n\n\n\n\n\nThis code visualises the email network using the nicely layout. The nodes are coloured by department, which helps compare communication patterns across different organisational groups."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#modifying-edges",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#modifying-edges",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\ng &lt;- ggraph(GAStech_graph, \n            layout = \"nicely\") +\n  geom_edge_link(aes(width = Weight), \n                 alpha = 0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(colour = Department), \n                  size = 3)\n\ng + theme_graph()\n\n\n\n\n\n\n\n\n\nThis code visualises the email network with edge width mapped to Weight. Thicker lines represent stronger or more frequent email connections, while node colours show different departments."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#working-with-facet_edges",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#working-with-facet_edges",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nset_graph_style()\n\ng &lt;- ggraph(GAStech_graph, \n            layout = \"nicely\") + \n  geom_edge_link(aes(width = Weight), \n                 alpha = 0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(colour = Department), \n                  size = 2)\n\ng + facet_edges(~Weekday)\n\n\n\n\n\n\n\n\n\nThis code applies a graph style and visualises the email network by weekday. The edge width represents the weight of communication, while the faceting separates the network into different weekday panels."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#working-with-facet_edges-1",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#working-with-facet_edges-1",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nset_graph_style()\n\ng &lt;- ggraph(GAStech_graph, \n            layout = \"nicely\") + \n  geom_edge_link(aes(width=Weight), \n                 alpha=0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(colour = Department), \n                  size = 2) +\n  theme(legend.position = 'bottom')\n  \ng + facet_edges(~Weekday)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#a-framed-facet-graph",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#a-framed-facet-graph",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nset_graph_style() \n\ng &lt;- ggraph(GAStech_graph, \n            layout = \"nicely\") + \n  geom_edge_link(aes(width = Weight), \n                 alpha = 0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(colour = Department), \n                  size = 2)\n  \ng + facet_edges(~Weekday) +\n  th_foreground(foreground = \"grey80\",  \n                border = TRUE) +\n  theme(legend.position = \"bottom\")\n\n\n\n\n\n\n\n\n\nThis code creates a faceted email network by weekday. Edge width shows communication weight, node colour shows department, and the foreground theme improves panel visibility while placing the legend at the bottom."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#working-with-facet_nodes",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#working-with-facet_nodes",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nset_graph_style()\n\ng &lt;- ggraph(GAStech_graph, \n            layout = \"nicely\") + \n  geom_edge_link(aes(width=Weight), \n                 alpha=0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(colour = Department), \n                  size = 2)\n  \ng + facet_nodes(~Department)+\n  th_foreground(foreground = \"grey80\",  \n                border = TRUE) +\n  theme(legend.position = 'bottom')"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#computing-centrality-indices",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#computing-centrality-indices",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\ng &lt;- GAStech_graph %&gt;%\n  mutate(betweenness_centrality = centrality_betweenness()) %&gt;%\n  ggraph(layout = \"fr\") + \n  geom_edge_link(aes(width = Weight), \n                 alpha = 0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(colour = Department,\n                      size = betweenness_centrality))\n\ng + theme_graph()\n\n\n\n\n\n\n\n\n\nThis code calculates betweenness centrality for each node and uses it to control node size in the network graph. Larger nodes represent people who are more important as bridges between different parts of the email network."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-community",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-community",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\ng &lt;- GAStech_graph %&gt;%\n  mutate(community = as.factor(\n    group_edge_betweenness(\n      weights = Weight, \n      directed = TRUE))) %&gt;%\n  ggraph(layout = \"fr\") + \n  geom_edge_link(\n    aes(\n      width=Weight), \n    alpha=0.2) +\n  scale_edge_width(\n    range = c(0.1, 5)) +\n  geom_node_point(\n    aes(colour = community))  \n\ng + theme_graph()\n\n\n\n\n\n\n\n\n\n\n\nCode\ng &lt;- GAStech_graph %&gt;%\n  activate(nodes) %&gt;%\n  mutate(community = as.factor(\n    group_optimal(weights = Weight)),\n         betweenness_measure = centrality_betweenness()) %&gt;%\n  ggraph(layout = \"fr\") +\n  geom_mark_hull(\n    aes(x, y, \n        group = community, \n        fill = community),  \n    alpha = 0.2,  \n    expand = unit(0.3, \"cm\"),  # Expand\n    radius = unit(0.3, \"cm\")  # Smoothness\n  ) + \n  geom_edge_link(aes(width=Weight), \n                 alpha=0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(fill = Department,\n                      size = betweenness_measure),\n                      color = \"black\",\n                      shape = 21)\n  \ng + theme_graph()"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#data-preparation",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#data-preparation",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nGAStech_edges_aggregated &lt;- GAStech_edges %&gt;%\n  left_join(GAStech_nodes, by = c(\"sourceLabel\" = \"label\")) %&gt;%\n  rename(from = id) %&gt;%\n  left_join(GAStech_nodes, by = c(\"targetLabel\" = \"label\")) %&gt;%\n  rename(to = id) %&gt;%\n  filter(MainSubject == \"Work related\") %&gt;%\n  group_by(from, to) %&gt;%\n    summarise(weight = n()) %&gt;%\n  filter(from!=to) %&gt;%\n  filter(weight &gt; 1) %&gt;%\n  ungroup()"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#plotting-the-first-interactive-network-graph",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#plotting-the-first-interactive-network-graph",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nvisNetwork(GAStech_nodes, \n           GAStech_edges_aggregated)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#working-with-layout",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#working-with-layout",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nvisNetwork(GAStech_nodes,\n           GAStech_edges_aggregated) %&gt;%\n  visIgraphLayout(layout = \"layout_with_fr\")\n\n\n\n\n\n\nThis code creates an interactive network graph using visNetwork. The Fruchterman-Reingold layout is applied to position closely connected nodes near each other."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#working-with-visual-attributes---nodes",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#working-with-visual-attributes---nodes",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nGAStech_nodes &lt;- GAStech_nodes %&gt;%\n  rename(group = Department) \n\n\n\n\nCode\nvisNetwork(GAStech_nodes,\n           GAStech_edges_aggregated) %&gt;%\n  visIgraphLayout(layout = \"layout_with_fr\") %&gt;%\n  visLegend() %&gt;%\n  visLayout(randomSeed = 123)\n\n\n\n\n\n\nThis code creates an interactive network graph with a Fruchterman-Reingold layout. It also adds a legend and uses a fixed random seed so that the network layout remains consistent each time the code is rendered."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#working-with-visual-attributes---edges",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#working-with-visual-attributes---edges",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nvisNetwork(GAStech_nodes,\n           GAStech_edges_aggregated) %&gt;%\n  visIgraphLayout(layout = \"layout_with_fr\") %&gt;%\n  visEdges(arrows = \"to\", \n           smooth = list(enabled = TRUE, \n                         type = \"curvedCW\")) %&gt;%\n  visLegend() %&gt;%\n  visLayout(randomSeed = 123)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#interactivity",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#interactivity",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\nvisNetwork(GAStech_nodes,\n           GAStech_edges_aggregated) %&gt;%\n  visIgraphLayout(layout = \"layout_with_fr\") %&gt;%\n  visOptions(highlightNearest = TRUE,\n             nodesIdSelection = TRUE) %&gt;%\n  visLegend() %&gt;%\n  visLayout(randomSeed = 123)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-network-metrics",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-network-metrics",
+    "title": "Hands-on_Ex06",
+    "section": "",
+    "text": "Code\ng &lt;- GAStech_graph %&gt;%\n  ggraph(layout = \"fr\") + \n  geom_edge_link(aes(width=Weight), \n                 alpha=0.2) +\n  scale_edge_width(range = c(0.1, 5)) +\n  geom_node_point(aes(colour = Department, \n                      size = centrality_betweenness()))\ng + theme_graph()"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#installing-and-launching-r-packages",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#installing-and-launching-r-packages",
+    "title": "Hands-on_Ex06",
+    "section": "29.2.1 Installing and launching R packages",
+    "text": "29.2.1 Installing and launching R packages\n\n\nCode\npacman::p_load(tidytext, widyr, wordcloud, DT, ggwordcloud, textplot, lubridate, hms,\ntidyverse, tidygraph, ggraph, igraph)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#importing-multiple-text-files-from-multiple-folders",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#importing-multiple-text-files-from-multiple-folders",
+    "title": "Hands-on_Ex06",
+    "section": "29.3 Importing Multiple Text Files from Multiple Folders",
+    "text": "29.3 Importing Multiple Text Files from Multiple Folders\n\n\nCode\nnews20 &lt;- \"data/20news/\"\n\n\n\n\nCode\nread_folder &lt;- function(infolder) {\n  tibble(file = dir(infolder, \n                    full.names = TRUE)) %&gt;%\n    mutate(text = map(file, \n                      read_lines)) %&gt;%\n    transmute(id = basename(file), \n              text) %&gt;%\n    unnest(text)\n}"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#importing-multiple-text-files-from-multiple-folders-1",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#importing-multiple-text-files-from-multiple-folders-1",
+    "title": "Hands-on_Ex06",
+    "section": "29.4 Importing Multiple Text Files from Multiple Folders",
+    "text": "29.4 Importing Multiple Text Files from Multiple Folders\n\n\nCode\nread_folder &lt;- function(infolder) {\n  tibble(file = dir(infolder, \n                    full.names = TRUE)) %&gt;%\n    mutate(text = map(file, \n                      read_lines)) %&gt;%\n    transmute(id = basename(file), \n              text) %&gt;%\n    unnest(text)\n}\n\nraw_text &lt;- tibble(folder = dir(news20, \n                                full.names = TRUE)) %&gt;%\n  mutate(folder_out = map(folder, \n                          read_folder)) %&gt;%\n  unnest(cols = c(folder_out)) %&gt;%\n  transmute(newsgroup = basename(folder), \n            id, text)\n\nwrite_rds(raw_text, \"data/news20.rds\")\n\nglimpse(raw_text)\n\n\nRows: 7,601\nColumns: 3\n$ newsgroup &lt;chr&gt; \"alt.atheism\", \"alt.atheism\", \"alt.atheism\", \"alt.atheism\", …\n$ id        &lt;chr&gt; \"54256\", \"54256\", \"54256\", \"54256\", \"54256\", \"54256\", \"54256…\n$ text      &lt;chr&gt; \"From: salem@pangea.Stanford.EDU (Bruce Salem)\", \"Subject: R…\n\n\nCode\nnames(raw_text)\n\n\n[1] \"newsgroup\" \"id\"        \"text\"     \n\n\n\n\nCode\ntheme_set(theme_gray())"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#initial-eda",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#initial-eda",
+    "title": "Hands-on_Ex06",
+    "section": "29.5 Initial EDA",
+    "text": "29.5 Initial EDA\n\n\nCode\nraw_text &lt;- read_rds(\"data/news20.rds\")\n\nraw_text %&gt;%\n  group_by(newsgroup) %&gt;%\n  summarize(messages = n_distinct(id)) %&gt;%\n  ggplot(aes(messages, newsgroup)) +\n  geom_col(fill = \"lightblue\") +\n  labs(y = NULL)\n\n\n\n\n\n\n\n\n\nThis code groups the dataset by newsgroup, counts the number of unique messages in each group, and visualises the message counts using a horizontal bar chart."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#introducing-tidytext",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#introducing-tidytext",
+    "title": "Hands-on_Ex06",
+    "section": "29.6 Introducing tidytext",
+    "text": "29.6 Introducing tidytext"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#removing-header-and-automated-email-signitures",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#removing-header-and-automated-email-signitures",
+    "title": "Hands-on_Ex06",
+    "section": "29.6.1 Removing header and automated email signitures",
+    "text": "29.6.1 Removing header and automated email signitures\n\n\nCode\ncleaned_text &lt;- raw_text %&gt;%\n  group_by(newsgroup, id) %&gt;%\n  filter(cumsum(text == \"\") &gt; 0,\n         cumsum(str_detect(\n           text, \"^--\")) == 0) %&gt;%\n  ungroup()"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#removing-lines-with-nested-text-representing-quotes-from-other-users.",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#removing-lines-with-nested-text-representing-quotes-from-other-users.",
+    "title": "Hands-on_Ex06",
+    "section": "29.6.2 Removing lines with nested text representing quotes from other users.",
+    "text": "29.6.2 Removing lines with nested text representing quotes from other users.\n\n\nCode\ncleaned_text &lt;- cleaned_text %&gt;%\n  filter(str_detect(text, \"^[^&gt;]+[A-Za-z\\\\d]\")\n         | text == \"\",\n         !str_detect(text, \n                     \"writes(:|\\\\.\\\\.\\\\.)$\"),\n         !str_detect(text, \n                     \"^In article &lt;\")\n  )"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#text-data-processing",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#text-data-processing",
+    "title": "Hands-on_Ex06",
+    "section": "29.6.3 Text Data Processing",
+    "text": "29.6.3 Text Data Processing\n\n\nCode\nusenet_words &lt;- cleaned_text %&gt;%\n  unnest_tokens(word, text) %&gt;%\n  filter(str_detect(word, \"[a-z']$\"),\n         !word %in% stop_words$word)\n\n\nThis code tokenises the cleaned text into individual words and removes common stop words. It keeps only valid word-like tokens, preparing the text data for further word frequency or text analysis.\n\n\nCode\nusenet_words %&gt;%\n  count(word, sort = TRUE)\n\n\n# A tibble: 5,542 × 2\n   word           n\n   &lt;chr&gt;      &lt;int&gt;\n 1 people        57\n 2 time          50\n 3 jesus         47\n 4 god           44\n 5 message       40\n 6 br            27\n 7 bible         23\n 8 drive         23\n 9 homosexual    23\n10 read          22\n# ℹ 5,532 more rows\n\n\n\n\nCode\nwords_by_newsgroup &lt;- usenet_words %&gt;%\n  count(newsgroup, word, sort = TRUE) %&gt;%\n  ungroup()"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-words-in-newsgroups",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-words-in-newsgroups",
+    "title": "Hands-on_Ex06",
+    "section": "29.6.4 Visualising Words in newsgroups",
+    "text": "29.6.4 Visualising Words in newsgroups\n\n\nCode\nwordcloud(\n  words_by_newsgroup$word,\n  words_by_newsgroup$n,\n  max.words = 150,\n  scale = c(3, 0.5),\n  random.order = FALSE\n)\n\n\n\n\n\n\n\n\n\nThis word cloud shows the most frequent words in the text data. The maximum number of words is reduced and the scaling is adjusted so that large words can fit within the plotting area."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-words-in-newsgroups-1",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-words-in-newsgroups-1",
+    "title": "Hands-on_Ex06",
+    "section": "29.6.5 Visualising Words in newsgroups",
+    "text": "29.6.5 Visualising Words in newsgroups\n\n\nCode\nset.seed(1234)\n\nwords_by_newsgroup %&gt;%\n  filter(newsgroup %in% unique(newsgroup)[1:4]) %&gt;%\n  group_by(newsgroup) %&gt;%\n  slice_max(n, n = 30, with_ties = FALSE) %&gt;%\n  ungroup() %&gt;%\n  ggplot(aes(label = word,\n             size = n)) +\n  geom_text_wordcloud() +\n  theme_minimal() +\n  facet_wrap(~newsgroup)\n\n\n\n\n\n\n\n\n\nThis code creates faceted word clouds by newsgroup. The word size represents frequency, and set.seed(1234) makes the word cloud layout reproducible each time the code is rendered."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#basic-concept-of-tf-idf",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#basic-concept-of-tf-idf",
+    "title": "Hands-on_Ex06",
+    "section": "29.7 Basic Concept of TF-IDF",
+    "text": "29.7 Basic Concept of TF-IDF"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#computing-tf-idf-within-newsgroups",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#computing-tf-idf-within-newsgroups",
+    "title": "Hands-on_Ex06",
+    "section": "29.7.1 Computing tf-idf within newsgroups",
+    "text": "29.7.1 Computing tf-idf within newsgroups\n\n\nCode\nwords_by_newsgroup &lt;- usenet_words %&gt;%\n  count(newsgroup, word, sort = TRUE)\n\ntf_idf &lt;- words_by_newsgroup %&gt;%\n  bind_tf_idf(word, newsgroup, n) %&gt;%\n  arrange(desc(tf_idf))"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-tf-idf-as-interactive-table",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-tf-idf-as-interactive-table",
+    "title": "Hands-on_Ex06",
+    "section": "29.7.2 Visualising tf-idf as interactive table",
+    "text": "29.7.2 Visualising tf-idf as interactive table\n\n\nCode\nlibrary(DT)\n\ntf_idf %&gt;%\n  datatable(\n    filter = \"top\",\n    options = list(\n      pageLength = 10,\n      autoWidth = TRUE\n    )\n  )\n\n\n\n\n\n\nThis code displays the tf_idf dataset as an interactive table. The table allows users to search, sort columns, filter values, and choose how many rows to display."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-tf-idf-as-interactive-table-1",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-tf-idf-as-interactive-table-1",
+    "title": "Hands-on_Ex06",
+    "section": "29.7.3 Visualising tf-idf as interactive table",
+    "text": "29.7.3 Visualising tf-idf as interactive table\n\n\nCode\nDT::datatable(tf_idf, filter = \"top\") %&gt;% \n  formatRound(columns = c(\"tf\", \"idf\", \"tf_idf\"), \n              digits = 3) %&gt;%\n  formatStyle(0, \n              target = \"row\", \n              lineHeight = \"25%\")\n\n\n\n\n\n\nThis code displays the tf_idf table as an interactive table with column filters. The tf, idf, and tf_idf columns are rounded to three decimal places, and the row height is reduced to make the table more compact."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-tf-idf-within-newsgroups",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-tf-idf-within-newsgroups",
+    "title": "Hands-on_Ex06",
+    "section": "29.7.4 Visualising tf-idf within newsgroups",
+    "text": "29.7.4 Visualising tf-idf within newsgroups\n\n\nCode\ntf_idf %&gt;%\n  filter(str_detect(newsgroup, \"^sci\\\\.\")) %&gt;%\n  group_by(newsgroup) %&gt;%\n  slice_max(tf_idf, \n            n = 12) %&gt;%\n  ungroup() %&gt;%\n  mutate(word = reorder(word, \n                        tf_idf)) %&gt;%\n  ggplot(aes(tf_idf, \n             word, \n             fill = newsgroup)) +\n  geom_col(show.legend = FALSE) +\n  facet_wrap(~ newsgroup, \n             scales = \"free\") +\n  labs(x = \"tf-idf\", \n       y = NULL)\n\n\n\n\n\n\n\n\n\nThis code filters the TF-IDF results to include only science-related newsgroups. It then selects the top 12 words with the highest TF-IDF score in each group and visualises them as faceted bar charts, showing the most distinctive words for each science newsgroup."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#counting-and-correlating-pairs-of-words-with-the-widyr-package",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#counting-and-correlating-pairs-of-words-with-the-widyr-package",
+    "title": "Hands-on_Ex06",
+    "section": "29.7.5 Counting and correlating pairs of words with the widyr package",
+    "text": "29.7.5 Counting and correlating pairs of words with the widyr package\n\n\nCode\nnewsgroup_cors &lt;- words_by_newsgroup %&gt;%\n  pairwise_cor(newsgroup, \n               word, \n               n, \n               sort = TRUE)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-correlation-as-a-network",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualising-correlation-as-a-network",
+    "title": "Hands-on_Ex06",
+    "section": "29.7.6 Visualising correlation as a network",
+    "text": "29.7.6 Visualising correlation as a network\n\n\nCode\nset.seed(2017)\n\nnewsgroup_cors %&gt;%\n  filter(correlation &gt; .025) %&gt;%\n  graph_from_data_frame() %&gt;%\n  ggraph(layout = \"fr\") +\n  geom_edge_link(aes(alpha = correlation, \n                     width = correlation)) +\n  geom_node_point(size = 6, \n                  color = \"lightblue\") +\n  geom_node_text(aes(label = name),\n                 color = \"red\",\n                 repel = TRUE) +\n  theme_void()\n\n\n\n\n\n\n\n\n\nThis code visualises the correlation network between newsgroups. Only correlations above 0.025 are kept, and stronger correlations are shown with thicker and more visible edges. The nodes represent newsgroups, while the labels identify each group in the network."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#bigram",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#bigram",
+    "title": "Hands-on_Ex06",
+    "section": "29.7.7 Bigram",
+    "text": "29.7.7 Bigram\n\n\nCode\nbigrams &lt;- cleaned_text %&gt;%\n  unnest_tokens(bigram, \n                text, \n                token = \"ngrams\", \n                n = 2)\nbigrams\n\n\n# A tibble: 28,824 × 3\n   newsgroup   id    bigram    \n   &lt;chr&gt;       &lt;chr&gt; &lt;chr&gt;     \n 1 alt.atheism 54256 &lt;NA&gt;      \n 2 alt.atheism 54256 &lt;NA&gt;      \n 3 alt.atheism 54256 as i      \n 4 alt.atheism 54256 i don't   \n 5 alt.atheism 54256 don't know\n 6 alt.atheism 54256 know this \n 7 alt.atheism 54256 this book \n 8 alt.atheism 54256 book i    \n 9 alt.atheism 54256 i will    \n10 alt.atheism 54256 will use  \n# ℹ 28,814 more rows"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#counting-bigrams",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#counting-bigrams",
+    "title": "Hands-on_Ex06",
+    "section": "29.7.8 Counting bigrams",
+    "text": "29.7.8 Counting bigrams\n\n\nCode\nbigrams_count &lt;- bigrams %&gt;%\n  filter(bigram != 'NA') %&gt;%\n  count(bigram, sort = TRUE)\n\nbigrams_count\n\n\n# A tibble: 19,885 × 2\n   bigram       n\n   &lt;chr&gt;    &lt;int&gt;\n 1 of the     169\n 2 in the     113\n 3 to the      74\n 4 to be       59\n 5 for the     52\n 6 i have      48\n 7 that the    47\n 8 if you      40\n 9 on the      39\n10 it is       38\n# ℹ 19,875 more rows"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#cleaning-bigram",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#cleaning-bigram",
+    "title": "Hands-on_Ex06",
+    "section": "29.7.9 Cleaning bigram",
+    "text": "29.7.9 Cleaning bigram\n\n\nCode\nbigrams_separated &lt;- bigrams %&gt;%\n  filter(bigram != \"NA\") %&gt;%\n  separate(bigram, c(\"word1\", \"word2\"), \n           sep = \" \")\n\nbigrams_filtered &lt;- bigrams_separated %&gt;%\n  filter(!word1 %in% stop_words$word) %&gt;%\n  filter(!word2 %in% stop_words$word)\nbigrams_filtered\n\n\n# A tibble: 4,604 × 4\n   newsgroup   id    word1        word2        \n   &lt;chr&gt;       &lt;chr&gt; &lt;chr&gt;        &lt;chr&gt;        \n 1 alt.atheism 54256 defines      god          \n 2 alt.atheism 54256 term         preclues     \n 3 alt.atheism 54256 science      ideas        \n 4 alt.atheism 54256 ideas        drawn        \n 5 alt.atheism 54256 supernatural precludes    \n 6 alt.atheism 54256 scientific   assertions   \n 7 alt.atheism 54256 religious    dogma        \n 8 alt.atheism 54256 religion     involves     \n 9 alt.atheism 54256 involves     circumventing\n10 alt.atheism 54256 gain         absolute     \n# ℹ 4,594 more rows\n\n\nThis code separates each bigram into two individual words and removes bigrams that contain stop words. The filtered result keeps more meaningful word pairs for further bigram analysis."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#counting-the-bigram-again",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#counting-the-bigram-again",
+    "title": "Hands-on_Ex06",
+    "section": "29.7.10 Counting the bigram again",
+    "text": "29.7.10 Counting the bigram again\n\n\nCode\nbigram_counts &lt;- bigrams_filtered %&gt;% \n  count(word1, word2, sort = TRUE)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#create-a-network-graph-from-bigram-data-frame",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#create-a-network-graph-from-bigram-data-frame",
+    "title": "Hands-on_Ex06",
+    "section": "29.7.11 Create a network graph from bigram data frame",
+    "text": "29.7.11 Create a network graph from bigram data frame\n\n\nCode\nbigram_graph &lt;- bigram_counts %&gt;%\n  filter(n &gt; 3) %&gt;%\n  graph_from_data_frame()\nbigram_graph\n\n\nIGRAPH 6fa841a DN-- 40 24 -- \n+ attr: name (v/c), n (e/n)\n+ edges from 6fa841a (vertex names):\n [1] 1          -&gt;2           1          -&gt;3           static     -&gt;void       \n [4] time       -&gt;pad         1          -&gt;4           infield    -&gt;fly        \n [7] mat        -&gt;28          vv         -&gt;vv          1          -&gt;5          \n[10] cock       -&gt;crow        noticeshell-&gt;widget      27         -&gt;1993       \n[13] 3          -&gt;4           child      -&gt;molestation cock       -&gt;crew       \n[16] gun        -&gt;violence    heat       -&gt;sink        homosexual -&gt;male       \n[19] homosexual -&gt;women       include    -&gt;xol         mary       -&gt;magdalene  \n[22] read       -&gt;write       rev        -&gt;20          tt         -&gt;ee"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualizing-a-network-of-bigrams-with-ggraph",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#visualizing-a-network-of-bigrams-with-ggraph",
+    "title": "Hands-on_Ex06",
+    "section": "29.7.12 Visualizing a network of bigrams with ggraph",
+    "text": "29.7.12 Visualizing a network of bigrams with ggraph\n\n\nCode\nset.seed(1234)\n\nggraph(bigram_graph, layout = \"fr\") +\n  geom_edge_link() +\n  geom_node_point() +\n  geom_node_text(aes(label = name), \n                 vjust = 1, \n                 hjust = 1)\n\n\n\n\n\n\n\n\n\nThis code visualises the bigram network using a Fruchterman-Reingold layout. The edges represent connections between words that appear together as bigrams, while the nodes represent individual words."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#revised-version",
+    "href": "Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html#revised-version",
+    "title": "Hands-on_Ex06",
+    "section": "29.7.13 Revised version",
+    "text": "29.7.13 Revised version\n\n\nCode\nset.seed(1234)\n\na &lt;- grid::arrow(type = \"closed\", \n                 length = unit(.15,\n                               \"inches\"))\n\nggraph(bigram_graph, \n       layout = \"fr\") +\n  geom_edge_link(aes(edge_alpha = n), \n                 show.legend = FALSE,\n                 arrow = a, \n                 end_cap = circle(.07,\n                                  'inches')) +\n  geom_node_point(color = \"lightblue\", \n                  size = 5) +\n  geom_node_text(aes(label = name), \n                 vjust = 1, \n                 hjust = 1) +\n  theme_void()"
   }
 ]
