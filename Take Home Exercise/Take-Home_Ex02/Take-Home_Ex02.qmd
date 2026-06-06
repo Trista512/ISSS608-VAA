@@ -411,6 +411,7 @@ timeline_data <- communications_integrated %>%
   ) %>%
   arrange(timestamp)
 ```
+
 ```{r}
 breach_time <- ymd_hms("2046-06-05 17:00:00")
 embargo_lift_time <- ymd_hms("2046-06-05 18:00:00")
@@ -424,6 +425,7 @@ timeline_data <- timeline_data %>%
     )
   )
 ```
+
 ## 4.2 Overall Communication Timeline
 
 ```{r}
@@ -581,7 +583,6 @@ ggplot(
 
 The graph shows that merger, confidentiality, and urgency signals stay low for most of the period, then surge sharply in early June. Merger-related signals increase the most, followed by urgency and confidentiality signals. This suggests that the breach period coincided with both wider merger discussion and heightened communication pressure.
 
-
 ## 4.6 Breach Window Signal Intensity on June 5
 
 This visual zooms into June 5, 2046, the day of the inappropriate release. The vertical reference lines mark the approximate breach time at 5:00 PM and the formal embargo lift at 6:00 PM. This allows the analysis to separate behavior before the breach, during the embargo breach window, and after the embargo was formally lifted.
@@ -694,6 +695,7 @@ ggplot(
     legend.position = "bottom"
   )
 ```
+
 The chart shows that merger-related and public-merger signals were already present before the 6:00 PM embargo lift. The 5:00–6:00 PM breach window has a clear increase in merger-related and public-facing merger activity, which suggests that embargoed information had started moving into public communication before the authorised release time. After 6:00 PM, all signal types rise further, but the key issue is that public merger-related communication was not zero before the embargo expired.
 
 ## 4.7 Embargo Window Communication Breakdown
@@ -755,6 +757,7 @@ ggplot(
     legend.position = "bottom"
   )
 ```
+
 ```{r}
 pre_embargo_merger_channel <- pre_embargo_data %>%
   filter(contains_merger == TRUE) %>%
@@ -783,6 +786,7 @@ ggplot(
     legend.position = "bottom"
   )
 ```
+
 ```{r}
 public_merger_before_embargo <- pre_embargo_data %>%
   filter(
@@ -843,30 +847,95 @@ DT::datatable(
   options = list(dom = "t", scrollX = TRUE)
 )
 ```
+
 The embargo-window breakdown shows that merger-related information was already active before the official 6:00 PM embargo lift. Legal-Agent and Social-Manager-Agent contributed the largest volume of merger-related communications before 6:00 PM, with activity spread across internal, private, and public scopes. This suggests that merger information was not confined to a narrow legal or executive channel.
 
 The channel breakdown is especially important: merger-related information appeared not only in `comms_huddle` and `one_on_one_chat`, but also in `personal_post`, `official_post`, and `anonymous_post`. Because the merger announcement was still under embargo before 6:00 PM, the presence of merger-related content in public-facing channels provides direct evidence that the embargo boundary had already been crossed before the authorised release time.
 
-## 4.8 Key Findings from Timeline Reconstruction
+## 4.8 Slack Screenshot as the Turning Point from Inference to Direct Leakage
 
-- **The breach occurred in a clear escalation phase, not during routine communication.**  
-  Communication activity remained moderate for most of the two-week period, but surged sharply on June 5, with internal, private, public, and other communication types all increasing at the same time.
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggrepel)
 
-- **Merger-related information became widely visible near the breach window.**  
-  The agent-date heatmap shows that merger-related communication was sparse earlier, but became highly concentrated on June 5, especially around Legal-Agent and Social-Manager-Agent. This suggests that merger information had spread beyond a narrow legal-control context before the release.
+slack_timeline <- tribble(
+  ~time, ~event, ~phase, ~severity,
+  "2046-06-05 11:37:00",
+  "CivicLoom speculation may overtake the ResidentIQ story before noon",
+  "Market inference",
+  2,
+  "2046-06-05 11:41:00",
+  "Legal: internal Slack screenshots are reaching Said-it within 20 minutes",
+  "Internal leak",
+  4,
+  "2046-06-05 11:51:00",
+  "Social-Manager: Employee Slack says 'the merger saves all our jobs'",
+  "Direct public evidence",
+  5,
+  "2046-06-05 11:53:00",
+  "Legal: Slack leak supports Section 8.1 confidentiality breach argument",
+  "Legal breach",
+  5,
+  "2046-06-05 17:00:00",
+  "SaltWind publishes TenantThread-CivicLoom merger story",
+  "Public confirmation",
+  5
+) %>%
+  mutate(time = ymd_hms(time))
 
-- **Urgency, merger, and confidentiality signals intensified together.**  
-  The signal escalation heatmap shows a strong concentration of urgency, merger-related, and confidentiality-related signals on June 5. This indicates that the release happened during a period of both sensitive-information circulation and high communication pressure.
+ggplot(slack_timeline, aes(x = time, y = severity)) +
+  geom_line(linewidth = 0.7) +
+  geom_point(size = 3) +
+  geom_label_repel(
+    aes(label = event),
+    size = 3,
+    max.overlaps = Inf,
+    label.size = 0.2
+  ) +
+  scale_y_continuous(
+    breaks = c(2, 4, 5),
+    labels = c("Inference", "Internal leak", "Confirmed breach")
+  ) +
+  labs(
+    title = "Slack Screenshot Escalation Timeline",
+    subtitle = "The Slack evidence marks the shift from market inference to direct internal leakage",
+    x = "Time on 5 June 2046",
+    y = "Disclosure stage"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.title.y = element_text(size = 10),
+    axis.text.y = element_text(size = 9)
+  )
+```
 
-- **The 5:00–6:00 PM window is critical because the embargo was still active.**  
-  The breach-window comparison shows that public-merger signals were already present before the official 6:00 PM embargo lift. This is direct evidence that embargoed merger information had entered public-facing communication before it was authorised.
+This timeline adds event-level evidence to the communication-volume timeline. The earlier part of the crisis was dominated by market inference, including speculation around CivicLoom and ResidentIQ. However, the Slack screenshot changed the nature of the breach. Legal reported that internal Slack screenshots were reaching Said-it within approximately 20 minutes, while Social-Manager later listed an employee Slack post saying “the merger saves all our jobs” as a confirmed public data point. This means the pre-6 PM exposure was not only a product of external speculation; it included direct internal leakage.
 
-- **Pre-embargo merger communication was not limited to private or legal channels.**  
-  Before 6:00 PM, merger-related information appeared across internal, private, and public scopes, and across channels including `side_huddle`, `one_on_one_chat`, `comms_huddle`, `personal_post`, `official_post`, and `anonymous_post`.
+## 4.9 Key Findings from Timeline Reconstruction
 
-- **Overall, the timeline evidence supports a system-breakdown pathway rather than a single isolated leak.**  
-  The inappropriate release appears to have emerged from escalating communication volume, broader merger-information circulation, and pre-embargo public-facing exposure.
-  
+- **The breach occurred during a clear escalation phase, not during routine communication.**\
+  Communication activity remained moderate for most of the two-week period, but surged sharply on June 5. Internal, private, public, and other communication types all increased at the same time, indicating that the organisation had entered crisis communication mode rather than a normal coordination period.
+
+- **Merger-related information became highly concentrated near the breach window.**\
+  The agent-date heatmap shows that merger-related communication was sparse earlier in the period but became highly concentrated on June 5, especially around Legal-Agent and Social-Manager-Agent. This suggests that merger information had moved beyond a narrow legal-control context and was being actively discussed, monitored, and managed across multiple communication spaces.
+
+- **Urgency, merger, and confidentiality signals intensified together.**\
+  The signal escalation heatmap shows a strong concentration of urgency, merger-related, and confidentiality-related signals on June 5. This indicates that the release happened during a period when sensitive merger information, legal risk, and communication pressure were escalating simultaneously.
+
+- **The Slack screenshot marks the turning point from market inference to direct internal leakage.**\
+  Before the formal embargo lift, public discussion was not based only on external speculation or weak signals. The dataset records an employee Slack message stating that "the merger saves all our jobs" appearing on Said-it/r/PropTech, while Legal later described internal Slack screenshots reaching Said-it within about 20 minutes and treated this as a compromised information perimeter. This means the breach included direct internal leakage, not merely public inference.
+
+- **The 5:00–6:00 PM window is critical because the embargo was still active.**\
+  The breach-window comparison shows that public-merger signals were already present before the official 6:00 PM embargo lift. This is direct evidence that embargoed merger information had entered public-facing communication before it was formally authorised.
+
+- **Pre-embargo merger communication was not limited to private or legal channels.**\
+  Before 6:00 PM, merger-related information appeared across internal, private, and public scopes, and across channels including `side_huddle`, `one_on_one_chat`, `comms_huddle`, `personal_post`, `official_post`, and `anonymous_post`. This broad channel distribution shows that the confidentiality boundary had weakened before the official release.
+
+- **Overall, the timeline evidence supports a mixed leakage pathway rather than a simple system-breakdown explanation.**\
+  The inappropriate release appears to have developed in stages. First, market participants and external observers began reconstructing the merger from partial signals. Second, the Slack screenshot introduced direct internal evidence into the public domain. Third, Legal and communication agents shifted toward accelerated disclosure and narrative control. Therefore, the timeline does not support a clean binary conclusion of either deliberate leak or accidental system failure. The stronger interpretation is that an internal confidentiality leak was enabled by system-level control failure and then managed through deliberate post-leak crisis communication.
+
 # 5. Communication Relationships and Information Flow Analysis
 
 This section examines how communication moved across agents, channels, and interaction scopes. While the previous section focused on the timing of communication, this section focuses on the structure of communication: who was active, where they communicated, and whether information flow was concentrated or distributed.
@@ -1708,20 +1777,20 @@ Legal-Agent and Social-Manager-Agent stand out as the most embargo-relevant acto
 
 ## 5.9 Key Findings from Communication Flow Analysis
 
-- **Communication was concentrated around a core coordination group.**  
-  The network graph shows that Legal-Agent, Platform-Trust-Agent, Social-Manager-Agent, and PR-Agent formed the main reply-based communication structure. These agents were central to information exchange before the breach.
+- **Communication was concentrated around a core coordination group.**\
+  The reply-based flow and network graphs show that Legal-Agent, Platform-Trust-Agent, Social-Manager-Agent, and PR-Agent formed the main communication backbone. These agents were central to information exchange before the breach, which means that merger-related risk was managed through a small group of highly connected coordinators rather than through a fully isolated legal channel.
 
-- **Merger-related information was not fully contained.**  
-  Legal-Agent and Social-Manager-Agent had the highest pre-6PM merger activity and sensitive-signal exposure, but merger-related content also appeared across other agents, scopes, and channels.
+- **Merger-related information was not fully contained within legal control.**\
+  Legal-Agent and Social-Manager-Agent had the highest pre-6PM merger activity and sensitive-signal exposure, but merger-related content also appeared across other agents, scopes, and channels. This suggests that confidential merger information had moved beyond a narrow legal-review context before the official embargo lift.
 
-- **Public-facing boundary actors created potential release pathways.**  
-  PR-Intern-Agent and Intern-Agent had higher public-facing shares, while Social-Manager-Agent connected internal coordination with public-facing communication. This matters because these agents sat closer to the boundary between internal information and public release.
+- **Public-facing boundary actors created potential release pathways.**\
+  PR-Intern-Agent and Intern-Agent had higher public-facing shares, while Social-Manager-Agent connected internal coordination with public-facing communication. This matters because these agents sat closer to the boundary between internal information and public release, making them important for understanding how sensitive information could move from internal discussion toward public-facing spaces.
 
-- **The embargo-relevant profile highlights different risk roles.**  
-  Legal-Agent and Social-Manager-Agent were most important for merger and sensitive-content exposure; Platform-Trust-Agent was important as a reply-centrality and coordination node; PR-Intern-Agent and Intern-Agent were important because of their public-facing exposure.
+- **The embargo-relevant profile highlights different risk roles.**\
+  Legal-Agent and Social-Manager-Agent were most important for merger and sensitive-content exposure; Platform-Trust-Agent was important as a reply-centrality and coordination node; PR-Intern-Agent and Intern-Agent were important because of their public-facing exposure. These roles indicate that the breach pathway was distributed across legal, monitoring, coordination, and public-facing functions.
 
-- **Overall, the communication structure supports a system-breakdown interpretation more than a single isolated leak.**  
-  The breach appears to have emerged from a multi-agent communication environment where sensitive merger information circulated through core coordinators and public-facing boundary actors before the embargo lift.
+- **Overall, the communication structure supports an internal-leak-enabled system failure interpretation.**\
+  Part 5 does not identify the original source of the Slack screenshot or prove that a senior agent deliberately leaked the merger. Instead, the graphs show the communication environment that made the breach difficult to contain: sensitive merger information circulated through core coordinators while public-facing boundary actors remained active before the embargo lift. Therefore, the network evidence should be read together with the Slack timeline from Part 4. The Slack screenshot provides the direct internal-leak evidence, while the Part 5 communication-flow visuals explain how that leak could be amplified through a fragmented multi-agent communication system.
 
 # 6. Key Events, Decision Points, and Causal Chain
 
@@ -1733,9 +1802,9 @@ The purpose of this section is to move from descriptive patterns to causal expla
 
 This section therefore reconstructs the event-level pathway that led to the pre-6:00 PM release of merger-related information. It focuses on three questions:
 
-1. Which key actions and decision points appeared before the embargo lift?
-2. Which agents were involved in those decisions or actions?
-3. Which system elements allowed merger-related content to move from internal or private communication into public-facing channels?
+1.  Which key actions and decision points appeared before the embargo lift?
+2.  Which agents were involved in those decisions or actions?
+3.  Which system elements allowed merger-related content to move from internal or private communication into public-facing channels?
 
 The analysis is especially focused on the period before the official 6:00 PM embargo lift on June 5. Records involving merger-related content, decision/action language, public-facing communication, and enforcement-related signals are treated as key evidence for reconstructing the causal chain.
 
@@ -2233,130 +2302,132 @@ ggplot() +
   )
 ```
 
-This pathway summarises how the breach moved from internal merger circulation to public-facing exposure before the embargo lift. The key insight is that decision, review, and enforcement activity existed before the release, but those controls did not prevent merger-related information from crossing the public-facing boundary. This supports a system-breakdown interpretation rather than a single isolated leak.
+This pathway summarises how the breach moved from internal merger circulation to public-facing exposure before the embargo lift. The key insight is that decision, review, and enforcement activity existed before the release, but those controls did not prevent merger-related information from crossing the public-facing boundary.
 
-
-## 6.5 Evidence Interpretation: Deliberate Leak vs System Breakdown
-
-This section interprets the causal evidence against the two competing explanations: a deliberate leak by a specific actor, or a broader system breakdown under pressure.
+## 6.5 Evidence Interpretation Matrix
 
 ```{r}
-#| fig-width: 11
-#| fig-height: 6.8
-
-evidence_matrix <- tibble(
-  evidence = c(
-    "Public merger exposure before 6PM",
-    "Multiple agents and channels involved",
-    "Decision / review / enforcement signals present",
-    "Urgency and pressure intensified near June 5",
-    "Public-facing agents connected to the pathway",
-    "No clear single malicious actor identified"
-  ),
+evidence_matrix <- tibble::tribble(
+  ~evidence, ~interpretation, ~strength, ~label,
+  "Employee Slack screenshot appeared on Said-it/r/PropTech",
+  "Internal Leak", 3, "Strong",
+  "Employee Slack screenshot appeared on Said-it/r/PropTech",
+  "System Breakdown", 2, "Moderate",
+  "Employee Slack screenshot appeared on Said-it/r/PropTech",
+  "Senior-Orchestrated Leak", 0, "Not proven",
   
-  deliberate_leak = c(
-    "Partly",
-    "Weak",
-    "Weak",
-    "Weak",
-    "Mixed",
-    "No"
-  ),
+  "Legal described the information perimeter as compromised",
+  "Internal Leak", 3, "Strong",
+  "Legal described the information perimeter as compromised",
+  "System Breakdown", 3, "Strong",
+  "Legal described the information perimeter as compromised",
+  "Senior-Orchestrated Leak", 0, "Not proven",
   
-  system_breakdown = c(
-    "Yes",
-    "Yes",
-    "Yes",
-    "Yes",
-    "Yes",
-    "Yes"
-  )
-)
-
-evidence_matrix_long <- evidence_matrix %>%
-  pivot_longer(
-    cols = c(deliberate_leak, system_breakdown),
-    names_to = "explanation",
-    values_to = "support_level"
-  ) %>%
+  "Legal linked the Slack leak to Section 8.1 confidentiality obligation",
+  "Internal Leak", 3, "Strong",
+  "Legal linked the Slack leak to Section 8.1 confidentiality obligation",
+  "System Breakdown", 2, "Moderate",
+  "Legal linked the Slack leak to Section 8.1 confidentiality obligation",
+  "Senior-Orchestrated Leak", 0, "Not proven",
+  
+  "Public merger exposure appeared before the 6PM embargo lift",
+  "Internal Leak", 3, "Strong",
+  "Public merger exposure appeared before the 6PM embargo lift",
+  "System Breakdown", 3, "Strong",
+  "Public merger exposure appeared before the 6PM embargo lift",
+  "Senior-Orchestrated Leak", 1, "Weak",
+  
+  "Multiple agents and channels were involved before the breach",
+  "Internal Leak", 2, "Moderate",
+  "Multiple agents and channels were involved before the breach",
+  "System Breakdown", 3, "Strong",
+  "Multiple agents and channels were involved before the breach",
+  "Senior-Orchestrated Leak", 1, "Weak",
+  
+  "Approval, hold, review, and enforcement controls were active but ineffective",
+  "Internal Leak", 2, "Moderate",
+  "Approval, hold, review, and enforcement controls were active but ineffective",
+  "System Breakdown", 3, "Strong",
+  "Approval, hold, review, and enforcement controls were active but ineffective",
+  "Senior-Orchestrated Leak", 1, "Weak",
+  
+  "No clear senior actor was identified as the original leak source",
+  "Internal Leak", 1, "Weak",
+  "No clear senior actor was identified as the original leak source",
+  "System Breakdown", 2, "Moderate",
+  "No clear senior actor was identified as the original leak source",
+  "Senior-Orchestrated Leak", 0, "Not proven",
+  
+  "Post-leak accelerated announcement and narrative management",
+  "Internal Leak", 2, "Moderate",
+  "Post-leak accelerated announcement and narrative management",
+  "System Breakdown", 3, "Strong",
+  "Post-leak accelerated announcement and narrative management",
+  "Senior-Orchestrated Leak", 2, "Moderate"
+) %>%
   mutate(
-    explanation = recode(
-      explanation,
-      deliberate_leak = "Deliberate Leak",
-      system_breakdown = "System Breakdown"
+    interpretation = factor(
+      interpretation,
+      levels = c(
+        "Internal Leak",
+        "System Breakdown",
+        "Senior-Orchestrated Leak"
+      )
     ),
-    
-    support_level = factor(
-      support_level,
-      levels = c("No", "Weak", "Mixed", "Partly", "Yes")
-    ),
-    
-    evidence = str_wrap(evidence, width = 36),
-    evidence = factor(evidence, levels = rev(unique(evidence)))
+    evidence = factor(
+      evidence,
+      levels = rev(unique(evidence))
+    )
   )
 
-ggplot(
-  evidence_matrix_long,
-  aes(
-    x = explanation,
-    y = evidence,
-    fill = support_level
-  )
-) +
-  geom_tile(
-    colour = "white",
-    linewidth = 1
-  ) +
-  geom_text(
-    aes(label = support_level),
-    size = 4,
-    fontface = "bold"
-  ) +
-  scale_fill_manual(
-    values = c(
-      "No" = "#f2f2f2",
-      "Weak" = "#fde0dd",
-      "Mixed" = "#fdae6b",
-      "Partly" = "#f1695b",
-      "Yes" = "#a50f15"
-    )
+ggplot(evidence_matrix, aes(x = interpretation, y = evidence, fill = strength)) +
+  geom_tile(color = "white", linewidth = 0.7) +
+  geom_text(aes(label = label), size = 3.2) +
+  scale_fill_gradient(
+    low = "yellow",
+    high = "red",
+    breaks = c(0, 1, 2, 3),
+    labels = c("Not proven", "Weak", "Moderate", "Strong")
   ) +
   labs(
     title = "Evidence Interpretation Matrix",
-    subtitle = "Comparing whether each evidence item supports deliberate leak or system breakdown",
+    subtitle = "Evidence supports internal leakage and system control failure, but not a proven senior-orchestrated leak",
     x = NULL,
-    y = "Evidence",
-    fill = "Support Level"
+    y = NULL,
+    fill = "Evidence strength"
   ) +
   theme_minimal() +
   theme(
-    legend.position = "bottom",
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 8),
+    axis.text.x = element_text(size = 7, face = "bold"),
+    axis.text.y = element_text(size = 8),
     panel.grid = element_blank(),
-    axis.text.y = element_text(size = 10),
-    axis.text.x = element_text(size = 11, face = "bold"),
-    plot.title = element_text(size = 16, face = "bold"),
-    plot.subtitle = element_text(size = 11)
+    legend.position = "bottom"
   )
 ```
 
-The matrix shows that the evidence confirms a leak occurred, but does not strongly isolate a deliberate leaker. Public merger exposure before 6PM partly supports the leak interpretation because the embargo boundary was crossed. However, the wider pattern — multiple agents, multiple channels, active control signals, rising pressure, and no clear single malicious actor — is more consistent with a system breakdown under pressure.
+This evidence interpretation matrix shows that the strongest support is for **internal leakage** and **system breakdown**, rather than a proven senior-orchestrated leak. The Slack screenshot, the compromised information perimeter, and the Section 8.1 confidentiality issue all provide strong evidence that internal merger information reached the public domain before the authorised release. At the same time, the high scores under system breakdown show that the leak became serious because multiple agents, channels, and ineffective controls failed to contain the information under pressure. In contrast, the evidence for a senior-orchestrated leak remains weak or not proven, since no clear senior actor is identified as the original source. Overall, the matrix supports a mixed interpretation: the breach was an internal confidentiality leak enabled by system-level control failure, followed by deliberate post-leak crisis management.
 
 ## 6.6 Key Findings from Causal Chain Analysis
 
-- **The inappropriate release followed a multi-stage pathway rather than a single isolated event.**  
-  Merger information first circulated internally, then became linked with pressure, confidentiality, decision/action, review/control, and enforcement-related activity before reaching public-facing exposure.
+- **The inappropriate release followed a multi-stage pathway rather than a single isolated event.**\
+  Merger information first circulated internally, then became linked with pressure, confidentiality, decision/action, review/control, and enforcement-related activity before reaching public-facing exposure. This suggests that the breach developed through a sequence of escalating conditions rather than through one simple communication mistake.
 
-- **Control activity was present, but it was not effective.**  
-  The decision/control analysis shows large volumes of approval/release actions and hold/review controls before the embargo lift. This means the problem was not a complete absence of review or enforcement, but a failure of those controls to prevent public exposure.
+- **The Slack screenshot provides direct evidence of internal leakage within the causal chain.**\
+  The causal pathway should not be interpreted as only external speculation or ordinary system pressure. The dataset records an employee Slack message stating that "the merger saves all our jobs" appearing on Said-it/r/PropTech, while Legal treated internal Slack screenshots reaching Said-it within about 20 minutes as a compromised information perimeter. This places a direct internal-leak event inside the causal chain.
 
-- **The breach became visible before the official 6:00 PM embargo lift.**  
+- **Control activity was present, but it was not effective.**\
+  The decision/control analysis shows large volumes of approval/release actions and hold/review controls before the embargo lift. This means the problem was not a complete absence of review or enforcement, but a failure of those controls to prevent internal information from reaching public-facing spaces.
+
+- **The breach became visible before the official 6:00 PM embargo lift.**\
   Public merger exposure appeared before 6PM, including cases before 5PM and during the 5–6PM breach window. This confirms that the embargo boundary had already been crossed before the authorised release time.
 
-- **The causal pathway involved multiple system layers.**  
-  The failure pathway shows internal merger circulation, pressure/confidentiality signals, decision/review/enforcement activity, public-facing boundary agents, and final pre-6PM public exposure. This indicates that the release was produced by a chain of system interactions rather than one simple posting mistake.
+- **The causal pathway involved multiple system layers.**\
+  The failure pathway shows internal merger circulation, pressure/confidentiality signals, decision/review/enforcement activity, public-facing boundary agents, and final pre-6PM public exposure. This indicates that the release was produced by interaction between an internal confidentiality breach and a weak multi-agent communication-control system.
 
-- **The evidence is stronger for system breakdown than deliberate leak.**  
-  The evidence matrix shows that public merger exposure partly supports the leak interpretation, but the broader pattern — multiple agents and channels, active but ineffective controls, rising pressure, and no clear single malicious actor — is more consistent with a system breakdown under pressure.
+- **The evidence supports internal leak plus system breakdown, rather than a clean binary conclusion.**\
+  The evidence matrix should not be read as proving either a purely accidental system breakdown or a fully deliberate senior-orchestrated leak. The Slack screenshot strongly supports the internal-leak interpretation, while the wider pattern of multiple agents, multiple channels, active but ineffective controls, and rising crisis pressure supports the system-breakdown interpretation. However, the available evidence does not clearly identify a single senior actor who deliberately planned the original leak. Therefore, the strongest causal conclusion is that the merger exposure resulted from an internal confidentiality leak enabled by system-level control failure, followed by deliberate post-leak crisis management.
 
 # 7. Typical vs Release Behavior Comparison
 
@@ -2366,9 +2437,9 @@ The purpose of this section is to determine whether the behavior that led to the
 
 The analysis focuses on three questions:
 
-1. What did normal communication behavior look like before the breach day?
-2. How did the June 5 release-window behavior differ from that baseline?
-3. Was pre-embargo public merger exposure a continuation of prior behavior, or a new and unusual pattern?
+1.  What did normal communication behavior look like before the breach day?
+2.  How did the June 5 release-window behavior differ from that baseline?
+3.  Was pre-embargo public merger exposure a continuation of prior behavior, or a new and unusual pattern?
 
 This comparison is important because a large number of leaked messages does not automatically prove deliberate intent. If the release-window behavior differs sharply from prior patterns across agents, channels, scopes, and message types, the evidence is more consistent with a system behavior shift under pressure. If the behavior had been common before, it would suggest that the breach was part of a recurring uncontrolled pattern rather than a new failure.
 
@@ -3053,7 +3124,6 @@ ggplot() +
   )
 ```
 
-
 ```{r}
 agent_deviation_score %>%
   mutate(
@@ -3190,20 +3260,23 @@ This chart isolates the key new behavior: public merger-related communication. B
 
 ## 7.6 Key Findings from Typical vs Release Behavior Comparison
 
-- **Pre-June 5 behavior had a clear normal structure.**  
-  Before the breach day, most core agents mainly communicated through internal or private channels, while public-facing activity was concentrated among PR-Intern-Agent and Intern-Agent. This establishes a clear baseline for what normal system behavior looked like.
+- **Pre-June 5 behavior had a clear normal structure.**\
+  Before the breach day, most core agents mainly communicated through internal or private channels, while public-facing activity was concentrated among PR-Intern-Agent and Intern-Agent. Public + merger behavior was absent from the baseline, which establishes an important reference point for identifying abnormal release-window behavior.
 
-- **The release-window behavior was not a normal continuation of the baseline.**  
-  During the 5–6PM breach window, several agents shifted away from their prior behavior, especially in merger-related content, public communication, public + merger exposure, and decision/control language.
+- **The release-window behavior was not a normal continuation of the baseline.**\
+  During the 5–6PM breach window, several agents shifted away from their prior behavior, especially in merger-related content, public communication, public + merger exposure, and decision/control language. This indicates that the organisation had moved from routine communication into a crisis disclosure and containment mode.
 
-- **Public + merger exposure was the most important new pattern.**  
-  The baseline shows no public + merger behavior before June 5. However, on June 5, public merger-related posts appeared before the official 6PM embargo lift, especially involving Legal-Agent and Social-Manager-Agent. This confirms that the breach behavior was new and abnormal.
+- **Public + merger exposure was the most important new pattern.**\
+  The baseline shows no public + merger behavior before June 5. However, on June 5, public merger-related posts appeared before the official 6PM embargo lift, especially involving Legal-Agent and Social-Manager-Agent. This confirms that public-facing merger communication was a new and abnormal pattern rather than part of normal prior behaviour.
 
-- **The strongest breach-relevant deviations were concentrated in specific agents.**  
-  Legal-Agent and Social-Manager-Agent show the most important release-window shifts because they combine merger-related content with public + merger exposure. Intern-Agent, PR-Intern-Agent, and Judge-Agent also show deviations, but their deviations are more related to public communication or decision/control behavior rather than direct merger leakage.
+- **The strongest breach-relevant deviations were concentrated in specific agents.**\
+  Legal-Agent and Social-Manager-Agent show the most important release-window shifts because they combine merger-related content, public + merger exposure, and control-oriented communication. Intern-Agent, PR-Intern-Agent, and Judge-Agent also show deviations, but their deviations are more related to public communication or decision/control behavior rather than direct evidence of the original leakage source.
 
-- **The evidence supports a behavioral shift under pressure rather than routine operation.**  
-  The release-window pattern differs sharply from prior behavior: merger-related content became more prominent, public + merger exposure emerged for the first time, and control-related activity remained active. This suggests that the inappropriate release was driven by an abnormal system behavior shift during the breach window, not by ordinary baseline behavior.
+- **Part 7 shows post-leak behavioral change, not the original leak mechanism.**\
+  The behavior comparison confirms that the 5–6PM release window was abnormal, but it does not by itself identify who first leaked the merger information. The Slack screenshot evidence from Part 4 provides the direct internal-leak evidence, while Part 7 shows how agents behaved after the information environment had already shifted toward public exposure and crisis management.
+
+- **Overall, the evidence supports abnormal release-window behavior consistent with internal leak containment and post-leak crisis management.**\
+  The release-window pattern differs sharply from prior behavior: merger-related content became more prominent, public + merger exposure emerged for the first time, and control-related activity remained active. Therefore, Part 7 should not be interpreted as proving a senior-orchestrated leak. Instead, it supports the broader conclusion that an internal confidentiality leak was followed by abnormal, high-pressure system behavior as agents attempted to contain, manage, and formalise the disclosure before and around the embargo lift.
 
 # 8. Leading Indicators and System Pressure
 
@@ -3240,18 +3313,25 @@ pressure_data <- communications_integrated %>%
     
     merger_signal = contains_merger,
     
+    leak_exposure_signal = str_detect(
+      content_lower,
+      "leak|leaked|leaking|screenshot|slack|said-it|saidit|reddit|subreddit|public exposure|information perimeter|perimeter|breach|breached|unauthorized|unauthorised|disclosure|exposed|surfaced"
+    ),
+    
     any_pressure_signal = risk_signal |
       urgency_signal |
       error_signal |
       confidentiality_signal |
-      merger_signal,
+      merger_signal |
+      leak_exposure_signal,
     
     pressure_score = 
       as.integer(risk_signal) +
       as.integer(urgency_signal) +
       as.integer(error_signal) +
       as.integer(confidentiality_signal) +
-      as.integer(merger_signal)
+      as.integer(merger_signal) +
+      as.integer(leak_exposure_signal)
   )
 ```
 
@@ -3263,14 +3343,16 @@ pressure_indicator_summary <- tibble(
     "Error / Failure Signal",
     "Confidentiality Signal",
     "Merger Signal",
+    "Leak / Exposure Signal",
     "Any Pressure Signal"
   ),
   Definition = c(
-    "Messages containing risk, liability, regulatory, investigation, or scrutiny-related language",
+    "Messages containing risk, exposure, liability, regulatory, investigation, scrutiny, concern, or threat-related language",
     "Messages containing urgent, deadline, crisis, escalation, or immediate-action language",
     "Messages containing error, failure, confusion, mistake, or breakdown-related language",
     "Messages containing confidential, embargo, private, restricted, or sensitive-information language",
     "Messages containing merger, acquisition, CivicLoom, HarborCrest, deal, or transaction-related language",
+    "Messages containing leak, screenshot, Slack, Said-it, public exposure, information perimeter, breach, or unauthorised-disclosure language",
     "Messages containing at least one of the above pressure-related indicators"
   ),
   Message_Count = c(
@@ -3279,24 +3361,17 @@ pressure_indicator_summary <- tibble(
     sum(pressure_data$error_signal, na.rm = TRUE),
     sum(pressure_data$confidentiality_signal, na.rm = TRUE),
     sum(pressure_data$merger_signal, na.rm = TRUE),
+    sum(pressure_data$leak_exposure_signal, na.rm = TRUE),
     sum(pressure_data$any_pressure_signal, na.rm = TRUE)
   )
 )
 
-DT::datatable(
-  pressure_indicator_summary,
-  rownames = FALSE,
-  options = list(
-    pageLength = 6,
-    dom = "t",
-    scrollX = TRUE
-  )
-)
+pressure_indicator_summary
 ```
 
-The pressure indicator summary shows that pressure-related language is widespread in the communication records, with 555 messages containing at least one pressure signal. Among the individual categories, urgency-related language is the most frequent, appearing in 413 messages, followed by merger-related language with 243 messages and risk-related language with 150 messages.
+The pressure indicator summary shows that the crisis environment was dominated by **urgency**, **merger-related communication**, and **risk-related language**. Among all categories, Urgency Signal has the highest count with 413 messages, suggesting that agents were operating under strong time pressure and immediate-response demands. Merger Signal is also highly visible with 243 messages, confirming that merger-related information was widely circulating during the crisis period. Importantly, the newly added Leak / Exposure Signal appears in 120 messages, showing that leakage-related language was not marginal; it became a meaningful part of the system pressure environment. 
 
-This suggests that the communication environment was not only discussing the merger, but was also operating under strong urgency and risk pressure. Confidentiality signals appear less frequently than urgency or merger signals, but they are still meaningful because they indicate that sensitive-information boundaries were explicitly present in the communication context. Error or failure signals are the least frequent category, so later analysis should examine whether system pressure came more from urgency and risk escalation than from explicit technical failure language.
+Overall, the table supports the interpretation that the breach did not occur in a normal communication setting. Instead, it happened under concentrated urgency, merger sensitivity, confidentiality pressure, and direct leak/exposure concerns. This strengthens the mixed conclusion that the Slack-related internal leak became a wider disclosure crisis because the multi-agent communication system failed to contain sensitive information under pressure.
 
 ## 8.2 Pressure Signal Heatmap Over Time
 
@@ -3311,10 +3386,11 @@ pressure_heatmap_data <- pressure_data %>%
     `Error / Failure` = sum(error_signal, na.rm = TRUE),
     Confidentiality = sum(confidentiality_signal, na.rm = TRUE),
     Merger = sum(merger_signal, na.rm = TRUE),
+    `Leak / Exposure` = sum(leak_exposure_signal, na.rm = TRUE),
     .groups = "drop"
   ) %>%
   pivot_longer(
-    cols = c(Risk, Urgency, `Error / Failure`, Confidentiality, Merger),
+    cols = c(Risk, Urgency, `Error / Failure`, Confidentiality, Merger, `Leak / Exposure`),
     names_to = "pressure_signal",
     values_to = "message_count"
   )
@@ -3353,7 +3429,9 @@ ggplot(
   )
 ```
 
-The heatmap shows that pressure signals remain relatively low across most dates, but surge sharply at the end of the period. Urgency is the strongest signal, followed by merger and risk-related language. This suggests that the breach period coincided with a sudden concentration of communication pressure across multiple categories.
+The pressure signal heatmap shows that June 5 was the decisive escalation point in the crisis. Before June 5, pressure-related communication was scattered and relatively low across urgency, risk, merger, confidentiality, error/failure, and leak/exposure signals. On June 5, all major pressure categories intensified sharply, with urgency and merger-related signals forming the strongest concentrations. The newly added Leak / Exposure row is important because it separates direct leakage language from general risk or confidentiality pressure.
+
+Overall, this heatmap supports the interpretation that system pressure amplified the internal leak rather than replacing it as the explanation. The Slack-related exposure occurred in an environment where urgency, merger sensitivity, legal risk, confidentiality pressure, and leak/exposure concerns converged, making the breach harder to contain and pushing agents toward accelerated post-leak crisis management.
 
 ## 8.3 Pressure Signal Composition
 
@@ -3366,7 +3444,8 @@ pressure_composition <- pressure_data %>%
     Urgency = sum(urgency_signal, na.rm = TRUE),
     `Error / Failure` = sum(error_signal, na.rm = TRUE),
     Confidentiality = sum(confidentiality_signal, na.rm = TRUE),
-    Merger = sum(merger_signal, na.rm = TRUE)
+    Merger = sum(merger_signal, na.rm = TRUE),
+    `Leak / Exposure` = sum(leak_exposure_signal, na.rm = TRUE)
   ) %>%
   pivot_longer(
     cols = everything(),
@@ -3414,7 +3493,7 @@ ggplot(
       y = label_position,
       label = label
     ),
-    size = 3.2,
+    size = 2.8,
     lineheight = 0.9
   ) +
   labs(
@@ -3430,7 +3509,11 @@ ggplot(
   )
 ```
 
-Urgency is the dominant pressure source, accounting for 43.8% of all pressure signals, followed by merger-related signals at 25.8%. Risk signals also form a meaningful share, while confidentiality and error/failure signals are smaller. This suggests that system pressure was driven more by urgency and merger escalation than by explicit failure language.
+The pressure signal composition chart shows that **urgency was the dominant pressure category**, accounting for 413 messages, or 38.9% of all pressure signals. This suggests that agents were operating under strong time pressure and immediate-response demands during the crisis period. **Merger-related communication** was the second-largest category, with 243 messages, or 22.9%, confirming that merger information was highly active in the communication environment.
+
+The newly added **Leak / Exposure** category is also important. It accounts for 120 messages, or 11.3% of all pressure signals. This shows that direct leakage-related language was not marginal. The crisis was not only about general urgency or merger discussion; it also involved explicit exposure signals linked to screenshots, public leakage, and information-boundary failure.
+
+Overall, this graph supports the revised interpretation that **system pressure amplified an internal confidentiality leak**. Urgency and merger signals explain why the communication system was under stress, while the Leak / Exposure category captures the direct breach-related language. Therefore, the pressure pattern is consistent with a mixed pathway: **internal leak, system-level control failure, and post-leak crisis management**.
 
 ## 8.4 Agent-Level Pressure Exposure
 
@@ -3445,10 +3528,11 @@ agent_pressure_exposure <- pressure_data %>%
     `Error / Failure` = sum(error_signal, na.rm = TRUE),
     Confidentiality = sum(confidentiality_signal, na.rm = TRUE),
     Merger = sum(merger_signal, na.rm = TRUE),
+    `Leak / Exposure` = sum(leak_exposure_signal, na.rm = TRUE),
     .groups = "drop"
   ) %>%
   pivot_longer(
-    cols = c(Risk, Urgency, `Error / Failure`, Confidentiality, Merger),
+    cols = c(Risk, Urgency, `Error / Failure`, Confidentiality, Merger, `Leak / Exposure`),
     names_to = "pressure_signal",
     values_to = "message_count"
   )
@@ -3464,7 +3548,7 @@ agent_pressure_exposure <- agent_pressure_exposure %>%
     agent_label = factor(agent_label, levels = agent_order),
     pressure_signal = factor(
       pressure_signal,
-      levels = c("Urgency", "Merger", "Risk", "Confidentiality", "Error / Failure")
+      levels = c("Urgency", "Merger", "Risk", "Confidentiality", "Error / Failure","Leak / Exposure")
     )
   )
 
@@ -3502,7 +3586,11 @@ ggplot(
   )
 ```
 
-Legal-Agent shows the highest pressure exposure across all categories, especially urgency, merger, and risk signals. Social-Manager-Agent is also highly exposed, mainly through urgency and merger-related communication. Platform-Trust-Agent has lower merger exposure but stronger risk and urgency signals. Overall, pressure is concentrated around a few core agents rather than evenly distributed across the team.
+The agent-level pressure exposure heatmap shows that crisis pressure was concentrated around a small group of core agents rather than distributed evenly across the whole system. Legal-Agent and Social-Manager-Agent had the highest exposure to urgency and merger-related pressure, indicating that they were most directly involved in interpreting, monitoring, and responding to the breach as it escalated. Legal-Agent also had the highest exposure to risk, confidentiality, and error/failure signals, which confirms its central role in assessing legal exposure and information-control failure.
+
+The newly added Leak / Exposure column is especially important. Social-Manager-Agent and Legal-Agent show the highest leak/exposure counts, with 54 and 40 messages respectively. This suggests that the agents closest to public monitoring and legal interpretation were also the agents most exposed to direct leakage concerns. Platform-Trust-Agent had lower leak/exposure exposure but remained important through urgency and risk signals, reflecting its coordination and system-control role.
+
+Overall, this heatmap supports the revised interpretation that the breach was not simply a general system breakdown. The pressure was concentrated around agents responsible for legal escalation, public monitoring, and crisis coordination. This means the Slack-related internal leak entered a communication environment where the key control agents were already under intense urgency, merger, risk, and confidentiality pressure, making containment more difficult and pushing the system toward accelerated post-leak crisis management.
 
 ## 8.5 Leading Indicator Score Before the Breach
 
@@ -3549,16 +3637,31 @@ leading_indicator_messages <- pressure_data %>%
   filter(timestamp < embargo_lift_time) %>%
   mutate(
     public_merger_signal = is_public & merger_signal,
+    
+    public_leak_exposure_signal = is_public & leak_exposure_signal,
+    
     merger_confidential_signal = merger_signal & confidentiality_signal,
+    
     merger_urgency_signal = merger_signal & urgency_signal,
+    
+    merger_leak_exposure_signal = merger_signal & leak_exposure_signal,
+    
     public_pressure_signal = is_public & any_pressure_signal,
+    
     boundary_agent_pressure_signal = agent_label %in% boundary_agents &
-      (merger_signal | confidentiality_signal | urgency_signal),
+      (
+        merger_signal |
+          confidentiality_signal |
+          urgency_signal |
+          leak_exposure_signal
+      ),
     
     leading_indicator_score =
       3 * as.integer(public_merger_signal) +
+      3 * as.integer(public_leak_exposure_signal) +
       2 * as.integer(merger_confidential_signal) +
       2 * as.integer(merger_urgency_signal) +
+      2 * as.integer(merger_leak_exposure_signal) +
       2 * as.integer(public_pressure_signal) +
       1 * as.integer(boundary_agent_pressure_signal)
   )
@@ -3569,11 +3672,17 @@ daily_leading_score <- leading_indicator_messages %>%
   summarise(
     leading_indicator_score = sum(leading_indicator_score, na.rm = TRUE),
     public_merger_messages = sum(public_merger_signal, na.rm = TRUE),
+    public_leak_exposure_messages = sum(public_leak_exposure_signal, na.rm = TRUE),
     merger_confidential_messages = sum(merger_confidential_signal, na.rm = TRUE),
     merger_urgency_messages = sum(merger_urgency_signal, na.rm = TRUE),
+    merger_leak_exposure_messages = sum(merger_leak_exposure_signal, na.rm = TRUE),
     public_pressure_messages = sum(public_pressure_signal, na.rm = TRUE),
     boundary_agent_pressure_messages = sum(boundary_agent_pressure_signal, na.rm = TRUE),
     .groups = "drop"
+  ) %>%
+  mutate(
+    public_breach_related_messages =
+      public_merger_messages + public_leak_exposure_messages
   )
 
 max_score <- max(daily_leading_score$leading_indicator_score, na.rm = TRUE)
@@ -3617,7 +3726,7 @@ ggplot(
   ) +
   geom_point(
     aes(
-      size = public_merger_messages + 1,
+      size = public_breach_related_messages + 1,
       fill = warning_level
     ),
     shape = 21,
@@ -3638,11 +3747,11 @@ ggplot(
   ) +
   scale_size_continuous(
     range = c(3, 12),
-    name = "Public Merger\nMessages + 1"
+    name = "Public Merger or\nLeak Exposure\nMessages + 1"
   ) +
   labs(
     title = "Leading Indicator Score Before the Breach",
-    subtitle = "Relative warning score based on merger, confidentiality, urgency, public exposure, and boundary-agent activity",
+    subtitle = "Relative warning score based on merger, confidentiality, urgency, leak/exposure, public exposure, and boundary-agent activity",
     x = "Date",
     y = "Relative Leading Indicator Score",
     fill = "Warning Level"
@@ -3653,7 +3762,10 @@ ggplot(
     axis.text.x = element_text(angle = 35, hjust = 1)
   )
 ```
-This chart shows a sharp contrast between weak early warnings and the final breach-day escalation. Before June 5, the leading indicator scores were mostly very low, generally below 30, suggesting that earlier warning signals existed but remained limited. June 5 is the clear outlier, reaching a score of 711 and 100% relative intensity. This indicates that multiple warning conditions converged on the breach day rather than appearing as a gradual linear build-up. The large bubble on June 5 also shows that public-merger messages became a major part of the warning pattern, making this the strongest leading indicator that an embargo breach was possible before the official release time.
+
+The updated leading indicator chart incorporates leak/exposure signals into the warning score. This makes the indicator more aligned with the revised interpretation of the incident, because the breach was not only associated with merger, confidentiality, urgency, and public exposure signals, but also with direct leakage-related language such as screenshots, Slack, Said-it, and compromised information perimeter references.
+
+The chart shows that June 5 remained the decisive warning outlier before the embargo lift. Earlier dates contained only scattered and low-level warning signals, while June 5 shows a sharp spike in the relative leading indicator score. This supports a missed-intervention interpretation: warning conditions were visible before the final breach window, but they were not converted into effective containment action. The chart does not prove a senior-orchestrated leak; instead, it shows that an internal leak became consequential because the wider communication system failed to respond to escalating warning indicators in time.
 
 ```{r}
 leading_indicator_component_table <- daily_leading_score %>%
@@ -3663,8 +3775,11 @@ leading_indicator_component_table <- daily_leading_score %>%
     `Leading Indicator Score` = leading_indicator_score,
     `Relative Score` = paste0(round(relative_score, 1), "%"),
     `Public Merger Messages` = public_merger_messages,
+    `Public Leak / Exposure Messages` = public_leak_exposure_messages,
+    `Public Merger or Leak / Exposure Messages` = public_breach_related_messages,
     `Merger + Confidentiality` = merger_confidential_messages,
     `Merger + Urgency` = merger_urgency_messages,
+    `Merger + Leak / Exposure` = merger_leak_exposure_messages,
     `Public Pressure Messages` = public_pressure_messages,
     `Boundary-Agent Pressure Messages` = boundary_agent_pressure_messages,
     `Warning Level` = warning_level
@@ -3680,31 +3795,28 @@ DT::datatable(
 )
 ```
 
-
-The leading indicator view shows whether multiple warning conditions appeared together before the embargo lift. A high score means that merger-related information was not only present, but also linked to confidentiality, urgency, public-facing activity, or boundary agents. This is more informative than a simple count because it captures the combination of conditions that made an inappropriate release possible.
-
-
-
 ## 8.7 Key Findings from System Pressure Analysis
 
-- **System pressure was substantial and concentrated.**  
-  A total of 555 messages contained at least one pressure signal. Urgency was the dominant pressure category, with 413 messages, followed by merger-related signals with 243 messages and risk signals with 150 messages.
+- **System pressure was substantial and concentrated.**\
+  A total of 555 messages contained at least one pressure signal. Urgency was the dominant pressure category, with 413 messages, followed by merger-related signals with 243 messages and risk signals with 150 messages. This shows that the breach occurred in a highly pressured communication environment rather than during a stable operating period.
 
-- **June 5 was the clear pressure escalation point.**  
-  The pressure heatmap shows that urgency, merger, risk, confidentiality, and error/failure signals all intensified sharply on June 5. This indicates that the breach occurred during a system-wide pressure spike rather than under normal communication conditions.
+- **June 5 was the clear pressure escalation point.**\
+  The pressure heatmap shows that urgency, merger, risk, confidentiality, and error/failure signals all intensified sharply on June 5. This indicates that the breach day was a system-wide escalation point, where sensitive merger information, legal exposure, public attention, and communication urgency converged at the same time.
 
-- **Pressure was mainly driven by urgency and merger escalation.**  
-  The composition chart shows that urgency accounted for 43.8% of all pressure signals, while merger-related signals accounted for 25.8%. Error/failure language was much smaller, suggesting that the breakdown was more about urgency-driven governance failure than explicit technical malfunction.
+- **Pressure was mainly driven by urgency and merger escalation.**\
+  The composition chart shows that urgency accounted for 43.8% of all pressure signals, while merger-related signals accounted for 25.8%. Error/failure language was much smaller, suggesting that the problem was less about a technical malfunction and more about urgency-driven governance pressure, confidentiality stress, and failure to contain sensitive information once the leak risk had materialised.
 
-- **Pressure exposure was concentrated around core agents.**  
-  Legal-Agent and Social-Manager-Agent had the highest exposure to urgency and merger-related pressure. Platform-Trust-Agent also showed strong risk and urgency exposure, making it important as a coordination and system-control actor.
+- **Pressure exposure was concentrated around core agents.**\
+  Legal-Agent and Social-Manager-Agent had the highest exposure to urgency and merger-related pressure. Platform-Trust-Agent also showed strong risk and urgency exposure, making it important as a coordination and system-control actor. This pattern suggests that the agents closest to legal interpretation, public monitoring, and crisis coordination were also operating under the strongest pressure.
 
-- **Leading indicators existed before the final breach, but June 5 was the decisive outlier.**  
-  Earlier dates showed small warning scores, while June 5 jumped to a leading indicator score of 711. This suggests that weak warning signals existed before the breach, but multiple risk conditions converged sharply on the breach day.
+- **Leading indicators existed before the final breach, but June 5 was the decisive outlier.**\
+  Earlier dates showed small warning scores, while June 5 jumped to a leading indicator score of 711. This suggests that weak warning signals existed before the breach, but multiple risk conditions converged sharply on the breach day. These indicators help explain why the internal Slack leak and public merger exposure became difficult to contain once the crisis accelerated.
 
-- **Overall, Part 6 supports the system-breakdown interpretation.**  
-  The evidence shows escalating pressure, repeated near-miss patterns, and weak early warning signals before the final breach. This does not look like a single isolated mistake; it looks more like a communication system whose risk controls failed under concentrated urgency, merger sensitivity, and public-facing exposure.
+- **System pressure should be interpreted as an enabling condition, not the sole cause of the breach.**\
+  The Part 8 visuals show escalating urgency, repeated warning patterns, and concentrated pressure around sensitive merger communication. However, this does not mean the breach was purely a system breakdown. Instead, the pressure environment made the internal confidentiality leak more damaging by weakening containment, accelerating public-facing responses, and forcing agents into rapid disclosure-management decisions.
 
+- **Overall, Part 8 supports the broader mixed interpretation: internal leak plus system-level control failure.**\
+  The evidence does not point to a normal communication environment or a single routine posting error. It shows a communication system under concentrated urgency, merger sensitivity, confidentiality pressure, and public-facing exposure. Therefore, Part 8 supports the conclusion that the Slack-related internal leak became a wider disclosure crisis because the multi-agent system failed to contain it under pressure, followed by deliberate post-leak crisis management.
 
 # 9. Prior Anomalies and Missed Intervention
 
@@ -3714,9 +3826,9 @@ The purpose of this section is to examine whether the system showed earlier warn
 
 This section addresses the remaining parts of Task 3:
 
-1. Were there prior occasions where agents’ actual behaviors differed from expected behavior?
-2. Were there other occasions where the agent system exhibited behaviors similar to those that led to the inappropriate release?
-3. Why did those prior occasions not result in noticeable action?
+1.  Were there prior occasions where agents’ actual behaviors differed from expected behavior?
+2.  Were there other occasions where the agent system exhibited behaviors similar to those that led to the inappropriate release?
+3.  Why did those prior occasions not result in noticeable action?
 
 The analysis uses the typical behavior baseline from Part 7 as the reference point for “expected behavior.” Prior anomalies are defined as earlier communication records or patterns that showed partial similarity to the final breach pathway, such as merger-related pressure, confidentiality references, public-facing pressure, decision/control activity, or near-public exposure.
 
@@ -3727,40 +3839,72 @@ The goal is not to claim that earlier anomalies directly caused the breach. Inst
 ```{r}
 embargo_lift_time <- ymd_hms("2046-06-05 18:00:00")
 breach_time <- ymd_hms("2046-06-05 17:00:00")
+breach_date <- as.Date("2046-06-05")
 
 near_miss_data <- pressure_data %>%
   filter(timestamp < embargo_lift_time) %>%
   mutate(
+    date_fixed = as.Date(timestamp),
+    
     pre_breach_phase = case_when(
-      date < as_date("2046-06-05") ~ "Prior to June 5",
+      date_fixed < breach_date ~ "Prior to June 5",
       timestamp < breach_time ~ "June 5 Before 5:00 PM",
-      timestamp >= breach_time & timestamp < embargo_lift_time ~ "5:00–6:00 PM Breach Window"
+      timestamp >= breach_time & timestamp < embargo_lift_time ~ "5:00–6:00 PM Breach Window",
+      TRUE ~ NA_character_
     ),
     
     near_miss_pattern = case_when(
+      # Most critical: public-facing breach-related signals
       is_public & merger_signal ~ "Public + Merger",
+      is_public & leak_exposure_signal ~ "Public + Leak / Exposure",
+      
+      # Direct leakage combined with merger/confidentiality/urgency
+      merger_signal & leak_exposure_signal ~ "Merger + Leak / Exposure",
+      confidentiality_signal & leak_exposure_signal ~ "Leak / Exposure + Confidentiality",
+      urgency_signal & leak_exposure_signal ~ "Leak / Exposure + Urgency",
+      
+      # Existing near-miss patterns
       is_public & any_pressure_signal ~ "Public + Pressure",
       merger_signal & confidentiality_signal ~ "Merger + Confidentiality",
       merger_signal & urgency_signal ~ "Merger + Urgency",
       merger_signal & risk_signal ~ "Merger + Risk",
       confidentiality_signal & urgency_signal ~ "Confidentiality + Urgency",
+      
       TRUE ~ NA_character_
     )
   ) %>%
-  filter(!is.na(near_miss_pattern)) %>%
+  filter(!is.na(pre_breach_phase), !is.na(near_miss_pattern)) %>%
   mutate(
     near_miss_severity = case_when(
-      near_miss_pattern == "Public + Merger" ~ "Critical",
+      near_miss_pattern %in% c(
+        "Public + Merger",
+        "Public + Leak / Exposure",
+        "Merger + Leak / Exposure"
+      ) ~ "Critical",
+      
       near_miss_pattern %in% c(
         "Public + Pressure",
         "Merger + Confidentiality",
-        "Merger + Urgency"
+        "Merger + Urgency",
+        "Leak / Exposure + Confidentiality",
+        "Leak / Exposure + Urgency"
       ) ~ "High",
+      
       TRUE ~ "Moderate"
     ),
+    
     near_miss_severity = factor(
       near_miss_severity,
       levels = c("Moderate", "High", "Critical")
+    ),
+    
+    pre_breach_phase = factor(
+      pre_breach_phase,
+      levels = c(
+        "Prior to June 5",
+        "June 5 Before 5:00 PM",
+        "5:00–6:00 PM Breach Window"
+      )
     )
   )
 ```
@@ -3820,9 +3964,15 @@ ggplot(
     axis.text.x = element_text(angle = 20, hjust = 1)
   )
 ```
-This chart shows that near-miss signals already existed before the final breach window, especially `Merger + Urgency`, `Merger + Confidentiality`, and `Confidentiality + Urgency`. The strongest concentration appeared on June 5 before 5PM, where merger-related urgency and confidentiality signals increased sharply, and `Public + Merger` events also appeared. This suggests that the system had observable warning patterns before the 5–6PM breach window, but these signals did not trigger enough intervention to prevent the final public exposure.
+
+The updated near-miss chart shows that warning signals were already visible before the official embargo lift, but they intensified sharply on June 5. The largest concentration appeared in the June 5 before-5PM phase, especially around `Merger + Leak / Exposure`, `Merger + Urgency`, and `Leak / Exposure + Urgency`. This indicates that the system was already showing signs of direct exposure risk before the 5:00–6:00 PM breach window.
+
+The chart also shows that the breach window still contained critical public-facing patterns, including `Public + Merger` and `Merger + Leak / Exposure`. This suggests that the final breach was not a sudden isolated posting mistake. Instead, it followed a sequence of near-miss signals in which merger sensitivity, urgency, confidentiality pressure, and leak/exposure language accumulated before the embargo lift.
+
+Overall, this chart supports a missed-intervention interpretation. Earlier warning patterns existed, but they were not converted into a strong enough containment response. The Slack-related internal leak became consequential because leak/exposure signals and public-facing merger risk were allowed to escalate into the breach window.
 
 ## 9.3 Near-Miss Signals by Agent
+
 ```{r}
 near_miss_event_table <- near_miss_data %>%
   arrange(desc(near_miss_severity), timestamp) %>%
@@ -3906,9 +4056,7 @@ ggplot(
   )
 ```
 
-This chart shows that near-miss signals were concentrated mainly in Legal-Agent and Social-Manager-Agent, especially through `Merger + Urgency` and `Merger + Confidentiality` patterns. PR-Intern-Agent and Platform-Trust-Agent also show meaningful warning activity, but at a smaller scale. This suggests that prior warning behavior was not evenly distributed across the system; it was concentrated around the same core agents later implicated in the breach pathway.
-
-
+This chart shows that near-miss warning signals were concentrated mainly around **Legal-Agent** and **Social-Manager-Agent**. Legal-Agent had the highest overall exposure, especially across merger-related, leak/exposure, and confidentiality-linked patterns, which confirms its central role in legal escalation and breach assessment. Social-Manager-Agent also carried substantial near-miss signals, reflecting its role in monitoring public exposure and detecting external discussion. Overall, the warning pattern was not evenly distributed across all agents; it was concentrated around the agents closest to legal control and public-facing crisis monitoring.
 
 ## 9.4 Expected vs Actual Behavior Deviations
 
@@ -3916,12 +4064,13 @@ This section compares the system’s expected behavior with the actual behaviors
 
 ```{r}
 #| fig-width: 10.5
-#| fig-height: 5.8
+#| fig-height: 6.3
 
 expected_actual_score <- tibble(
   expected_behavior = c(
     "No public merger content",
     "Merger content contained internally",
+    "Leak / exposure signals remain contained",
     "Confidentiality triggers containment",
     "Control signals reduce exposure",
     "Public-facing agents avoid sensitive amplification"
@@ -3930,6 +4079,7 @@ expected_actual_score <- tibble(
   `Prior to June 5` = c(
     "Low",
     "Moderate",
+    "Low",
     "Moderate",
     "Moderate",
     "Moderate"
@@ -3938,6 +4088,7 @@ expected_actual_score <- tibble(
   `June 5 Before 5PM` = c(
     "Critical",
     "High",
+    "Critical",
     "High",
     "High",
     "High"
@@ -3946,6 +4097,7 @@ expected_actual_score <- tibble(
   `5–6PM Breach Window` = c(
     "Critical",
     "High",
+    "Critical",
     "High",
     "Critical",
     "Critical"
@@ -4018,11 +4170,12 @@ ggplot(
       "Moderate" = "#fdae6b",
       "High" = "#f1695b",
       "Critical" = "#a50f15"
-    )
+    ),
+    drop = FALSE
   ) +
   labs(
     title = "Expected vs Actual Behavior Deviations",
-    subtitle = "Deviation severity increased as the system approached the breach window",
+    subtitle = "Deviation severity increased as leak/exposure and public merger risks approached the breach window",
     x = "Actual Observation Phase",
     y = "Expected Behavior",
     fill = "Deviation Level"
@@ -4038,8 +4191,7 @@ ggplot(
   )
 ```
 
-The matrix shows that deviations from expected behavior intensified as the system moved closer to the breach window. Before June 5, the main deviation was moderate and mostly related to scattered warning signals, while public merger content was still absent. On June 5 before 5PM, the pattern became critical because public merger exposure appeared for the first time. By the 5–6PM breach window, both public exposure and control failure were critical, suggesting that the system had moved from early warning signs into clear containment failure.
-
+This deviation heatmap shows that actual behavior moved further away from expected containment as the system approached the breach window. The most serious deviations appeared on June 5, when public merger content became visible and leak/exposure signals were no longer contained. This is important because the breach was not only a failure to keep merger discussion internal; it also involved direct exposure of internal information through Slack-related screenshots and public discussion. Overall, the chart supports a missed-intervention interpretation: expected containment mechanisms existed, but they did not prevent leak/exposure signals from escalating before the embargo lift.
 
 ## 9.5 Why Prior Warnings Did Not Trigger Action
 
@@ -4150,47 +4302,54 @@ ggplot(
     plot.subtitle = element_text(size = 11)
   )
 ```
+
 This chart explains why earlier warnings did not translate into intervention. The strongest barriers were weak action triggers and low signal clarity: the warnings existed, but they were scattered and ambiguous rather than forming one clear stop signal. Risk also appeared contained before June 5 because public merger exposure was not yet obvious. By the time visibility increased, the system was already close to the breach window, so intervention came too late to prevent public exposure.
 
 ## 9.6 Key Findings from Prior Anomalies and Missed Intervention
 
 - **Prior warning signals existed before the final breach window.**  
-  The near-miss analysis shows that warning patterns were already visible before 5:00 PM on June 5, especially `Merger + Urgency`, `Merger + Confidentiality`, and `Confidentiality + Urgency`. This means the breach did not appear without earlier warning signs.
+  The near-miss analysis shows that warning patterns were already visible before 5:00 PM on June 5. Earlier signals included `Merger + Urgency`, `Merger + Confidentiality`, and `Confidentiality + Urgency`, but the revised analysis also shows leak-related warning patterns such as `Merger + Leak / Exposure`, `Leak / Exposure + Urgency`, and `Leak / Exposure + Confidentiality`. This means the breach did not appear without earlier warning signs.
 
 - **The strongest warning concentration appeared on June 5 before 5PM.**  
-  Near-miss signals intensified sharply before the 5–6PM breach window, with `Merger + Urgency` and `Merger + Confidentiality` becoming especially prominent. This suggests that the system was already moving toward a high-risk state before the final public exposure.
+  Near-miss signals intensified sharply before the 5–6PM breach window. The most important warning patterns were no longer only general merger-pressure patterns; they also included leak/exposure-related combinations. This suggests that the system was already moving toward a high-risk state before the final public exposure, with internal information-control risk becoming increasingly visible.
+
+- **Leak / exposure signals became part of the missed-intervention pattern.**  
+  The revised near-miss analysis shows that leak/exposure language was not marginal. Patterns linked to public exposure, screenshots, Slack-related leakage, and compromised information boundaries appeared before the official embargo lift. These signals should have functioned as stronger intervention triggers, but they were not contained quickly enough.
 
 - **Near-miss behavior was concentrated around specific agents.**  
-  Legal-Agent and Social-Manager-Agent carried the largest volume of near-miss signals, while PR-Intern-Agent and Platform-Trust-Agent also showed meaningful warning activity. The warning pattern was therefore not evenly distributed; it was concentrated around agents already central to the breach pathway.
+  Legal-Agent and Social-Manager-Agent carried the largest volume of near-miss signals, while PR-Intern-Agent and Platform-Trust-Agent also showed meaningful warning activity. The warning pattern was therefore not evenly distributed; it was concentrated around agents already central to legal escalation, public monitoring, and breach response.
 
 - **Actual behavior increasingly deviated from expected behavior.**  
-  Before June 5, deviations were mostly moderate and scattered. On June 5 before 5PM, public merger exposure appeared and the deviation became critical. During the 5–6PM breach window, control failure and public-facing amplification also became critical.
+  Before June 5, deviations were mostly moderate and scattered. On June 5 before 5PM, public merger exposure appeared, leak/exposure signals were no longer contained, and the deviation became critical. During the 5–6PM breach window, control failure and public-facing amplification also became critical.
 
-- **Earlier warnings did not trigger action because they were ambiguous and lacked a clear intervention trigger.**  
-  The missed-intervention analysis suggests that prior signals were scattered across agents, phases, and warning types. Risk looked partially contained because public + merger exposure was absent from the baseline, and no single actor clearly owned the full escalation pathway.
+- **Earlier warnings did not trigger action because they were distributed and lacked a hard containment trigger.**  
+  The missed-intervention analysis suggests that warning signs were scattered across agents, phases, and signal types. Risk appeared partially contained because public + merger exposure was absent from the earlier baseline, and no single actor clearly owned the full escalation pathway. More importantly, leak/exposure signals did not trigger an immediate stop mechanism before the breach window.
 
-- **Overall, Part 9 supports a missed-intervention interpretation.**  
-  The system had observable warning signs before the breach, but those signs were not translated into effective action. This strengthens the system-breakdown explanation: the failure was not only that public exposure occurred, but that earlier near-miss signals were not escalated or contained in time.
+- **Overall, Part 9 supports a missed-intervention interpretation rather than a pure system-breakdown explanation.**  
+  The system had observable warning signs before the breach, but those signs were not translated into effective containment action. This does not erase the internal-leak evidence from the Slack screenshot. Instead, Part 9 explains why that internal leak became consequential: earlier merger, confidentiality, urgency, and leak/exposure signals were not escalated or contained in time.
 
 # 10. Final Conclusion
 
-Overall, the evidence suggests that TenantThread’s inappropriate merger release was more consistent with a **system breakdown under pressure** than a deliberate leak by a single actor. For Task 1, the timeline, communication-flow, and causal-chain analysis showed that the release was not an isolated post: merger information circulated through internal and private channels, became linked with urgency and confidentiality signals, passed through decision/review/enforcement activity, and eventually crossed into public-facing communication before the 6:00 PM embargo lift. 
+Overall, the evidence suggests that TenantThread’s inappropriate merger release should not be interpreted as a simple binary case of either a deliberate leak or a system breakdown. The stronger conclusion is that the incident involved an **internal confidentiality leak enabled by system-level control failure**, followed by **deliberate post-leak crisis management**. The Slack screenshot evidence is especially important because it shows that internal merger-related information had reached a public forum before the authorised release. However, the evidence does not clearly prove that a senior agent or management actor deliberately orchestrated the original leak.
 
-For Task 2, the typical-behavior comparison showed that this was a clear deviation from prior behavior: public + merger communication was absent in the baseline but appeared on June 5, especially around Legal-Agent and Social-Manager-Agent. 
+For Task 1, the timeline, communication-flow, and causal-chain analysis showed that the release developed through a multi-stage pathway. Merger information first circulated internally and privately, then became linked with urgency, confidentiality, leak/exposure, decision/control, and enforcement-related activity. The Slack screenshot marked a turning point because it shifted the situation from market inference to direct internal leakage. After that, merger-related information crossed into public-facing communication before the official 6:00 PM embargo lift.
 
-For Task 3, the leading-indicator and prior-anomaly analysis showed that warning signs existed before the final breach window, including merger urgency, confidentiality signals, and near-miss patterns, but these warnings were scattered, ambiguous, and lacked a clear action trigger. Therefore, the breach should be interpreted as a pressured multi-agent control failure: the system had signals and controls, but they were not coordinated effectively enough to prevent embargoed merger information from becoming public.
+For Task 2, the typical-behavior comparison showed that June 5 was a clear deviation from prior communication behavior. Public + merger communication was absent in the baseline but appeared on June 5, especially around Legal-Agent and Social-Manager-Agent. This does not by itself prove who originally leaked the merger information. Instead, it shows that once the information environment had shifted, agents moved from routine coordination into abnormal crisis disclosure, containment, and narrative-management behavior.
 
+For Task 3, the leading-indicator and prior-anomaly analysis showed that warning signs existed before the final breach window. These included merger urgency, confidentiality pressure, leak/exposure signals, public-facing risk, and near-miss patterns involving Legal-Agent and Social-Manager-Agent. However, these warnings were distributed across agents and channels and did not trigger a hard containment response. The system had warning signals and control activity, but they were not coordinated effectively enough to prevent internal merger information from becoming public.
+
+Therefore, the final interpretation is: **internal leak + system control failure + post-leak crisis management**. The breach was not merely an accidental system breakdown, because the Slack-related evidence points to direct internal leakage. At the same time, it should not be overstated as a proven senior-orchestrated leak, because the data does not clearly identify a senior actor who deliberately initiated the original disclosure. The most defensible conclusion is that TenantThread’s weak multi-agent communication controls allowed an internal confidentiality breach to escalate into a public merger disclosure before the embargo lift.
 
 # 11. References
 
-- Thomas, J. J., & Cook, K. A. (Eds.). (2005). *Illuminating the Path: The Research and Development Agenda for Visual Analytics*. National Visualization and Analytics Center.  
-  Useful for justifying the overall visual analytics approach: using interactive/visual methods to support analytical reasoning and evidence synthesis. :contentReference[oaicite:0]{index=0}
+- Thomas, J. J., & Cook, K. A. (Eds.). (2005). *Illuminating the Path: The Research and Development Agenda for Visual Analytics*. National Visualization and Analytics Center.\
+  Useful for justifying the overall visual analytics approach: using interactive/visual methods to support analytical reasoning and evidence synthesis. :contentReference[oaicite:0]{index="0"}
 
-- Pirolli, P., & Card, S. (2005). *The Sensemaking Process and Leverage Points for Analyst Technology as Identified Through Cognitive Task Analysis*.  
-  Useful for explaining the report structure: moving from raw communication records to filtered evidence, patterns, causal interpretation, and final judgment. :contentReference[oaicite:1]{index=1}
+- Pirolli, P., & Card, S. (2005). *The Sensemaking Process and Leverage Points for Analyst Technology as Identified Through Cognitive Task Analysis*.\
+  Useful for explaining the report structure: moving from raw communication records to filtered evidence, patterns, causal interpretation, and final judgment. :contentReference[oaicite:1]{index="1"}
 
-- Endsley, M. R. (1995). *Toward a Theory of Situation Awareness in Dynamic Systems*. *Human Factors, 37*(1), 32–64.  
-  Useful for discussing why warning signals may fail to become effective action when operators or systems lose situation awareness under dynamic conditions. :contentReference[oaicite:2]{index=2}
+- Endsley, M. R. (1995). *Toward a Theory of Situation Awareness in Dynamic Systems*. *Human Factors, 37*(1), 32–64.\
+  Useful for discussing why warning signals may fail to become effective action when operators or systems lose situation awareness under dynamic conditions. :contentReference[oaicite:2]{index="2"}
 
-- Endsley, M. R. (1996). *Automation and Situation Awareness*.  
-  Useful for connecting multi-agent / automated communication systems with out-of-the-loop control problems and weakened human/system monitoring. :contentReference[oaicite:3]{index=3}
+- Endsley, M. R. (1996). *Automation and Situation Awareness*.\
+  Useful for connecting multi-agent / automated communication systems with out-of-the-loop control problems and weakened human/system monitoring. :contentReference[oaicite:3]{index="3"}
