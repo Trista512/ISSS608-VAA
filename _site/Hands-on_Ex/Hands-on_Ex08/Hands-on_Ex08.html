@@ -851,6 +851,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
+<p>The original code uses <code>newggslopegraph()</code> from the <code>CGPfunctions</code> package to create a slope graph. However, this package is not available for my current version of R, so the function cannot be installed or loaded successfully. Therefore, I use <code>ggplot2</code> as an alternative to recreate the same type of visualisation.</p>
+<p>In this code, the rice yield data is first filtered to keep only the two selected years, 1961 and 1980. The data is then reshaped into a wide format so that each country has one yield value for 1961 and one yield value for 1980. The <code>geom_segment()</code> function is used to draw the coloured slope lines between the two years, while grey guide lines and text labels are added to reproduce the structure of the original slope graph.</p>
 
 
 <!-- -->
@@ -1723,6 +1725,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb19-447"><a href="#cb19-447" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.margin =</span> <span class="fu">margin</span>(<span class="dv">20</span>, <span class="dv">40</span>, <span class="dv">20</span>, <span class="dv">40</span>)</span>
 <span id="cb19-448"><a href="#cb19-448" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb19-449"><a href="#cb19-449" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-450"><a href="#cb19-450" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-451"><a href="#cb19-451" aria-hidden="true" tabindex="-1"></a>The original code uses <span class="in">`newggslopegraph()`</span> from the <span class="in">`CGPfunctions`</span> package to create a slope graph. However, this package is not available for my current version of R, so the function cannot be installed or loaded successfully. Therefore, I use <span class="in">`ggplot2`</span> as an alternative to recreate the same type of visualisation.</span>
+<span id="cb19-452"><a href="#cb19-452" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-453"><a href="#cb19-453" aria-hidden="true" tabindex="-1"></a>In this code, the rice yield data is first filtered to keep only the two selected years, 1961 and 1980. The data is then reshaped into a wide format so that each country has one yield value for 1961 and one yield value for 1980. The <span class="in">`geom_segment()`</span> function is used to draw the coloured slope lines between the two years, while grey guide lines and text labels are added to reproduce the structure of the original slope graph.</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
