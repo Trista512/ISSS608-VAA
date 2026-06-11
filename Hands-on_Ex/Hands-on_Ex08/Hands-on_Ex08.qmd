@@ -1,0 +1,417 @@
+---
+title: "Hands-on_Ex06"
+author: "HU YUE"
+date: "2026-06-05"
+date-modified: "last-modified"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-location: left
+    toc-depth: 3
+    code-fold: true
+    code-tools: true
+    fig-width: 10
+    fig-height: 6
+execute:
+  warning: false
+  message: false
+---
+
+# 17  Visualising and Analysing Time-oriented Data
+
+## 17.3 Do It Yourself
+
+```{r}
+pacman::p_load(scales, viridis, lubridate, ggthemes,
+               gridExtra, readxl, knitr, data.table,
+               CGPfunctions, ggHoriPlot, tidyverse)
+```
+
+## 17.4 Plotting Calendar Heatmap
+
+## 17.4.2 Importing the data
+
+```{r}
+attacks <- read_csv("Data/eventlog.csv")
+```
+
+## 17.4.3 Examining the data structure
+
+```{r}
+kable(head(attacks))
+```
+
+## 17.4.4 Data Preparation
+
+```{r}
+make_hr_wkday <- function(ts, sc, tz) {
+  real_times <- ymd_hms(ts, 
+                        tz = tz[1], 
+                        quiet = TRUE)
+  dt <- data.table(source_country = sc,
+                   wkday = weekdays(real_times),
+                   hour = hour(real_times))
+  return(dt)
+}
+```
+
+```{r}
+wkday_levels <- c('Saturday', 'Friday', 
+                  'Thursday', 'Wednesday', 
+                  'Tuesday', 'Monday', 
+                  'Sunday')
+
+attacks <- attacks %>%
+  group_by(tz) %>%
+  do(make_hr_wkday(.$timestamp, 
+                   .$source_country, 
+                   .$tz)) %>% 
+  ungroup() %>% 
+  mutate(wkday = factor(
+    wkday, levels = wkday_levels),
+    hour  = factor(
+      hour, levels = 0:23))
+```
+
+```{r}
+kable(head(attacks))
+```
+
+## 17.4.5 Building the Calendar Heatmaps
+
+```{r}
+grouped <- attacks %>% 
+  count(wkday, hour) %>% 
+  ungroup() %>%
+  na.omit()
+
+ggplot(grouped, 
+       aes(hour, 
+           wkday, 
+           fill = n)) + 
+geom_tile(color = "white", 
+          size = 0.1) + 
+theme_tufte(base_family = "Helvetica") + 
+coord_equal() +
+scale_fill_gradient(name = "# of attacks",
+                    low = "yellow", 
+                    high = "red") +
+labs(x = NULL, 
+     y = NULL, 
+     title = "Attacks by weekday and time of day") +
+theme(axis.ticks = element_blank(),
+      plot.title = element_text(hjust = 0.5),
+      legend.title = element_text(size = 8),
+      legend.text = element_text(size = 6) )
+```
+
+## 17.4.6 Building Multiple Calendar Heatmaps
+
+```{r}
+top4_countries <- attacks %>%
+  count(source_country, sort = TRUE) %>%
+  slice_head(n = 4) %>%
+  pull(source_country)
+
+grouped_multi <- attacks %>%
+  filter(source_country %in% top4_countries) %>%
+  count(source_country, wkday, hour) %>%
+  ungroup() %>%
+  na.omit()
+
+grouped_multi <- grouped_multi %>%
+  mutate(
+    wkday = factor(
+      wkday,
+      levels = c("Sunday", "Monday", "Tuesday", "Wednesday",
+                 "Thursday", "Friday", "Saturday")
+    )
+  )
+
+ggplot(grouped_multi,
+       aes(x = hour,
+           y = wkday,
+           fill = n)) +
+  geom_tile(color = "white",
+            size = 0.1) +
+  facet_wrap(~ source_country, ncol = 2) +
+  coord_equal() +
+  scale_x_discrete(
+    breaks = 0:23,
+    expand = c(0, 0)
+  ) +
+  scale_y_discrete(
+    expand = c(0, 0)
+  ) +
+  scale_fill_gradient(
+    name = "# of attacks",
+    low = "lightblue",
+    high = "darkblue"
+  ) +
+  labs(
+    x = NULL,
+    y = NULL,
+    title = "Attacks by weekday and time of day"
+  ) +
+  theme_tufte(base_family = "Helvetica") +
+  theme(
+    axis.ticks = element_blank(),
+    plot.title = element_text(hjust = 0.5, size = 16),
+    strip.text = element_text(size = 12),
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 6),
+    panel.spacing = unit(1.2, "lines")
+  )
+```
+
+## 17.4.7 Plotting Multiple Calendar Heatmaps
+
+```{r}
+attacks_by_country <- count(
+  attacks, source_country) %>%
+  mutate(percent = percent(n/sum(n))) %>%
+  arrange(desc(n))
+```
+
+```{r}
+top4 <- attacks_by_country$source_country[1:4]
+top4_attacks <- attacks %>%
+  filter(source_country %in% top4) %>%
+  count(source_country, wkday, hour) %>%
+  ungroup() %>%
+  mutate(source_country = factor(
+    source_country, levels = top4)) %>%
+  na.omit()
+```
+
+## 17.4.8 Plotting Multiple Calendar Heatmaps
+
+```{r}
+ggplot(top4_attacks, 
+       aes(hour, 
+           wkday, 
+           fill = n)) + 
+  geom_tile(color = "white", 
+          size = 0.1) + 
+  theme_tufte(base_family = "Helvetica") + 
+  coord_equal() +
+  scale_fill_gradient(name = "# of attacks",
+                    low = "sky blue", 
+                    high = "dark blue") +
+  facet_wrap(~source_country, ncol = 2) +
+  labs(x = NULL, y = NULL, 
+     title = "Attacks on top 4 countries by weekday and time of day") +
+  theme(axis.ticks = element_blank(),
+        axis.text.x = element_text(size = 7),
+        plot.title = element_text(hjust = 0.5),
+        legend.title = element_text(size = 8),
+        legend.text = element_text(size = 6) )
+```
+
+## 17.5 Plotting Cycle Plot
+
+## 17.5.1 Step 1: Data Import
+
+```{r}
+air <- read_excel("data/arrivals_by_air.xlsx")
+```
+
+## 17.5.2 Step 2: Deriving month and year fields
+
+```{r}
+air$month <- factor(month(air$`Month-Year`), 
+                    levels=1:12, 
+                    labels=month.abb, 
+                    ordered=TRUE) 
+air$year <- year(ymd(air$`Month-Year`))
+```
+
+## 17.5.3 Step 4: Extracting the target country
+
+```{r}
+Vietnam <- air %>% 
+  select(`Vietnam`, 
+         month, 
+         year) %>%
+  filter(year >= 2010)
+```
+
+## 17.5.4 Step 5: Computing year average arrivals by month
+
+```{r}
+hline.data <- Vietnam %>% 
+  group_by(month) %>%
+  summarise(avgvalue = mean(`Vietnam`))
+```
+
+## 17.5.5 Srep 6: Plotting the cycle plot
+
+```{r}
+ggplot() + 
+  geom_line(data=Vietnam,
+            aes(x=year, 
+                y=`Vietnam`, 
+                group=month), 
+            colour="black") +
+  geom_hline(aes(yintercept=avgvalue), 
+             data=hline.data, 
+             linetype=6, 
+             colour="red", 
+             size=0.5) + 
+  facet_grid(~month) +
+  labs(axis.text.x = element_blank(),
+       title = "Visitor arrivals from Vietnam by air, Jan 2010-Dec 2019") +
+  xlab("") +
+  ylab("No. of Visitors") +
+  theme_tufte(base_family = "Helvetica")
+```
+
+## 17.6 Plotting Slopegraph
+
+## 17.6.1 Step 1: Data Import
+
+```{r}
+rice <- read_csv("data/rice.csv")
+```
+
+## 17.6.2 Step 2: Plotting the slopegraph
+
+```{r}
+library(tidyverse)
+
+# Prepare data
+rice_slope <- rice %>%
+  filter(Year %in% c(1961, 1980)) %>%
+  mutate(Year = as.numeric(as.character(Year))) %>%
+  select(Country, Year, Yield)
+
+# Convert to wide format
+rice_wide <- rice_slope %>%
+  pivot_wider(
+    names_from = Year,
+    values_from = Yield,
+    names_prefix = "Y"
+  )
+
+# Manually adjust label positions to avoid overlapping
+rice_wide <- rice_wide %>%
+  mutate(
+    left_y = case_when(
+      Country == "Japan" ~ Y1961,
+      Country == "Korea" ~ Y1961,
+      Country == "Malaysia" ~ 22000,
+      Country == "China" ~ 21000,
+      Country == "VietNam" ~ 20000,
+      Country == "SriLanka" ~ 19000,
+      Country == "Indonesia" ~ 18000,
+      Country == "Thailand" ~ 17000,
+      Country == "Myanmar" ~ 16000,
+      Country == "India" ~ 15000,
+      Country == "Philippines" ~ 13500,
+      TRUE ~ Y1961
+    ),
+    right_y = case_when(
+      Country == "Japan" ~ Y1980,
+      Country == "Korea" ~ Y1980,
+      Country == "China" ~ Y1980,
+      Country == "Indonesia" ~ Y1980,
+      Country == "Malaysia" ~ 29000,
+      Country == "Myanmar" ~ 28000,
+      Country == "SriLanka" ~ 27000,
+      Country == "Philippines" ~ 23000,
+      Country == "VietNam" ~ 22000,
+      Country == "India" ~ 21000,
+      Country == "Thailand" ~ 20000,
+      TRUE ~ Y1980
+    )
+  )
+
+ggplot(rice_wide) +
+  
+  # left grey guide lines
+  geom_segment(
+    aes(x = 1951, xend = 1961,
+        y = left_y, yend = Y1961),
+    color = "grey80",
+    linewidth = 0.4
+  ) +
+  
+  # right grey guide lines
+  geom_segment(
+    aes(x = 1980, xend = 1988,
+        y = Y1980, yend = right_y),
+    color = "grey80",
+    linewidth = 0.4
+  ) +
+  
+  # colored slope lines
+  geom_segment(
+    aes(x = 1961, xend = 1980,
+        y = Y1961, yend = Y1980,
+        color = Country),
+    linewidth = 1.2
+  ) +
+  
+  # value labels for 1961
+  geom_text(
+    aes(x = 1961, y = Y1961, label = round(Y1961, 0)),
+    size = 3,
+    hjust = 1.1,
+    color = "black"
+  ) +
+  
+  # value labels for 1980
+  geom_text(
+    aes(x = 1980, y = Y1980, label = round(Y1980, 0)),
+    size = 3,
+    hjust = -0.1,
+    color = "black"
+  ) +
+  
+  # country labels on the left
+  geom_text(
+    aes(x = 1950.5, y = left_y, label = Country),
+    hjust = 1,
+    size = 4,
+    fontface = "bold",
+    color = "black"
+  ) +
+  
+  # country labels on the right
+  geom_text(
+    aes(x = 1988.5, y = right_y, label = Country),
+    hjust = 0,
+    size = 4,
+    fontface = "bold",
+    color = "black"
+  ) +
+  
+  scale_x_continuous(
+    breaks = c(1961, 1980),
+    limits = c(1947, 1992)
+  ) +
+  
+  labs(
+    title = "Rice Yield of Top 11 Asian Countries",
+    subtitle = "1961-1980",
+    caption = "Prepared by: Dr. Kam Tin Seong",
+    x = NULL,
+    y = NULL
+  ) +
+  
+  theme_void() +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(size = 20, face = "bold", hjust = 0),
+    plot.subtitle = element_text(size = 13, hjust = 0),
+    plot.caption = element_text(size = 11, hjust = 0.95),
+    axis.text.x = element_text(size = 16, face = "bold", color = "grey30"),
+    axis.ticks.x = element_blank(),
+    plot.margin = margin(20, 40, 20, 40)
+  )
+```
+
+The original code uses `newggslopegraph()` from the `CGPfunctions` package to create a slope graph. However, this package is not available for my current version of R, so the function cannot be installed or loaded successfully. Therefore, I use `ggplot2` as an alternative to recreate the same type of visualisation.
+
+In this code, the rice yield data is first filtered to keep only the two selected years, 1961 and 1980. The data is then reshaped into a wide format so that each country has one yield value for 1961 and one yield value for 1980. The `geom_segment()` function is used to draw the coloured slope lines between the two years, while grey guide lines and text labels are added to reproduce the structure of the original slope graph.
