@@ -1,0 +1,607 @@
+---
+title: "Hands-on_Ex09"
+author: "HU YUE"
+date: "2026-06-17"
+date-modified: "last-modified"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-location: left
+    toc-depth: 3
+    code-fold: true
+    code-tools: true
+    fig-width: 10
+    fig-height: 6
+execute:
+  warning: false
+  message: false
+---
+
+# 21  Choropleth Mapping with R
+
+## 21.2 Getting Started
+```{r}
+pacman::p_load(sf, tmap, tidyverse)
+```
+
+## 21.3 Importing Data into R
+```{r}
+mpsz <- st_read("Data/MP14_SUBZONE_WEB_PL/MP14_SUBZONE_WEB_PL.shp")
+```
+
+```{r}
+mpsz
+```
+
+## 21.3.3 Importing Attribute Data into R
+```{r}
+popdata <- read_csv("data/respopagesextod2011to2020.csv")
+```
+
+## 21.3.4 Data Preparation
+```{r}
+popdata2020 <- popdata %>%
+  filter(Time == 2020) %>%
+  group_by(PA, SZ, AG) %>%
+  summarise(`POP` = sum(`Pop`)) %>%
+  ungroup() %>%
+  pivot_wider(names_from=AG, 
+              values_from=POP) %>%
+  mutate(YOUNG = rowSums(.[3:6])
+         +rowSums(.[12])) %>%
+mutate(`ECONOMY ACTIVE` = rowSums(.[7:11])+
+rowSums(.[13:15]))%>%
+mutate(`AGED`=rowSums(.[16:21])) %>%
+mutate(`TOTAL`=rowSums(.[3:21])) %>%  
+mutate(`DEPENDENCY` = (`YOUNG` + `AGED`)
+/`ECONOMY ACTIVE`) %>%
+  select(`PA`, `SZ`, `YOUNG`, 
+       `ECONOMY ACTIVE`, `AGED`, 
+       `TOTAL`, `DEPENDENCY`)
+```
+
+```{r}
+popdata2020 <- popdata2020 %>%
+  mutate(across(c(PA, SZ), toupper)) %>%
+  filter(`ECONOMY ACTIVE` > 0)
+```
+
+```{r}
+mpsz_pop2020 <- left_join(mpsz, popdata2020,
+                          by = c("SUBZONE_N" = "SZ"))
+```
+
+```{r}
+write_rds(mpsz_pop2020, "data/mpszpop2020.rds")
+```
+
+## 21.4 Choropleth Mapping Geospatial Data Using tmap
+
+## 21.4.1 Plotting a choropleth map quickly by using qtm()
+
+```{r}
+tmap_mode("plot")
+qtm(mpsz_pop2020, 
+    fill = "DEPENDENCY")
+```
+
+## 21.4.2 Creating a choropleth map by using tmap’s elements
+
+```{r}
+tm_shape(mpsz_pop2020) +
+  tm_polygons(fill = "DEPENDENCY", 
+              fill.scale = tm_scale_intervals(
+                style = "quantile",
+                n = 5,
+                values = "brewer.reds"),
+              fill.legend = tm_legend(
+                title = "Dependency ratio")) +
+  tm_title("Distribution of Dependency Ratio by Planning Subzone") +
+  tm_layout(frame = TRUE) +
+  tm_borders(fill_alpha = 0.5) +
+  tm_compass(type = "8star", size = 2) +
+  tm_grid(alpha = 0.2) +
+  tm_credits("Source: Planning Sub-zone boundary from Urban Redevelopment Authority (URA)\n and Population data from Department of Statistics (DOS)", 
+             position = c("left", "bottom"))
+```
+
+This choropleth map shows the spatial distribution of the dependency ratio across planning subzones in Singapore. The variable `DEPENDENCY` is classified into five quantile groups, which means that each class contains approximately the same number of subzones. A blue colour scale is used to represent different levels of dependency ratio, allowing areas with relatively higher or lower dependency burdens to be visually compared. The map also includes subzone boundaries, a compass, grid lines, and data source credits to improve readability and cartographic completeness.
+
+```{r}
+tm_shape(mpsz_pop2020) +
+  tm_polygons()
+```
+
+```{r}
+tm_shape(mpsz_pop2020)+
+  tm_polygons("DEPENDENCY")
+```
+
+```{r}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY")
+```
+
+```{r}
+tm_shape(mpsz_pop2020)+
+  tm_polygons(fill = "DEPENDENCY") +
+  tm_borders(lwd = 0.01,  
+             fill_alpha = 0.1)
+```
+
+## 21.4.3 Data classification methods of tmap
+
+```{r}
+tm_shape(mpsz_pop2020)+
+  tm_polygons("DEPENDENCY",
+      fill.scale = tm_scale_intervals(
+        style = "jenks",
+        n = 5)) +
+  tm_borders(fill_alpha = 0.5)
+```
+
+```{r}
+tm_shape(mpsz_pop2020)+
+  tm_polygons("DEPENDENCY",
+      fill.scale = tm_scale_intervals(
+        style = "equal",
+        n = 5)) +
+  tm_borders(fill_alpha = 0.5)
+```
+
+```{r}
+summary(mpsz_pop2020$DEPENDENCY)
+```
+
+```{r}
+tm_shape(mpsz_pop2020)+
+  tm_polygons("DEPENDENCY",
+          breaks = c(0, 0.60, 0.70, 0.80, 0.90, 1.00)) +
+  tm_borders(fill_alpha = 0.5)
+```
+This map visualises the spatial distribution of the dependency ratio across Singapore planning subzones. The `tm_shape()` function sets `mpsz_pop2020` as the spatial data layer, while `tm_polygons()` maps the `DEPENDENCY` variable using manually defined class breaks from 0 to 1.00. These fixed intervals allow the dependency ratio to be compared against consistent threshold values rather than data-driven quantiles. The `tm_borders()` function adds subzone boundaries to make each planning area easier to distinguish.
+
+## 21.4.4 Colour Scheme
+
+```{r}
+tm_shape(mpsz_pop2020)+
+  tm_polygons("DEPENDENCY",
+      fill.scale = tm_scale_intervals(
+        style = "quantile",
+        n = 5,
+        values = "brewer.greens")) +
+  tm_borders(fill_alpha = 0.5)
+```
+
+```{r}
+tm_shape(mpsz_pop2020)+
+  tm_polygons("DEPENDENCY",
+      fill.scale = tm_scale_intervals(
+        style = "quantile",
+        n = 5,
+        values = "-brewer.greens")) +
+  tm_borders(fill_alpha = 0.5)
+```
+To reverse the colour shading, add a “-” prefix.
+
+## 21.4.5 Map Layouts
+
+```{r}
+tm_shape(mpsz_pop2020) +
+  tm_polygons("DEPENDENCY",
+              fill.scale = tm_scale_intervals(
+                style = "jenks",
+                n = 5,
+                values = "brewer.greens"),
+              fill.legend = tm_legend(
+                title = "Dependency ratio")) +
+  tm_borders(fill_alpha = 0.5) +
+  tm_title("Distribution of Dependency Ratio by Planning Subzone \n(Jenks Classification)")
+```
+
+This map visualises the spatial distribution of the dependency ratio across Singapore planning subzones using the Jenks natural breaks classification method. The `DEPENDENCY` variable is divided into five classes based on natural groupings in the data, which helps reduce within-class variation and highlight meaningful spatial differences. A green colour scale is used to distinguish areas with different levels of dependency ratio, while subzone borders are added to make individual planning areas easier to identify.
+
+```{r}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY", 
+          style = "quantile", 
+          palette = "-Greens") +
+  tm_borders(alpha = 0.5) +
+  tmap_style("classic")
+```
+
+```{r}
+tm_shape(mpsz_pop2020)+
+  tm_polygons(fill = "DEPENDENCY", 
+              fill.scale = tm_scale_intervals(
+                style = "quantile",
+                n = 5,
+                values = "brewer.blues"),
+              fill.legend = tm_legend(
+                title = "Dependency ratio")) +
+  tm_title("Distribution of Dependency Ratio by planning subzone") +
+  tm_layout(frame = TRUE) +
+  tm_borders(fill_alpha = 0.5) +
+  tm_compass(type="8star", size = 2) +
+  tm_grid(alpha =0.2) +
+  tm_credits("Source: Planning Sub-zone boundary from Urban Redevelopment Authorithy (URA)\n and Population data from Department of Statistics DOS", 
+             position = c("left", "bottom"))
+```
+
+```{r}
+tmap_style("white")
+```
+
+## 21.4.6 Drawing Small Multiple Choropleth Maps
+
+```{r}
+tm_shape(mpsz_pop2020)+
+  tm_fill(c("YOUNG", "AGED"),
+          style = "equal", 
+          palette = "Blues") +
+  tm_layout(legend.position = c("right", "bottom")) +
+  tm_borders(alpha = 0.5) +
+  tmap_style("white")
+```
+
+This map compares the spatial distribution of the young population and the aged population across Singapore planning subzones. The `tm_fill()` function is used to map both `YOUNG` and `AGED` variables, producing separate maps for comparison. The values are classified using the equal interval method, which divides the data range into classes of equal width. A blue colour palette is applied to show variation in population concentration, while subzone borders and a white map style are used to improve readability.
+
+```{r}
+tm_shape(mpsz_pop2020)+ 
+  tm_polygons(c("DEPENDENCY","AGED"),
+          style = c("equal", "quantile"), 
+          palette = list("Blues","Greens")) +
+  tm_layout(legend.position = c("right", "bottom"))
+```
+
+```{r}
+tm_shape(mpsz_pop2020) +
+  tm_fill("DEPENDENCY",
+          style = "quantile",
+          palette = "Blues",
+          thres.poly = 0) + 
+  tm_facets(by = "REGION_N", 
+            free.coords = TRUE) +
+  tm_layout(legend.show = FALSE,
+            title.position = c("center", "center"), 
+            title.size = 20) +
+  tm_borders(alpha = 0.5)
+```
+
+This faceted map visualises the distribution of the dependency ratio across Singapore planning subzones by region. The `DEPENDENCY` variable is classified using the quantile method, which divides subzones into groups with approximately equal numbers of observations. The `tm_facets()` function separates the map by `REGION_N`, allowing regional spatial patterns to be compared more clearly. The legend is hidden to reduce visual clutter, while subzone borders are retained to make the boundaries of individual planning areas easier to identify.
+
+```{r}
+youngmap <- tm_shape(mpsz_pop2020)+ 
+  tm_polygons("YOUNG", 
+              style = "quantile", 
+              palette = "Blues")
+
+agedmap <- tm_shape(mpsz_pop2020)+ 
+  tm_polygons("AGED", 
+              style = "quantile", 
+              palette = "Blues")
+
+tmap_arrange(youngmap, agedmap, asp=1, ncol=2)
+```
+
+## 21.4.7 Mappping Spatial Object Meeting a Selection Criterion
+
+```{r}
+tm_shape(mpsz_pop2020[mpsz_pop2020$REGION_N == "CENTRAL REGION", ]) +
+  tm_fill("DEPENDENCY", 
+          style = "quantile", 
+          palette = "Blues", 
+          legend.hist = TRUE, 
+          legend.is.portrait = TRUE,
+          legend.hist.z = 0.1) +
+  tm_layout(legend.outside = TRUE,
+            legend.height = 0.45, 
+            legend.width = 5.0,
+            legend.position = c("right", "bottom"),
+            frame = FALSE) +
+  tm_borders(alpha = 0.5)
+```
+
+This map focuses only on planning subzones within the Central Region of Singapore. The `mpsz_pop2020` dataset is filtered using `REGION_N == "CENTRAL REGION"`, and the `DEPENDENCY` variable is mapped using the quantile classification method. The histogram legend helps show the distribution of dependency ratio values across the selected subzones, while the legend is placed outside the map to improve readability. Subzone borders are added to make individual planning areas easier to distinguish.
+
+# 22  Visualising Geospatial Point Data
+
+```{r}
+pacman::p_load(sf, tmap, tidyverse)
+```
+
+```{r}
+sgpools <- read_csv("data/SGPools_svy21.csv")
+```
+
+```{r}
+list(sgpools) 
+```
+
+## 22.3 Creating a sf data frame from an aspatial data frame
+
+```{r}
+sgpools_sf <- st_as_sf(sgpools, 
+                       coords = c("XCOORD", "YCOORD"),
+                       crs = 3414)
+```
+
+This code converts the `sgpools` data frame into an `sf` spatial object. The `XCOORD` and `YCOORD` columns are used as the x- and y-coordinates to create point geometries for each Singapore Pools outlet. The coordinate reference system is set to EPSG:3414, which is commonly used for projected spatial data in Singapore.
+
+```{r}
+list(sgpools_sf)
+```
+
+## 26 Drawing Proportional Symbol Map
+
+```{r}
+tmap_mode("view")
+```
+
+## 26.1 It all started with an interactive point symbol map
+
+```{r}
+tm_shape(sgpools_sf) + 
+  tm_bubbles(fill = "red",
+           size = 1,
+           col = "black",
+           lwd = 1)
+```
+
+## 26.2 Lets make it proportional
+
+```{r}
+tm_shape(sgpools_sf) + 
+  tm_bubbles(fill = "red",
+             size = "Gp1Gp2 Winnings",
+             col = "black",
+             lwd = 1)
+```
+
+This bubble map visualises the spatial distribution of Singapore Pools outlets and their Group 1 and Group 2 winnings. The `sgpools_sf` object provides the point locations of the outlets, while the bubble size is scaled according to the `Gp1Gp2 Winnings` variable. Larger bubbles indicate outlets with higher winnings, and the red fill with black outlines makes the points more visible on the map.
+
+## 26.3 Lets give it a different colour
+
+```{r}
+tm_shape(sgpools_sf) + 
+  tm_bubbles(fill = "OUTLET TYPE", 
+             size = "Gp1Gp2 Winnings",
+             col = "black",
+             lwd = 1)
+```
+
+## 26.4 I have a twin brothers :)
+
+```{r}
+tm_shape(sgpools_sf) + 
+  tm_bubbles(fill = "OUTLET TYPE", 
+             size = "Gp1Gp2 Winnings",
+             col = "black",
+             lwd = 1) + 
+  tm_facets(by = "OUTLET TYPE",
+            nrow = 1,
+            sync = TRUE)
+```
+
+This faceted bubble map visualises Singapore Pools outlets by outlet type and Group 1 and Group 2 winnings. The `tm_bubbles()` function uses `OUTLET TYPE` to determine the bubble fill colour, while the bubble size is scaled according to `Gp1Gp2 Winnings`. The `tm_facets()` function separates the map into different panels based on `OUTLET TYPE`, allowing the spatial distribution and winning patterns of different outlet categories to be compared more clearly. The `sync = TRUE` option keeps the map scales consistent across facets, making the comparison more reliable.
+
+```{r}
+tmap_mode("plot")
+```
+
+# 23  Analytical Mapping
+
+## 23.2 Getting Started
+
+```{r}
+pacman::p_load(tmap, tidyverse, sf)
+```
+
+## 23.2.2 Importing data
+
+```{r}
+NGA_wp <- read_rds("data/NGA_wp.rds")
+```
+
+## 23.3 Basic Choropleth Mapping
+
+## 23.3.1 Visualising distribution of non-functional water point
+
+```{r}
+p1 <- tm_shape(NGA_wp) +
+  tm_polygons(fill = "wp_functional",
+             fill.scale = tm_scale_intervals(
+               style = "equal",
+               n = 10,
+               values = "brewer.blues"),
+             fill.legend = tm_legend(
+               position = c("right", "bottom"))) +
+  tm_borders(lwd = 0.1,
+             fill_alpha = 1) +
+  tm_title("Distribution of functional water point by LGAs")
+```
+
+```{r}
+p2 <- tm_shape(NGA_wp) + 
+  tm_polygons(fill = "total_wp", 
+              fill.scale = tm_scale_intervals(
+                style = "equal",
+                n = 10,
+                values = "brewer.blues"),
+              fill.legend = tm_legend(
+                position = c("right", "bottom"))) +
+  tm_borders(lwd = 0.1, 
+             fill_alpha = 1) + 
+  tm_title("Distribution of total  water point by LGAs")
+```
+
+```{r}
+tmap_arrange(p2, p1, nrow = 1)
+```
+
+## 23.4 Choropleth Map for Rates
+
+## 23.4.1 Deriving Proportion of Functional Water Points and Non-Functional Water Points
+
+```{r}
+NGA_wp <- NGA_wp %>%
+  mutate(pct_functional = wp_functional/total_wp) %>%
+  mutate(pct_nonfunctional = wp_nonfunctional/total_wp)
+```
+
+## 23.4.2 Plotting map of rate
+
+```{r}
+tm_shape(NGA_wp) +
+  tm_polygons("pct_functional",
+              fill.scale = tm_scale_intervals(
+                style = "equal",
+                n = 10,
+                values = "brewer.reds"),
+              fill.legend = tm_legend(
+                position = c("right", "bottom"))) + 
+  tm_borders(lwd = 0.1,
+             fill_alpha = 1) +
+  tm_title("Rate map of functional water point by LGAs")
+```
+
+## 23.5 Extreme Value Maps
+
+## 23.5.1 Percentile Map
+
+```{r}
+NGA_wp <- NGA_wp %>%
+  drop_na()
+```
+
+```{r}
+percent <- c(0,.01,.1,.5,.9,.99,1)
+var <- NGA_wp["pct_functional"] %>%
+  st_set_geometry(NULL)
+quantile(var[,1], percent)
+```
+
+```{r}
+get.var <- function(vname,df) {
+  v <- df[vname] %>% 
+    st_set_geometry(NULL)
+  v <- unname(v[,1])
+  return(v)
+}
+```
+
+```{r}
+percentmap <- function(vnam, df, legtitle = NA, mtitle = "Percentile Map") {
+  percent <- c(0, .01, .1, .5, .9, .99, 1)
+  var <- df[[vnam]]
+  bperc <- quantile(var, percent, na.rm = TRUE)
+  
+  tm_shape(df) +
+    tm_polygons() +
+    tm_shape(df) +
+    tm_polygons(vnam,
+                title = legtitle,
+                breaks = bperc,
+                palette = "Blues",
+                labels = c("< 1%", 
+                           "1% - 10%", 
+                           "10% - 50%", 
+                           "50% - 90%", 
+                           "90% - 99%", 
+                           "> 99%")) +
+    tm_borders() +
+    tm_layout(main.title = mtitle)
+}
+```
+
+This function creates a percentile map for a selected variable in a spatial data frame. The argument `vnam` specifies the variable to be mapped, while `df` provides the spatial dataset. The variable values are divided into percentile-based classes using selected cut-off points, including the 1st, 10th, 50th, 90th, and 99th percentiles. This classification is useful for identifying both typical areas and extreme values. The map uses a blue colour palette, adds polygon borders, and allows the legend title and map title to be customised through the `legtitle` and `mtitle` arguments.
+
+```{r}
+percentmap("total_wp", NGA_wp)
+```
+
+## 23.5.2 Box map
+
+```{r}
+ggplot(data = NGA_wp,
+       aes(x = "",
+           y = wp_nonfunctional)) +
+  geom_boxplot()
+```
+
+```{r}
+boxbreaks <- function(v,mult=1.5) {
+  qv <- unname(quantile(v))
+  iqr <- qv[4] - qv[2]
+  upfence <- qv[4] + mult * iqr
+  lofence <- qv[2] - mult * iqr
+  # initialize break points vector
+  bb <- vector(mode="numeric",length=7)
+  # logic for lower and upper fences
+  if (lofence < qv[1]) {  # no lower outliers
+    bb[1] <- lofence
+    bb[2] <- floor(qv[1])
+  } else {
+    bb[2] <- lofence
+    bb[1] <- qv[1]
+  }
+  if (upfence > qv[5]) { # no upper outliers
+    bb[7] <- upfence
+    bb[6] <- ceiling(qv[5])
+  } else {
+    bb[6] <- upfence
+    bb[7] <- qv[5]
+  }
+  bb[3:5] <- qv[2:4]
+  return(bb)
+}
+```
+
+```{r}
+get.var <- function(vname,df) {
+  v <- df[vname] %>% st_set_geometry(NULL)
+  v <- unname(v[,1])
+  return(v)
+}
+```
+
+```{r}
+var <- get.var("wp_nonfunctional", NGA_wp) 
+boxbreaks(var)
+```
+
+```{r}
+boxmap <- function(vnam, df, 
+                   legtitle = NA,
+                   mtitle = "Box Map",
+                   mult = 1.5) {
+  var <- get.var(vnam, df)
+  bb <- boxbreaks(var)
+  
+  tm_shape(df) +
+    tm_polygons() +
+  tm_shape(df) +
+    tm_fill(vnam,
+            title = legtitle,
+            breaks = bb,
+            palette = "Blues",
+            labels = c("lower outlier", 
+                       "< 25%", 
+                       "25% - 50%", 
+                       "50% - 75%",
+                       "> 75%", 
+                       "upper outlier")) +
+    tm_borders() +
+    tm_layout(main.title = mtitle, 
+              title.position = c("left", "top"))
+}
+```
+
+This function creates a box map for a selected variable in a spatial data frame. The argument `vnam` specifies the variable to be mapped, while `df` provides the spatial dataset. The function calculates class breaks based on the boxplot structure, including lower outliers, the lower quartile, median, upper quartile, and upper outliers. This method is useful for identifying areas with unusually low or high values compared with the overall distribution. The map uses a blue colour palette, adds polygon borders, and allows the legend title and map title to be customised through `legtitle` and `mtitle`.
+
+```{r}
+tmap_mode("plot")
+boxmap("wp_nonfunctional", NGA_wp)
+```
+
